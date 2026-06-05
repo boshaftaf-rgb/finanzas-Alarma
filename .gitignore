@@ -1,0 +1,19 @@
+# Secretos y entorno local
+.env
+.env.local
+.env.*.local
+
+# Dependencias y builds (cuando existan frontend/worker)
+node_modules/
+dist/
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# IDE y OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
