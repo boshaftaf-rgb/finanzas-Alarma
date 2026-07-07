@@ -205,6 +205,13 @@ async function previewTickerQuote(rawTicker) {
   }
 }
 
+function escapeAttr(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;");
+}
+
 function badgeHtml(variant, text) {
   return `<span class="badge badge--${variant}">${text}</span>`;
 }
@@ -234,6 +241,7 @@ function renderAlerts() {
       continue;
     }
 
+    const label = alertDisplayLabel(alert);
     const kind = alertKind(alert);
     const badgeText = alertBadge(alert);
     const kindBadge =
@@ -248,12 +256,15 @@ function renderAlerts() {
         ${quoteBlockHtml(alert.ticker)}
       </div>
       <div>
-        <div class="alert-row__preset">${alertDisplayLabel(alert)} ${kindBadge}</div>
+        <div class="alert-row__preset">
+          <span class="alert-row__preset-label alert-row__preset-label--truncate" title="${escapeAttr(label)}">${label}</span>
+          ${kindBadge}
+        </div>
         <div class="alert-row__meta">Última evaluación: ${formatEvaluatedAt(alert.last_evaluated_at)}</div>
       </div>
       ${badgeHtml(alert.active ? "active" : "inactive", alert.active ? "Activa" : "Inactiva")}
       <div class="alert-row__actions">
-        <button type="button" class="btn-ghost btn-edit" aria-label="Editar alerta ${alert.ticker}">Editar</button>
+        <button type="button" class="btn-ghost btn-ghost--accent btn-edit" aria-label="Editar alerta ${alert.ticker}">Editar</button>
         <button type="button" class="toggle" role="switch" aria-checked="${alert.active}" aria-label="${alert.active ? "Desactivar" : "Activar"} alerta ${alert.ticker}">
           <span class="toggle__thumb"></span>
         </button>
@@ -486,7 +497,7 @@ function validateFormPayload() {
 
   if (formMode === "preset") {
     if (!selectedPreset) {
-      els.formError.textContent = "Selecciona un preset de alerta.";
+      els.formError.textContent = "Selecciona una alerta predefinida.";
       els.formError.classList.remove("hidden");
       return null;
     }
@@ -564,6 +575,17 @@ function bindEvents() {
   els.submitBtn.addEventListener("click", () => void handleSubmit());
   els.tabPreset.addEventListener("click", () => setFormMode("preset"));
   els.tabCustom.addEventListener("click", () => setFormMode("custom"));
+  for (const tab of [els.tabPreset, els.tabCustom]) {
+    tab.addEventListener("keydown", (e) => {
+      if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+      e.preventDefault();
+      const tabs = [els.tabPreset, els.tabCustom];
+      const index = tabs.indexOf(tab);
+      const next = e.key === "ArrowRight" ? (index + 1) % tabs.length : (index - 1 + tabs.length) % tabs.length;
+      setFormMode(next === 0 ? "preset" : "custom");
+      tabs[next].focus();
+    });
+  }
   for (const btn of document.querySelectorAll(".custom-type-btn")) {
     btn.addEventListener("click", () => setCustomType(btn.dataset.customType));
   }

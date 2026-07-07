@@ -18,6 +18,8 @@
   --color-action-primary-hover: #34d399;
   --color-action-primary-pressed: #059669;
   --color-on-primary: #042f1e;
+  --color-accent-secondary: #6ee7b7;
+  --color-on-surface: #f8fafc;
 
   --color-bullish: #22c55e;
   --color-bullish-soft: rgba(34, 197, 94, 0.12);
@@ -28,6 +30,9 @@
 
   --color-border-error: #f87171;
   --color-surface-error: #450a0a;
+  --color-error-text: #fca5a5;
+  --color-success-text: #bbf7d0;
+  --color-error-banner-text: #fecaca;
 
   --color-skeleton-base: #1a2332;
   --color-skeleton-shine: #243044;
@@ -47,6 +52,13 @@
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 
   --layout-max: 1120px;
+
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 24px;
+  --space-xxl: 32px;
 
   /* Escala de texto (accesibilidad) — normal por defecto */
   --text-scale: 1;

@@ -58,6 +58,13 @@
         <div id="skeleton" class="alert-list" aria-busy="true" aria-label="Cargando alertas"></div>
 
         <section id="empty-state" class="card empty-state hidden">
+          <div class="empty-state__icon" aria-hidden="true">
+            <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="4" y="8" width="32" height="24" rx="4" stroke="currentColor" stroke-width="1.5" />
+              <path d="M12 28l6-8 5 6 4-5 6 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+              <circle cx="28" cy="14" r="2" fill="currentColor" />
+            </svg>
+          </div>
           <h2 class="empty-state__title">Aún no tienes alertas</h2>
           <p class="empty-state__text">
             Crea tu primera alerta con un preset o una configuración personalizada. Te avisaremos por correo cuando se cumpla la
@@ -79,10 +86,12 @@
         role="dialog"
         aria-modal="true"
         aria-labelledby="alert-form-title"
+        aria-describedby="alert-form-subtitle"
       >
         <h2 id="alert-form-title" class="modal__title">Nueva alerta</h2>
-        <p class="modal__subtitle">Timeframe fijo: 15 minutos. Máx. 5 alertas activas por ticker.</p>
+        <p id="alert-form-subtitle" class="modal__subtitle">Timeframe fijo: 15 minutos. Máx. 5 alertas activas por ticker.</p>
 
+        <div class="modal__body">
         <div class="form-field">
           <label class="form-field__label" for="ticker-input">Ticker</label>
           <input
@@ -103,7 +112,7 @@
           <span class="form-field__label" id="alert-type-label">Tipo de alerta</span>
           <div class="form-mode-tabs" role="tablist" aria-labelledby="alert-type-label">
             <button type="button" role="tab" id="tab-preset" class="form-mode-tab is-active" aria-selected="true" aria-controls="preset-section">
-              Preset
+              Predefinida
             </button>
             <button type="button" role="tab" id="tab-custom" class="form-mode-tab" aria-selected="false" aria-controls="custom-section">
               Personalizada
@@ -111,7 +120,7 @@
           </div>
 
           <div id="preset-section" role="tabpanel" aria-labelledby="tab-preset">
-            <div id="preset-grid" class="preset-grid" role="listbox" aria-label="Presets de alerta"></div>
+            <div id="preset-grid" class="preset-grid" role="listbox" aria-label="Alertas predefinidas"></div>
           </div>
 
           <div id="custom-section" class="hidden" role="tabpanel" aria-labelledby="tab-custom">
@@ -166,7 +175,8 @@
           </div>
         </div>
 
-        <p id="form-error" class="form-field__error hidden"></p>
+        <p id="form-error" class="form-field__error hidden" role="alert"></p>
+        </div>
 
         <div class="modal__footer">
           <button type="button" id="btn-cancel" class="btn-secondary">Cancelar</button>
