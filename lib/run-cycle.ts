@@ -1,6 +1,8 @@
 import type { AlertRow } from "./types.js";
+import { decideFire, formatOutcome, todayMarketDate } from "./alert-fire-policy.js";
 import { evaluateAlert } from "./alert-evaluator.js";
 import { AlertStore } from "./alert-store.js";
+import { sendAlertEmail, smtpConfigFromEnv, type SmtpConfig } from "./email-sender.js";
 import { loadFixture } from "./fixture-loader.js";
 import { fetchBatchOhlcv } from "./twelve-data-fetcher.js";
 import type { OhlcvBar } from "./types.js";
@@ -17,6 +19,10 @@ export interface RunCycleOptions {
   fixturesDir?: string;
   twelveDataApiKey?: string;
   fetchImpl?: typeof fetch;
+  smtpConfig?: SmtpConfig;
+  sendEmails?: boolean;
+  today?: string;
+  now?: Date;
 }
 
 export async function runEvaluationCycle(
@@ -24,7 +30,8 @@ export async function runEvaluationCycle(
   store: AlertStore,
   options: RunCycleOptions,
 ): Promise<CycleResult[]> {
-  const now = new Date();
+  const now = options.now ?? new Date();
+  const today = options.today ?? todayMarketDate(now);
   const results: CycleResult[] = [];
   let ohlcvByTicker = new Map<string, OhlcvBar[]>();
 
@@ -40,6 +47,8 @@ export async function runEvaluationCycle(
   }
 
   const fixturesDir = options.fixturesDir ?? join(process.cwd(), "worker", "fixtures");
+  const sendEmails = options.sendEmails !== false;
+  let smtpConfig = options.smtpConfig;
 
   for (const alert of alerts) {
     try {
@@ -52,12 +61,38 @@ export async function runEvaluationCycle(
       }
 
       const evaluation = evaluateAlert(alert, bars);
-      const outcome = evaluation.conditionMet ? "DISPARARÍA" : "NO DISPARARÍA";
+      const decision = decideFire(
+        evaluation.conditionMet,
+        alert,
+        evaluation.candleTimestamp,
+        today,
+      );
+
+      let emailSent = false;
+      if (decision.shouldSend && sendEmails) {
+        if (!smtpConfig) {
+          smtpConfig = smtpConfigFromEnv();
+        }
+        await sendAlertEmail({
+          config: smtpConfig,
+          ticker: alert.ticker,
+          presetOrCustom: alert.preset_or_custom,
+          candleTimestamp: evaluation.candleTimestamp,
+        });
+        await store.recordEmailSent(alert, evaluation.candleTimestamp, today, now);
+        emailSent = true;
+        console.log(`Email enviado | ticker=${alert.ticker} | preset=${alert.preset_or_custom}`);
+      } else if (decision.shouldSend && !sendEmails) {
+        console.log(`Email omitido (modo prueba) | ticker=${alert.ticker}`);
+      } else {
+        await store.updateLastEvaluated(alert.id, now);
+      }
+
+      const outcome = formatOutcome(decision, emailSent);
       console.log(
         `Alerta ${alert.id} | ticker=${alert.ticker} | preset=${alert.preset_or_custom} | vela=${evaluation.candleTimestamp} | resultado=${outcome}`,
       );
       results.push({ ticker: alert.ticker, preset: alert.preset_or_custom, outcome });
-      await store.updateLastEvaluated(alert.id, now);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       console.error(`Alerta ${alert.ticker} (${alert.preset_or_custom}): error — ${message}`);

@@ -7,10 +7,12 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.49.8"
+    "@supabase/supabase-js": "^2.49.8",
+    "nodemailer": "^6.10.0"
   },
   "devDependencies": {
     "@types/node": "^22.13.10",
+    "@types/nodemailer": "^6.4.17",
     "@vercel/node": "^5.1.14",
     "typescript": "^5.8.2",
     "vitest": "^3.0.9"

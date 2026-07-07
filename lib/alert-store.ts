@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { AlertRow } from "./types.js";
+import { effectiveDailyCount } from "./alert-fire-policy.js";
 
 export class AlertStore {
   private readonly client: SupabaseClient;
@@ -26,5 +27,25 @@ export class AlertStore {
       .eq("id", alertId);
 
     if (error) throw new Error(`Error actualizando alerta ${alertId}: ${error.message}`);
+  }
+
+  async recordEmailSent(
+    alert: AlertRow,
+    candleTimestamp: string,
+    today: string,
+    evaluatedAt = new Date(),
+  ): Promise<void> {
+    const emailsSentToday = effectiveDailyCount(alert, today) + 1;
+    const { error } = await this.client
+      .from("alerts")
+      .update({
+        last_triggered_candle: candleTimestamp,
+        emails_sent_today: emailsSentToday,
+        email_count_date: today,
+        last_evaluated_at: evaluatedAt.toISOString(),
+      })
+      .eq("id", alert.id);
+
+    if (error) throw new Error(`Error registrando disparo ${alert.id}: ${error.message}`);
   }
 }
