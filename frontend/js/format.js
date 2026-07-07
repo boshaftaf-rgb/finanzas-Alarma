@@ -18,3 +18,26 @@ export function formatEvaluatedAt(iso) {
     timeStyle: "short",
   }).format(new Date(iso));
 }
+
+export function formatPrice(value) {
+  if (value == null || !Number.isFinite(value)) return "—";
+  return new Intl.NumberFormat("es-MX", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
+}
+
+export function formatPercentChange(value) {
+  if (value == null || !Number.isFinite(value)) return "—";
+  const sign = value > 0 ? "+" : "";
+  return `${sign}${value.toFixed(2)}%`;
+}
+
+export function formatVolume(value) {
+  if (value == null || !Number.isFinite(value)) return null;
+  return new Intl.NumberFormat("es-MX", { notation: "compact", maximumFractionDigits: 1 }).format(
+    value,
+  );
+}

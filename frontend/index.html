@@ -20,7 +20,7 @@
           <div>
             <h1 class="page-header__title">Mis alertas</h1>
             <p class="page-header__subtitle">
-              Monitoreo técnico en velas de 15 min. Notificaciones por correo con candle-lock.
+              Monitoreo técnico en velas de 15 min. Precios con datos de mercado (pueden tener ligero retraso).
             </p>
           </div>
           <div class="page-header__meta">
@@ -74,6 +74,7 @@
             maxlength="10"
           />
           <p class="form-field__hint">Símbolo de EE. UU. en mayúsculas (ej. MSFT, NVDA).</p>
+          <div id="ticker-preview" class="ticker-preview hidden" aria-live="polite"></div>
           <p id="ticker-error" class="form-field__error hidden"></p>
         </div>
 

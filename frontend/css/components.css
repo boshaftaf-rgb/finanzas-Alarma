@@ -173,7 +173,7 @@
 
 .alert-row {
   display: grid;
-  grid-template-columns: 88px 1fr auto auto;
+  grid-template-columns: minmax(148px, 180px) 1fr auto auto;
   gap: 12px 16px;
   align-items: center;
   padding: 14px 16px;
@@ -197,6 +197,102 @@
   font-size: 14px;
   font-weight: 600;
   letter-spacing: 0.02em;
+}
+
+.alert-row__symbol {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.alert-row__quote {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.alert-row__quote--muted {
+  color: var(--color-ink-faint);
+}
+
+.alert-row__company {
+  font-size: 11px;
+  color: var(--color-ink-faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 168px;
+}
+
+.quote-price {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-ink-secondary);
+}
+
+.quote-change {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.quote-change--up {
+  color: var(--color-bullish);
+}
+
+.quote-change--down {
+  color: var(--color-bearish);
+}
+
+.quote-change--flat {
+  color: var(--color-ink-muted);
+}
+
+.quote-volume {
+  color: var(--color-ink-faint);
+  font-size: 11px;
+}
+
+.quote-skeleton {
+  display: inline-block;
+  width: 88px;
+  height: 14px;
+}
+
+.ticker-preview {
+  margin-top: 10px;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border-default);
+  background: var(--color-canvas-subtle);
+}
+
+.ticker-preview__row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.ticker-preview__price {
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.ticker-preview__name {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--color-ink-muted);
+}
+
+.alert-row--inactive .alert-row__quote,
+.alert-row--inactive .alert-row__company {
+  opacity: 0.65;
 }
 
 .alert-row__preset {
@@ -491,7 +587,7 @@
     grid-template-rows: auto auto auto;
   }
 
-  .alert-row__ticker {
+  .alert-row__symbol {
     grid-column: 1;
   }
 

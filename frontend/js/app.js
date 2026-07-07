@@ -7,7 +7,8 @@ import {
   initAlertsApi,
   setAlertActive,
 } from "./alerts-api.js";
-import { formatEvaluatedAt, mapDbError } from "./format.js";
+import { formatEvaluatedAt, formatPercentChange, formatPrice, formatVolume, mapDbError } from "./format.js";
+import { fetchTickerQuotes } from "./quotes-api.js";
 import { MAX_UNIQUE_TICKERS, PRESETS, presetBadge, presetKind, presetLabel } from "./presets.js";
 import { normalizeTicker, validateTicker } from "./ticker-validation.js";
 
@@ -23,11 +24,14 @@ const els = {
   formError: document.getElementById("form-error"),
   presetGrid: document.getElementById("preset-grid"),
   submitBtn: document.getElementById("submit-alert"),
+  tickerPreview: document.getElementById("ticker-preview"),
 };
 
 let alerts = [];
 let busyId = null;
 let selectedPreset = null;
+let quotesByTicker = {};
+let quotesLoading = false;
 
 function showBanner(type, text) {
   els.banner.className = `alert-banner alert-banner--${type}`;
@@ -62,11 +66,101 @@ function renderSkeleton() {
     row.innerHTML = `
       <div class="skeleton skeleton-row__ticker"></div>
       <div class="skeleton skeleton-row__label"></div>
+      <div class="skeleton quote-skeleton"></div>
       <div class="skeleton skeleton-row__badge"></div>
-      <div class="skeleton skeleton-row__action"></div>
       <div class="skeleton skeleton-row__action"></div>
     `;
     els.skeleton.appendChild(row);
+  }
+}
+
+function quoteChangeClass(percentChange) {
+  if (percentChange > 0) return "up";
+  if (percentChange < 0) return "down";
+  return "flat";
+}
+
+function quoteBlockHtml(ticker, { compact = false } = {}) {
+  const quote = quotesByTicker[ticker.toUpperCase()];
+  if (quotesLoading && !quote) {
+    return `<div class="alert-row__quote" aria-busy="true"><span class="skeleton quote-skeleton"></span></div>`;
+  }
+  if (!quote) {
+    return `<div class="alert-row__quote alert-row__quote--muted">Sin cotización</div>`;
+  }
+
+  const dir = quoteChangeClass(quote.percentChange);
+  const volume = formatVolume(quote.volume);
+  const volumeHtml =
+    !compact && volume ? `<span class="quote-volume">Vol. ${volume}</span>` : "";
+
+  return `
+    <div class="alert-row__quote">
+      <span class="quote-price">${formatPrice(quote.price)}</span>
+      <span class="quote-change quote-change--${dir}">${formatPercentChange(quote.percentChange)}</span>
+      ${volumeHtml}
+    </div>
+    ${!compact && quote.name ? `<div class="alert-row__company" title="${quote.name}">${quote.name}</div>` : ""}
+  `;
+}
+
+function renderTickerPreview(ticker) {
+  const quote = quotesByTicker[ticker.toUpperCase()];
+  if (!quote) {
+    els.tickerPreview.classList.add("hidden");
+    els.tickerPreview.innerHTML = "";
+    return;
+  }
+
+  const dir = quoteChangeClass(quote.percentChange);
+  els.tickerPreview.classList.remove("hidden");
+  els.tickerPreview.innerHTML = `
+    <div class="ticker-preview__row">
+      <span class="ticker-preview__price">${formatPrice(quote.price)}</span>
+      <span class="quote-change quote-change--${dir}">${formatPercentChange(quote.percentChange)}</span>
+    </div>
+    ${quote.name ? `<p class="ticker-preview__name">${quote.name}</p>` : ""}
+  `;
+}
+
+async function loadQuotes(tickers = null) {
+  const list = tickers ?? [...new Set(alerts.map((a) => a.ticker))];
+  if (list.length === 0) {
+    quotesByTicker = {};
+    return;
+  }
+
+  quotesLoading = true;
+  renderAlerts();
+
+  const raw = await fetchTickerQuotes(list);
+  quotesByTicker = {};
+  for (const [key, value] of Object.entries(raw)) {
+    quotesByTicker[key.toUpperCase()] = value;
+  }
+
+  quotesLoading = false;
+  renderAlerts();
+}
+
+async function previewTickerQuote(rawTicker) {
+  const error = validateTicker(rawTicker);
+  if (error) {
+    els.tickerPreview.classList.add("hidden");
+    return;
+  }
+
+  const ticker = normalizeTicker(rawTicker);
+  els.tickerPreview.classList.remove("hidden");
+  els.tickerPreview.innerHTML = `<span class="skeleton quote-skeleton" aria-busy="true"></span>`;
+
+  const raw = await fetchTickerQuotes([ticker]);
+  const quote = raw[ticker];
+  if (quote) {
+    quotesByTicker[ticker] = quote;
+    renderTickerPreview(ticker);
+  } else {
+    els.tickerPreview.classList.add("hidden");
   }
 }
 
@@ -101,7 +195,10 @@ function renderAlerts() {
     row.className = `alert-row ${alert.active ? "" : "alert-row--inactive"}`.trim();
     row.dataset.id = alert.id;
     row.innerHTML = `
-      <div class="alert-row__ticker">${alert.ticker}</div>
+      <div class="alert-row__symbol">
+        <div class="alert-row__ticker">${alert.ticker}</div>
+        ${quoteBlockHtml(alert.ticker)}
+      </div>
       <div>
         <div class="alert-row__preset">${presetLabel(alert.preset_or_custom)} ${kindBadge}</div>
         <div class="alert-row__meta">Última evaluación: ${formatEvaluatedAt(alert.last_evaluated_at)}</div>
@@ -136,6 +233,7 @@ async function loadAlerts() {
     alerts = await fetchAlerts();
     setLoading(false);
     renderAlerts();
+    void loadQuotes();
   } catch (error) {
     setLoading(false);
     const message = error instanceof Error ? error.message : "Error desconocido";
@@ -216,6 +314,8 @@ function openModal() {
   els.tickerInput.classList.remove("input-text--error");
   els.tickerError.classList.add("hidden");
   els.formError.classList.add("hidden");
+  els.tickerPreview.classList.add("hidden");
+  els.tickerPreview.innerHTML = "";
   for (const card of els.presetGrid.querySelectorAll(".preset-card")) {
     card.classList.remove("is-selected");
     card.setAttribute("aria-selected", "false");
@@ -260,6 +360,7 @@ async function handleSubmit() {
     const created = await createAlert(ticker, selectedPreset);
     alerts = [created, ...alerts].sort((a, b) => a.ticker.localeCompare(b.ticker));
     renderAlerts();
+    void loadQuotes();
     showBanner("success", `Alerta creada para ${ticker}.`);
     closeModal();
   } catch (error) {
@@ -286,6 +387,10 @@ function bindEvents() {
     els.tickerInput.value = els.tickerInput.value.toUpperCase();
     els.tickerError.classList.add("hidden");
     els.tickerInput.classList.remove("input-text--error");
+    els.tickerPreview.classList.add("hidden");
+  });
+  els.tickerInput.addEventListener("blur", () => {
+    void previewTickerQuote(els.tickerInput.value);
   });
 }
 
