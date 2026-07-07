@@ -22,13 +22,13 @@ Plataforma web de análisis técnico automatizado que monitorea el mercado burs�
 |------|------------|-----|
 | Base de datos + Auth | **Supabase** (PostgreSQL + RLS) | Usuarios, alertas, códigos de invitación |
 | Frontend | **React + Vite** → **Vercel** | Panel de configuración; variables `VITE_*` |
-| Worker | **Python** (`pandas`, `pandas-ta`) en **Docker local** | Polling, indicadores, emails |
+| Worker | **TypeScript** serverless → **Vercel Cron** (`api/cron/evaluate`) | Polling, indicadores, emails |
 | Datos de mercado | **Twelve Data** | Velas de **15 minutos** |
 | Email | **Gmail SMTP** | Máx. **10 correos por alerta por día** |
 
-### Sin backend HTTP en v1
+### Backend mínimo en v1
 
-El frontend habla **directamente con Supabase** (`@supabase/supabase-js`, clave `anon`, sujeta a RLS). No hay FastAPI ni API intermedia. El worker es un proceso Python aislado en Docker.
+El frontend habla **directamente con Supabase** (`@supabase/supabase-js`, clave `anon`, sujeta a RLS). No hay FastAPI. El worker es una **función cron** en Vercel con secretos server-side (`service_role`, SMTP, Twelve Data).
 
 ---
 
@@ -37,10 +37,11 @@ El frontend habla **directamente con Supabase** (`@supabase/supabase-js`, clave 
 ```
 finanzas-Alarma/
 ├── frontend/              # React + Vite → Vercel
-├── worker/                # Python + Dockerfile
-├── supabase/
-│   └── migrations/        # Esquema, RLS, triggers
-├── docker-compose.yml
+├── api/cron/              # Worker serverless (Vercel Cron)
+├── lib/                   # EMA, RSI, evaluador, Supabase store
+├── worker/                # Python — solo desarrollo local (legacy)
+├── supabase/migrations/
+├── vercel.json            # Cron cada 5 min
 └── .env.example
 ```
 
@@ -52,7 +53,7 @@ finanzas-Alarma/
 - **Registro restringido:** códigos de invitación de **un solo uso** en tabla `invite_codes`.
 - El formulario de signup valida el código antes de llamar a `signUp()` y lo marca como usado tras registro exitoso.
 - **Frontend:** clave `anon` + políticas RLS (`user_id = auth.uid()`).
-- **Worker:** clave **`service_role`** únicamente en variables de entorno del contenedor Docker (nunca en Vercel ni en el bundle del frontend). Permite leer alertas de todos los usuarios en una sola consulta para alimentar el batch de Twelve Data, saltando RLS de forma controlada.
+- **Worker:** clave **`service_role`** en variables **server-side de Vercel** (función cron), nunca en `VITE_*` ni en el bundle del frontend.
 
 ---
 
@@ -120,7 +121,7 @@ En modo **custom**, el usuario configura o bien períodos EMA + dirección de cr
 | Feriados NYSE (v1) | **No considerados** — solo día de semana + franja horaria |
 | Timeframe de análisis | Velas de **15 minutos** |
 
-El worker corre en **Docker local** con loop o cron interno. Debe estar activo durante el horario de mercado para que las alertas se evalúen.
+El worker se ejecuta en **Vercel Cron** cada 5 minutos (`vercel.json`). `MarketScheduler` omite el ciclo fuera de horario de mercado.
 
 ---
 
@@ -214,11 +215,11 @@ Evita comparaciones con horas/minutos/segundos y hace el reset idempotente en un
 | Cliente | Clave | RLS |
 |---------|-------|-----|
 | Frontend (Vercel) | `anon` | **Activo** — cada usuario solo ve sus alertas |
-| Worker (Docker) | **`service_role`** | **Bypass** — lectura/escritura global para batch y actualización de contadores |
+| Worker (Vercel Cron) | **`service_role`** | **Bypass** — lectura/escritura global para batch y actualización de contadores |
 
 ### Requisitos de seguridad
 
-- `SUPABASE_SERVICE_ROLE_KEY` solo en `.env` del worker / `docker-compose.yml` (no commitear).
+- `SUPABASE_SERVICE_ROLE_KEY` solo en **variables server-side de Vercel** (y `.env` local para pruebas). No commitear.
 - Nunca exponer `service_role` en variables `VITE_*` ni en el repositorio.
 - El worker solo necesita: leer alertas activas, actualizar `last_triggered_candle`, `emails_sent_today`, `email_count_date`, `last_evaluated_at`.
 
@@ -252,7 +253,7 @@ flowchart TD
 flowchart LR
     U[Usuario] --> V[Vercel — React]
     V -->|anon + RLS| S[Supabase]
-    W[Worker Docker] -->|service_role| S
+    W[Worker Vercel Cron] -->|service_role| S
     W --> T[Twelve Data batch]
     W --> R[Gmail SMTP]
 ```
@@ -275,9 +276,9 @@ flowchart LR
 
 | Componente | Dónde |
 |------------|-------|
-| Frontend | **Vercel** (root: `frontend/`, env `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`) |
+| Frontend | **Vercel** (`frontend/` + `api/`, env `VITE_*` + secretos cron) |
 | Base de datos + Auth | **Supabase** (proyecto cloud) |
-| Worker | **Docker local** en PC del operador (`docker compose up`) |
+| Worker | **Vercel Cron** → `api/cron/evaluate` |
 | Migraciones | `supabase/migrations/` aplicadas al proyecto Supabase |
 
 ---
@@ -299,4 +300,4 @@ flowchart LR
 - [x] **Batching** Twelve Data (1 req/ciclo) en lugar de caché
 - [x] **Candle-lock** con `last_triggered_candle`
 - [x] **`email_count_date` como `DATE`**
-- [x] **Worker con `service_role`** en Docker
+- [x] **Worker con `service_role`** en Vercel Cron (ADR 001)

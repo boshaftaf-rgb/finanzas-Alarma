@@ -71,17 +71,25 @@ Las políticas RLS son la barrera de aislamiento entre usuarios. Un agente puede
 
 ---
 
-## 3. Worker Docker — ejecución local
+## 3. Worker — deploy en Vercel Cron
 
-**Issues:** [#6](https://github.com/boshaftaf-rgb/finanzas-Alarma/issues/6), [#9](https://github.com/boshaftaf-rgb/finanzas-Alarma/issues/9)
+**Issues:** [#7](https://github.com/boshaftaf-rgb/finanzas-Alarma/issues/7), [#9](https://github.com/boshaftaf-rgb/finanzas-Alarma/issues/9)
+
+**Runbook:** [`docs/vercel-deploy.md`](docs/vercel-deploy.md)
 
 ### Checklist
 
-- [ ] Docker Desktop instalado y en ejecución
-- [ ] `.env` con todas las variables del worker
-- [ ] `docker compose up` levanta el worker con loop interno
-- [ ] Verificar logs en español durante horario de mercado (o con fixtures en dev)
+- [ ] Proyecto conectado a Vercel (mismo repo: `frontend/` + `api/`)
+- [ ] Variables server-side: `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`, SMTP, Twelve Data
+- [ ] `WORKER_USE_FIXTURES=false` en producción
+- [ ] `vercel.json` desplegado (cron cada 5 min)
+- [ ] Verificar logs en Vercel → Functions durante horario de mercado
 - [ ] Confirmar que papá recibe email de prueba cuando se dispara una alerta
+
+### Lo que NO debes hacer
+
+- No poner `SUPABASE_SERVICE_ROLE_KEY` en variables `VITE_*`
+- No commitear `CRON_SECRET` al repositorio
 
 ---
 
@@ -133,11 +141,11 @@ Aunque el agente implemente el schema inicial, **revisa** cualquier migración S
 Fase 1 — ahora
 ├── #2 Provisioning (Supabase + Twelve Data + Gmail)
 ├── Migraciones + seed SQL
-├── Worker + fixtures
+├── Worker TS en Vercel (lib/ + api/cron)
 ├── Twelve Data batch
 └── Gmail SMTP + candle-lock
 
-Hito: papá recibe alertas por email
+Hito: papá recibe alertas por email (cron Vercel)
 
 Fase 2 — después
 ├── Panel presets (sin login o con auth)

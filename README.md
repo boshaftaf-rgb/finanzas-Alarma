@@ -6,42 +6,44 @@ Documentación principal:
 
 - [PRD](docs/PRD.md) — requisitos y decisiones de producto
 - [ARCHITECTURE.md](docs/ARCHITECTURE.md) — arquitectura, esquema y flujos
-- [Orden de implementación](docs/issues/00-orden-implementacion.md) — roadmap por issues
+- [Deploy Vercel](docs/vercel-deploy.md) — panel + worker cron
+- [ADR 001 — Worker en Vercel](docs/adr/001-worker-en-vercel.md)
+- [Orden de implementación](docs/issues/00-orden-implementacion.md)
 
-## Primer paso: servicios externos
+## Stack (v1)
 
-Antes de código de producto, provisiona Supabase, Twelve Data y Gmail SMTP:
+| Pieza | Dónde |
+|-------|--------|
+| Panel | Vercel (`frontend/`) |
+| Worker | Vercel Cron (`api/cron/evaluate` + `lib/`) |
+| Base de datos | Supabase |
 
-**→ [Guía de provisioning](docs/provisioning.md)**
-
-Copia la plantilla de entorno:
-
-```bash
-cp .env.example .env
-```
-
-Rellena `.env` con tus claves reales. No subas ese archivo a git.
-
-## Migraciones (issue #4)
-
-Con `DATABASE_URL` en `.env`:
-
-```bash
-pip install -r requirements-dev.txt
-python scripts/apply_migrations.py
-pytest tests/test_alert_triggers.py -v
-```
-
-Guía completa: [docs/supabase-migrations.md](docs/supabase-migrations.md)
-
-## Estructura prevista
+## Estructura
 
 ```
 finanzas-Alarma/
-├── frontend/              # React + Vite (Fase 3)
-├── worker/                # Python + Docker
-├── supabase/migrations/   # Esquema PostgreSQL
-├── scripts/               # Utilidades (p. ej. verify_services.py)
-├── docker-compose.yml
+├── api/cron/              # Worker serverless
+├── lib/                   # EMA, RSI, evaluador
+├── frontend/              # React + Vite
+├── worker/                # Python — solo dev local
+├── supabase/migrations/
+├── vercel.json
 └── .env.example
 ```
+
+## Desarrollo local
+
+```bash
+cp .env.example .env
+npm install
+npm test
+```
+
+Worker TypeScript (tests): `npm test`  
+Worker Python (opcional): ver [worker/README.md](worker/README.md)
+
+## Deploy
+
+**→ [Guía de deploy en Vercel](docs/vercel-deploy.md)**
+
+Provisioning de servicios: [docs/provisioning.md](docs/provisioning.md)

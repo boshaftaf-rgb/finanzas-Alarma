@@ -11,7 +11,7 @@
 | 3 | [#6](https://github.com/boshaftaf-rgb/finanzas-Alarma/issues/6) | Worker + fixtures |
 | 4 | [#7](https://github.com/boshaftaf-rgb/finanzas-Alarma/issues/7) | Twelve Data batch |
 | 5 | [#8](https://github.com/boshaftaf-rgb/finanzas-Alarma/issues/8) | Gmail SMTP + candle-lock |
-| 6 | [#9](https://github.com/boshaftaf-rgb/finanzas-Alarma/issues/9) Fase 2e | Docker loop producción |
+| 6 | [#9](https://github.com/boshaftaf-rgb/finanzas-Alarma/issues/9) Fase 2e | Deploy Vercel + Cron producción |
 
 **Hito:** papá recibe alertas por email (alertas configuradas vía SQL).
 

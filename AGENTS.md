@@ -47,11 +47,11 @@ Antes de nombrar variables, tablas o componentes UI, consulta **`CONTEXT.md`** p
 |------|------------|
 | Base de datos + Auth | Supabase (PostgreSQL + RLS) |
 | Frontend | React + Vite → Vercel |
-| Worker | Python (`pandas`, `pandas-ta`) en Docker local |
+| Worker | TypeScript serverless → **Vercel Cron** |
 | Datos de mercado | Twelve Data (velas 15 min, batch) |
 | Email | Gmail SMTP |
 
-No hay backend HTTP en v1: el frontend habla directo con Supabase; el worker usa `service_role` aislado en Docker.
+El frontend habla directo con Supabase; el worker cron usa `service_role` en variables server-side de Vercel (nunca en el bundle).
 
 ## Lógica validada — no tocar sin pedido explícito
 
@@ -64,7 +64,7 @@ Varios flujos **ya documentados o implementados** no deben refactorizarse por in
 | Límites de producto | 15 tickers únicos, 5 alertas/ticker, 10 emails/alerta/día, candle-lock |
 | Horario worker | Lun–vie 9:30–16:00 EST; polling cada 5 min |
 | Twelve Data | Una petición batch por ciclo (free tier) |
-| Secretos | `service_role` solo en Docker; nunca en `VITE_*` ni Vercel |
+| Secretos | `service_role` solo server-side Vercel; nunca en `VITE_*` |
 | Esquema acordado | Tablas, RLS y triggers según `docs/ARCHITECTURE.md` |
 
 **Reglas:**

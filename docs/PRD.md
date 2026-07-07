@@ -12,7 +12,7 @@ El usuario quiere una plataforma donde pueda registrarse de forma controlada, el
 
 1. Permite a usuarios invitados registrarse con email y contraseña usando un código de un solo uso.
 2. Ofrece un panel web (español) para crear, editar, activar y desactivar alertas sobre tickers de EE. UU.
-3. Ejecuta un worker Python en Docker local que, cada 5 minutos durante el horario de mercado, descarga datos de mercado en **una sola petición batch** (Twelve Data), calcula indicadores (EMA, RSI) sobre velas de 15 minutos, y envía correos vía Gmail SMTP cuando las condiciones se cumplen.
+3. Ejecuta un **worker serverless en Vercel** (Cron cada 5 min) que, durante el horario de mercado, descarga datos de mercado en **una sola petición batch** (Twelve Data), calcula indicadores (EMA, RSI) sobre velas de 15 minutos, y envía correos vía Gmail SMTP cuando las condiciones se cumplen.
 4. Protege contra spam de correos mediante **candle-lock** (máximo un email por vela de 15 min por alerta) y un tope de 10 emails por alerta por día.
 5. Almacena configuración y estado en Supabase (PostgreSQL + Auth + RLS), con el frontend hablando directamente con Supabase y el worker usando `service_role` de forma aislada.
 
@@ -38,10 +38,10 @@ El usuario quiere una plataforma donde pueda registrarse de forma controlada, el
 18. As a **usuario registrado**, I want to **recibir como máximo 10 correos por alerta por día**, so that **el sistema respete límites razonables de envío**.
 19. As a **usuario registrado**, I want to **que mis alertas solo sean visibles para mí**, so that **otros usuarios no accedan a mi configuración**.
 20. As a **operador del sistema**, I want to **generar códigos de invitación de un solo uso en la base de datos**, so that **invite conocidos de forma controlada**.
-21. As a **operador del sistema**, I want to **ejecutar el worker en Docker en mi PC local**, so that **no pague infraestructura cloud para el motor de polling**.
+21. As a **operador del sistema**, I want to **desplegar el worker en Vercel Cron** (función serverless), so that **las alertas se evalúen 24/7 sin depender de mi PC**.
 22. As a **operador del sistema**, I want to **que el worker solo evalúe alertas de lunes a viernes entre 9:30 y 16:00 EST**, so that **no consuma API ni envíe correos fuera del horario de mercado**.
 23. As a **operador del sistema**, I want to **que el worker haga una sola petición batch a Twelve Data por ciclo de polling**, so that **permanezca dentro del free tier (78 req/día vs 800 disponibles)**.
-24. As a **operador del sistema**, I want to **que la clave service_role de Supabase solo exista en el contenedor Docker**, so that **no se filtre al frontend ni al repositorio**.
+24. As a **operador del sistema**, I want to **que la clave service_role de Supabase solo exista en variables server-side de Vercel** (cron), so that **no se filtre al bundle del frontend ni al repositorio**.
 25. As a **operador del sistema**, I want to **desplegar el frontend en Vercel**, so that **el panel esté siempre accesible sin levantar un servidor local**.
 26. As a **operador del sistema**, I want to **aplicar migraciones versionadas de esquema Supabase**, so that **RLS, triggers y tablas sean reproducibles**.
 27. As a **usuario registrado**, I want to **que las alertas de cruce EMA se disparen cuando ocurre un cruce en la vela de 15 min más reciente**, so that **reciba señales de momentum o reversión oportunas**.
@@ -55,16 +55,17 @@ El usuario quiere una plataforma donde pueda registrarse de forma controlada, el
 35. As a **usuario registrado**, I want to **ver el estado activo/inactivo de cada alerta en el listado**, so that **identifique de un vistazo qué reglas están en marcha**.
 36. As a **usuario registrado**, I want to **editar parámetros de una alerta existente**, so that **ajuste estrategia sin recrear desde cero**.
 37. As a **operador del sistema**, I want to **un archivo .env.example documentando todas las variables necesarias**, so that **configure frontend, worker y Supabase sin adivinar**.
-38. As a **operador del sistema**, I want to **docker compose up levante el worker con cron/loop interno**, so that **el polling funcione sin configurar Task Scheduler de Windows manualmente**.
+38. As a **operador del sistema**, I want to **que Vercel Cron invoque el worker cada 5 minutos**, so that **el polling funcione sin Docker ni Task Scheduler local**.
 
 ## Implementation Decisions
 
 ### Arquitectura general
 
-- **Monorepo** con tres áreas: frontend (React + Vite), worker (Python + Docker), supabase/migrations.
-- **Sin backend HTTP en v1.** El frontend usa `@supabase/supabase-js` con clave `anon`. El worker usa `service_role`.
-- **Frontend desplegado en Vercel** apuntando al directorio frontend.
-- **Worker en Docker local** con loop cada 5 minutos; comprueba horario de mercado antes de cada ciclo.
+- **Monorepo** con: frontend (React + Vite), `api/` + `lib/` (worker TypeScript en Vercel), `worker/` Python (solo dev local), `supabase/migrations`.
+- **Frontend** en Vercel con `@supabase/supabase-js` (`anon`, RLS).
+- **Worker** en **Vercel Cron** → `api/cron/evaluate` con `service_role` y secretos solo server-side.
+- **Sin backend HTTP dedicado** (no FastAPI): panel → Supabase; cron → Supabase + Twelve Data + SMTP.
+- **Frontend desplegado en Vercel** (`frontend/`).
 - **Idioma:** español en UI, emails y logs del worker.
 
 ### Módulos principales
@@ -150,7 +151,7 @@ Tras disparo: actualizar `last_triggered_candle`, incrementar `emails_sent_today
 | Cliente | Clave | RLS |
 |---------|-------|-----|
 | Frontend (Vercel) | anon | Activo |
-| Worker (Docker) | service_role | Bypass |
+| Worker (Vercel Cron) | service_role | Bypass |
 
 `SUPABASE_SERVICE_ROLE_KEY`, `TWELVE_DATA_API_KEY`, `SMTP_APP_PASSWORD` solo en env del worker. `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` en Vercel.
 
@@ -215,7 +216,7 @@ No hay tests previos en el repositorio (greenfield). Los patrones anteriores se 
 
 ## Further Notes
 
-- El worker depende de que el PC del operador esté encendido y Docker activo durante el horario de mercado. Si el contenedor se detiene, no hay evaluación ni correos.
+- El worker corre en **Vercel Cron**; si el deploy falla o el cron se deshabilita, no hay evaluación ni correos hasta restaurar el proyecto.
 - Feriados NYSE no se consideran en v1; el worker podría ejecutar ciclos vacíos en días feriados que caen en día laborable.
 - Golden Cross y Death Cross en velas de 15m son ruidosos; se incluyen como presets por decisión de producto, no por robustez estadística.
 - Gmail SMTP (~500 emails/día en cuentas personales) es el límite global práctico; con candle-lock + 10/alerta/día + máx. 5 alertas × 15 tickers el peor caso teórico debe mantenerse bajo control.

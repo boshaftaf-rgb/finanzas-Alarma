@@ -4,47 +4,50 @@
 
 ## Prioridad
 
-**Fase 2e** (Docker) — orden #6 — implementar **ahora** tras #8.
+**Fase 2e** (Vercel Cron) — orden #6 — implementar **ahora** tras #8.
 
-**Fase 3c** (Vercel) — orden #9 — implementar **después** del panel (#4 Fase 3a, #5).
+**Fase 3c** (panel en Vercel) — orden #9 — implementar **después** del panel (#4 Fase 3a, #5).
 
 ## What to build
 
-Poner Stock Alerts en modo operación.
+Poner Stock Alerts en modo operación en la nube (sin PC local).
 
-### Fase 2e — Worker en producción (ahora)
+### Fase 2e — Worker en Vercel (ahora)
 
-- Loop del worker cada 5 minutos dentro del contenedor (sin Task Scheduler de Windows).
-- `docker compose up` levanta el worker en modo producción.
-- Logs del worker en español durante operación normal.
-- README operador: aplicar migraciones, seed alertas, variables worker, `docker compose up`.
+- `vercel.json` con cron cada 5 min → `api/cron/evaluate`.
+- Variables server-side en Vercel: `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`, SMTP, Twelve Data.
+- Logs del worker en español.
+- README operador: [docs/vercel-deploy.md](../vercel-deploy.md).
 
-Verificable: worker corre en Docker durante horario de mercado; papá recibe emails.
+Verificable: cron evalúa alertas en horario de mercado; papá recibe emails.
 
-### Fase 3c — Deploy Vercel (después)
+### Fase 3c — Panel en Vercel (después)
 
-- Config Vercel: root `frontend/`, env `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY`.
-- Frontend accesible por URL sin login.
+- Build `frontend/` en el mismo proyecto Vercel.
+- Env `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY`.
 
-Verificable: panel accesible en Vercel; crear alerta → worker evalúa → email recibido.
+Verificable: panel accesible por URL; crear alerta → cron evalúa → email recibido.
 
 ## Acceptance criteria
 
 ### Fase 2e (requerida ahora)
 
-- [ ] Worker corre en loop cada 5 min en Docker
-- [ ] `docker compose up` inicia el worker sin pasos manuales extra
-- [ ] Logs operativos del worker en español
-- [ ] `SUPABASE_SERVICE_ROLE_KEY` solo en env del contenedor Docker
-- [ ] README documenta setup del worker para el operador
-- [ ] Flujo verificado: alerta en seed SQL → worker evalúa → papá recibe email
+- [ ] Cron Vercel invoca `/api/cron/evaluate` cada 5 min
+- [ ] `CRON_SECRET` protege el endpoint
+- [ ] Logs operativos en español
+- [ ] `SUPABASE_SERVICE_ROLE_KEY` solo en env server-side Vercel
+- [ ] Flujo verificado: alerta seed → cron evalúa → papá recibe email
 
 ### Fase 3c (después del panel)
 
-- [ ] Frontend desplegado en Vercel y accesible por URL
-- [ ] Flujo end-to-end: crear alerta en Vercel → worker evalúa → email recibido
+- [ ] Frontend desplegado y accesible por URL
+- [ ] Flujo end-to-end desde el panel
 
 ## Blocked by
 
-- **Fase 2e (Docker):** #8
-- **Fase 3c (Vercel):** #5
+- **Fase 2e:** #8 (Gmail + candle-lock)
+- **Fase 3c:** #5
+
+## Nota
+
+Decisión ADR 001: worker en TypeScript serverless; `worker/` Python queda para dev local.
