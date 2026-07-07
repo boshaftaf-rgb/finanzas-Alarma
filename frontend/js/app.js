@@ -89,15 +89,28 @@ function renderSkeleton() {
     const row = document.createElement("div");
     row.className = "skeleton-row";
     row.setAttribute("aria-hidden", "true");
-    row.innerHTML = `
-      <div class="skeleton skeleton-row__ticker"></div>
-      <div class="skeleton skeleton-row__label"></div>
-      <div class="skeleton quote-skeleton"></div>
-      <div class="skeleton skeleton-row__badge"></div>
-      <div class="skeleton skeleton-row__action"></div>
-    `;
+    row.innerHTML = alertRowSkeletonHtml();
     els.skeleton.appendChild(row);
   }
+}
+
+function alertRowSkeletonHtml() {
+  return `
+    <div class="alert-row__symbol">
+      <div class="skeleton skeleton-row__ticker"></div>
+      <div class="skeleton quote-skeleton"></div>
+    </div>
+    <div>
+      <div class="skeleton skeleton-row__label"></div>
+      <div class="skeleton skeleton-row__meta"></div>
+    </div>
+    <div class="skeleton skeleton-row__badge"></div>
+    <div class="alert-row__actions">
+      <div class="skeleton skeleton-row__action"></div>
+      <div class="skeleton skeleton-row__action skeleton-row__action--sm"></div>
+      <div class="skeleton skeleton-row__action"></div>
+    </div>
+  `;
 }
 
 function quoteChangeClass(percentChange) {
@@ -210,6 +223,17 @@ function renderAlerts() {
   els.alertList.classList.remove("hidden");
 
   for (const alert of alerts) {
+    if (busyId === alert.id) {
+      const row = document.createElement("article");
+      row.className = "alert-row alert-row--busy";
+      row.dataset.id = alert.id;
+      row.setAttribute("aria-busy", "true");
+      row.setAttribute("aria-label", `Actualizando alerta ${alert.ticker}`);
+      row.innerHTML = alertRowSkeletonHtml();
+      els.alertList.appendChild(row);
+      continue;
+    }
+
     const kind = alertKind(alert);
     const badgeText = alertBadge(alert);
     const kindBadge =
@@ -240,11 +264,6 @@ function renderAlerts() {
     const toggle = row.querySelector(".toggle");
     const editBtn = row.querySelector(".btn-edit");
     const deleteBtn = row.querySelector(".btn-delete");
-    const disabled = busyId === alert.id;
-
-    toggle.disabled = disabled;
-    editBtn.disabled = disabled;
-    deleteBtn.disabled = disabled;
 
     editBtn.addEventListener("click", () => openEditModal(alert));
     toggle.addEventListener("click", () => void handleToggle(alert, !alert.active));
@@ -439,8 +458,8 @@ function openEditModal(alert) {
   }
 }
 
-function closeModal() {
-  if (els.submitBtn.classList.contains("is-loading")) return;
+function closeModal({ force = false } = {}) {
+  if (!force && els.submitBtn.classList.contains("is-loading")) return;
   els.modalBackdrop.classList.add("hidden");
   resetForm();
 }
@@ -449,6 +468,7 @@ function setSubmitLoading(loading) {
   els.submitBtn.disabled = loading;
   els.submitBtn.classList.toggle("is-loading", loading);
   els.submitBtn.setAttribute("aria-busy", String(loading));
+  document.getElementById("btn-cancel").disabled = loading;
 }
 
 function validateFormPayload() {
@@ -507,6 +527,10 @@ async function handleSubmit() {
 
   setSubmitLoading(true);
   els.formError.classList.add("hidden");
+  if (editingAlertId) {
+    busyId = editingAlertId;
+    renderAlerts();
+  }
   try {
     if (editingAlertId) {
       const updated = await updateAlert(editingAlertId, payload);
@@ -519,13 +543,16 @@ async function handleSubmit() {
       showBanner("success", `Alerta creada para ${ticker}.`);
       void loadQuotes();
     }
+    busyId = null;
     renderAlerts();
-    closeModal();
+    setSubmitLoading(false);
+    closeModal({ force: true });
   } catch (error) {
+    busyId = null;
+    renderAlerts();
     const raw = error instanceof Error ? error.message : "";
     els.formError.textContent = mapDbError(raw);
     els.formError.classList.remove("hidden");
-  } finally {
     setSubmitLoading(false);
   }
 }

@@ -168,7 +168,7 @@
 }
 
 .btn-primary.is-loading .btn-primary__loader {
-  display: block;
+  display: flex;
 }
 
 @keyframes spin {
@@ -181,6 +181,11 @@
   background: transparent;
   border: 1px solid var(--color-border-strong);
   color: var(--color-ink);
+}
+
+.btn-secondary:disabled:not(.is-loading) {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .btn-secondary:hover:not(:disabled) {

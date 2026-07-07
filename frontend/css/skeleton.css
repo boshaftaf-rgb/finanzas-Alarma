@@ -27,13 +27,32 @@
 
 .skeleton-row {
   display: grid;
-  grid-template-columns: 80px 1fr 100px 88px 88px;
-  gap: 16px;
+  grid-template-columns: minmax(148px, 180px) 1fr auto auto;
+  gap: 12px 16px;
   align-items: center;
   padding: 12px 16px;
   border: 1px solid var(--color-border-default);
   border-radius: var(--radius-md);
   background: var(--color-surface);
+}
+
+.skeleton-row__meta {
+  height: 12px;
+  width: 55%;
+  margin-top: 6px;
+}
+
+.skeleton-row__action--sm {
+  width: 40px;
+  border-radius: var(--radius-full);
+}
+
+.alert-row--busy {
+  pointer-events: none;
+}
+
+.alert-row--busy[aria-busy="true"] {
+  cursor: wait;
 }
 
 .skeleton-row__ticker {
@@ -61,7 +80,11 @@
 @media (max-width: 767px) {
   .skeleton-row {
     grid-template-columns: 1fr auto;
-    grid-template-rows: auto auto;
+    grid-template-rows: auto auto auto;
+  }
+
+  .skeleton-row > div:nth-child(2) {
+    grid-column: 1 / -1;
   }
 
   .skeleton-row__label {
