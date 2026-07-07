@@ -82,7 +82,9 @@ Las políticas RLS son la barrera de aislamiento entre usuarios. Un agente puede
 - [ ] Proyecto conectado a Vercel (mismo repo: `frontend/` + `api/`)
 - [ ] Variables server-side: `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`, SMTP, Twelve Data
 - [ ] `WORKER_USE_FIXTURES=false` en producción
-- [ ] `vercel.json` desplegado (cron cada 5 min)
+- [ ] `vercel.json` desplegado (sin Vercel Cron)
+- [ ] Secrets GitHub: `VERCEL_APP_URL`, `CRON_SECRET`
+- [ ] Workflow **Evaluar alertas** corre en Actions (o prueba manual con curl)
 - [ ] Verificar logs en Vercel → Functions durante horario de mercado
 - [ ] Confirmar que papá recibe email de prueba cuando se dispara una alerta
 

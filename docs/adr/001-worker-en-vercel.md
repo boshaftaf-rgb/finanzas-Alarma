@@ -11,7 +11,7 @@ El PRD original ubicaba el worker en **Docker local** para evitar coste cloud. E
 ## Decisión
 
 - **Panel:** React + Vite en Vercel (sin cambio).
-- **Worker:** función serverless en **`api/cron/evaluate`** disparada por **Vercel Cron** cada 5 minutos.
+- **Worker:** función serverless en **`api/cron/evaluate`**, disparada por **GitHub Actions** (gratis) cada 5 minutos — no Vercel Cron (de pago).
 - **Lógica:** TypeScript en `lib/` (EMA, RSI, evaluador, horario de mercado, Supabase).
 - **Secretos server-side en Vercel:** `SUPABASE_SERVICE_ROLE_KEY`, `TWELVE_DATA_API_KEY`, `SMTP_*`, `CRON_SECRET`.
 - **Nunca en el bundle del frontend:** `service_role` ni claves SMTP.
@@ -22,7 +22,7 @@ El PRD original ubicaba el worker en **Docker local** para evitar coste cloud. E
 |---------|-------|-------|
 | Runtime producción | Python + Docker local | TypeScript serverless (Vercel) |
 | Disponibilidad | PC + Docker encendidos | Vercel 24/7 |
-| Coste infra worker | 0 € (PC local) | Plan Vercel (cron frecuente puede requerir Pro) |
+| Coste infra worker | Plan Vercel Pro (cron) | **$0** — Vercel Hobby + GitHub Actions |
 | Código `worker/` Python | Producción | **Solo desarrollo / referencia / tests locales** |
 
 ## Alternativas descartadas
@@ -35,4 +35,5 @@ El PRD original ubicaba el worker en **Docker local** para evitar coste cloud. E
 
 - `docs/ARCHITECTURE.md` — stack actualizado
 - `docs/PRD.md` — user stories del operador actualizadas
-- `vercel.json` — cron `*/5 * * * *`
+- `vercel.json` — sin cron de pago
+- `.github/workflows/evaluate-alerts.yml` — scheduler gratuito

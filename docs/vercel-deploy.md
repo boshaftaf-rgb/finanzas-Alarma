@@ -1,58 +1,78 @@
-# Deploy en Vercel (panel + worker)
+# Deploy en Vercel (panel + worker) — $0
 
-Decisión: [ADR 001](adr/001-worker-en-vercel.md).
+Decisión: [ADR 001](adr/001-worker-en-vercel.md).  
+**Scheduler:** [GitHub Actions](https://github.com/features/actions) (gratis), no Vercel Cron (de pago).
 
 ## Qué se despliega
 
 | Ruta / pieza | Rol |
 |--------------|-----|
 | `frontend/` | Panel React (Fase 3) |
-| `api/cron/evaluate` | Worker — evalúa alertas cada 5 min |
+| `api/cron/evaluate` | Worker — evalúa alertas (invocado por HTTP) |
 | `lib/` | Lógica compartida (EMA, RSI, evaluador) |
+| `.github/workflows/evaluate-alerts.yml` | Cron gratuito cada 5 min (lun–vie) |
 
-## Variables en Vercel (server-side)
+## Paso a paso (operador)
 
-Configurar en **Project Settings → Environment Variables**:
+### 1. Deploy en Vercel
+
+1. Importa el repo en [vercel.com](https://vercel.com).
+2. Añade las variables de entorno (ver tabla abajo).
+3. Deploy y copia la URL de producción (ej. `https://finanzas-alarma.vercel.app`).
+
+### 2. Secrets en GitHub
+
+Repo → **Settings → Secrets and variables → Actions → New repository secret**
+
+| Secret | Valor |
+|--------|--------|
+| `VERCEL_APP_URL` | URL de producción **sin** barra final (ej. `https://finanzas-alarma.vercel.app`) |
+| `CRON_SECRET` | Mismo string largo que en Vercel |
+
+### 3. Probar manualmente
+
+```bash
+curl -H "Authorization: Bearer TU_CRON_SECRET" \
+  "https://TU-URL.vercel.app/api/cron/evaluate?once=true"
+```
+
+O en GitHub → **Actions → Evaluar alertas → Run workflow**.
+
+### 4. Automático
+
+El workflow corre cada **5 minutos** de lunes a viernes. Fuera del horario NY (9:30–16:00) el worker responde `mercado_cerrado` y sale rápido.
+
+## Variables en Vercel
+
+**Project Settings → Environment Variables**
 
 | Variable | Uso |
 |----------|-----|
-| `SUPABASE_URL` | Worker (cron) |
+| `SUPABASE_URL` | Worker |
 | `SUPABASE_SERVICE_ROLE_KEY` | Worker — **nunca** en `VITE_*` |
 | `TWELVE_DATA_API_KEY` | Worker (issue #7) |
-| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_APP_PASSWORD` | Worker (issue #8) |
-| `ALERT_RECIPIENT_EMAIL` | Worker |
-| `CRON_SECRET` | Protege `/api/cron/evaluate` |
-| `WORKER_USE_FIXTURES` | `true` solo en preview/dev; `false` en producción |
-| `VITE_SUPABASE_URL` | Frontend |
-| `VITE_SUPABASE_ANON_KEY` | Frontend |
+| `SMTP_*`, `ALERT_RECIPIENT_EMAIL` | Worker (issue #8) |
+| `CRON_SECRET` | Protege el endpoint |
+| `WORKER_USE_FIXTURES` | `true` hasta #7; luego `false` |
+| `VITE_SUPABASE_URL` | Frontend (fase 3) |
+| `VITE_SUPABASE_ANON_KEY` | Frontend (fase 3) |
 
-## Cron
+## Coste
 
-`vercel.json` programa el worker cada 5 minutos:
+| Servicio | Coste |
+|----------|--------|
+| Vercel Hobby | $0 (funciones serverless dentro del free tier) |
+| Supabase free | $0 |
+| Twelve Data free | $0 |
+| Gmail | $0 |
+| GitHub Actions | $0 en repo **público**; repo privado: ~500 min/mes suele bastar |
 
-```json
-{ "path": "/api/cron/evaluate", "schedule": "*/5 * * * *" }
-```
+**No uses** Vercel Cron (requiere plan de pago para cada 5 min).
 
-Vercel envía `Authorization: Bearer <CRON_SECRET>` en las invocaciones programadas si configuras `CRON_SECRET` en el proyecto.
+## Alternativa si GitHub Actions no alcanza (repo privado)
 
-## Probar manualmente (preview)
-
-```bash
-curl -H "Authorization: Bearer $CRON_SECRET" \
-  "https://tu-proyecto.vercel.app/api/cron/evaluate?once=true"
-```
-
-Con fixtures (antes de Twelve Data #7):
-
-```
-WORKER_USE_FIXTURES=true
-```
-
-## Plan Vercel
-
-El cron cada **5 minutos** puede requerir **plan Pro** según límites de tu cuenta. Revisa [Vercel Cron Jobs](https://vercel.com/docs/cron-jobs).
+- [cron-job.org](https://cron-job.org) (plan gratuito): una petición HTTP GET/POST a tu URL con header `Authorization: Bearer CRON_SECRET` cada 5 min.
 
 ## `worker/` Python
 
-Carpeta **legacy / desarrollo local**. Producción = TypeScript en `api/` + `lib/`.
+Solo desarrollo local. Producción = `api/` + `lib/` en Vercel.
