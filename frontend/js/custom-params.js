@@ -1,0 +1,50 @@
+export function validateEmaParams(fastRaw, slowRaw, direction) {
+  const fast = Number(fastRaw);
+  const slow = Number(slowRaw);
+  if (!Number.isInteger(fast) || fast < 2 || fast > 200) {
+    return "La media rápida debe ser un número entre 2 y 200.";
+  }
+  if (!Number.isInteger(slow) || slow < 2 || slow > 200) {
+    return "La media lenta debe ser un número entre 2 y 200.";
+  }
+  if (fast >= slow) {
+    return "La media rápida debe ser menor que la media lenta.";
+  }
+  if (direction !== "up" && direction !== "down") {
+    return "Selecciona la dirección del cruce.";
+  }
+  return null;
+}
+
+export function validateRsiParams(periodRaw, thresholdRaw, operator) {
+  const period = Number(periodRaw);
+  const threshold = Number(thresholdRaw);
+  if (!Number.isInteger(period) || period < 2 || period > 50) {
+    return "El período RSI debe ser un número entre 2 y 50.";
+  }
+  if (!Number.isFinite(threshold) || threshold < 0 || threshold > 100) {
+    return "El umbral debe estar entre 0 y 100.";
+  }
+  if (operator !== "<" && operator !== ">") {
+    return "Selecciona el operador (menor o mayor que).";
+  }
+  return null;
+}
+
+export function buildEmaParams(fastRaw, slowRaw, direction) {
+  return {
+    type: "ema",
+    ema_fast: Number(fastRaw),
+    ema_slow: Number(slowRaw),
+    direction,
+  };
+}
+
+export function buildRsiParams(periodRaw, thresholdRaw, operator) {
+  return {
+    type: "rsi",
+    period: Number(periodRaw),
+    threshold: Number(thresholdRaw),
+    operator,
+  };
+}

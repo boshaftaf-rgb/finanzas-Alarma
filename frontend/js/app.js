@@ -7,10 +7,18 @@ import {
   fetchAlerts,
   initAlertsApi,
   setAlertActive,
+  updateAlert,
 } from "./alerts-api.js";
+import { alertBadge, alertDisplayLabel, alertKind } from "./alert-labels.js";
+import {
+  buildEmaParams,
+  buildRsiParams,
+  validateEmaParams,
+  validateRsiParams,
+} from "./custom-params.js";
 import { formatEvaluatedAt, formatPercentChange, formatPrice, formatVolume, mapDbError } from "./format.js";
 import { fetchTickerQuotes } from "./quotes-api.js";
-import { MAX_UNIQUE_TICKERS, PRESETS, presetBadge, presetKind, presetLabel } from "./presets.js";
+import { MAX_UNIQUE_TICKERS, PRESETS } from "./presets.js";
 import { normalizeTicker, validateTicker } from "./ticker-validation.js";
 
 const els = {
@@ -20,11 +28,25 @@ const els = {
   emptyState: document.getElementById("empty-state"),
   alertList: document.getElementById("alert-list"),
   modalBackdrop: document.getElementById("modal-backdrop"),
+  formTitle: document.getElementById("alert-form-title"),
   tickerInput: document.getElementById("ticker-input"),
   tickerError: document.getElementById("ticker-error"),
   formError: document.getElementById("form-error"),
   presetGrid: document.getElementById("preset-grid"),
+  presetSection: document.getElementById("preset-section"),
+  customSection: document.getElementById("custom-section"),
+  tabPreset: document.getElementById("tab-preset"),
+  tabCustom: document.getElementById("tab-custom"),
+  customEmaFields: document.getElementById("custom-ema-fields"),
+  customRsiFields: document.getElementById("custom-rsi-fields"),
+  emaFast: document.getElementById("ema-fast"),
+  emaSlow: document.getElementById("ema-slow"),
+  emaDirection: document.getElementById("ema-direction"),
+  rsiPeriod: document.getElementById("rsi-period"),
+  rsiThreshold: document.getElementById("rsi-threshold"),
+  rsiOperator: document.getElementById("rsi-operator"),
   submitBtn: document.getElementById("submit-alert"),
+  submitLabel: document.getElementById("submit-alert-label"),
   tickerPreview: document.getElementById("ticker-preview"),
 };
 
@@ -33,6 +55,9 @@ let busyId = null;
 let selectedPreset = null;
 let quotesByTicker = {};
 let quotesLoading = false;
+let editingAlertId = null;
+let formMode = "preset";
+let customType = "ema";
 
 function showBanner(type, text) {
   els.banner.className = `alert-banner alert-banner--${type}`;
@@ -92,8 +117,7 @@ function quoteBlockHtml(ticker, { compact = false } = {}) {
 
   const dir = quoteChangeClass(quote.percentChange);
   const volume = formatVolume(quote.volume);
-  const volumeHtml =
-    !compact && volume ? `<span class="quote-volume">Vol. ${volume}</span>` : "";
+  const volumeHtml = !compact && volume ? `<span class="quote-volume">Vol. ${volume}</span>` : "";
 
   return `
     <div class="alert-row__quote">
@@ -186,14 +210,10 @@ function renderAlerts() {
   els.alertList.classList.remove("hidden");
 
   for (const alert of alerts) {
-    const kind = presetKind(alert.preset_or_custom);
-    const badgeText = presetBadge(alert.preset_or_custom);
+    const kind = alertKind(alert);
+    const badgeText = alertBadge(alert);
     const kindBadge =
-      kind === "ema"
-        ? badgeHtml("ema", badgeText)
-        : kind === "rsi"
-          ? badgeHtml("rsi", badgeText)
-          : "";
+      kind === "ema" ? badgeHtml("ema", badgeText) : kind === "rsi" ? badgeHtml("rsi", badgeText) : "";
 
     const row = document.createElement("article");
     row.className = `alert-row ${alert.active ? "" : "alert-row--inactive"}`.trim();
@@ -204,11 +224,12 @@ function renderAlerts() {
         ${quoteBlockHtml(alert.ticker)}
       </div>
       <div>
-        <div class="alert-row__preset">${presetLabel(alert.preset_or_custom)} ${kindBadge}</div>
+        <div class="alert-row__preset">${alertDisplayLabel(alert)} ${kindBadge}</div>
         <div class="alert-row__meta">Última evaluación: ${formatEvaluatedAt(alert.last_evaluated_at)}</div>
       </div>
       ${badgeHtml(alert.active ? "active" : "inactive", alert.active ? "Activa" : "Inactiva")}
       <div class="alert-row__actions">
+        <button type="button" class="btn-ghost btn-edit" aria-label="Editar alerta ${alert.ticker}">Editar</button>
         <button type="button" class="toggle" role="switch" aria-checked="${alert.active}" aria-label="${alert.active ? "Desactivar" : "Activar"} alerta ${alert.ticker}">
           <span class="toggle__thumb"></span>
         </button>
@@ -217,12 +238,15 @@ function renderAlerts() {
     `;
 
     const toggle = row.querySelector(".toggle");
+    const editBtn = row.querySelector(".btn-edit");
     const deleteBtn = row.querySelector(".btn-delete");
     const disabled = busyId === alert.id;
 
     toggle.disabled = disabled;
+    editBtn.disabled = disabled;
     deleteBtn.disabled = disabled;
 
+    editBtn.addEventListener("click", () => openEditModal(alert));
     toggle.addEventListener("click", () => void handleToggle(alert, !alert.active));
     deleteBtn.addEventListener("click", () => void handleDelete(alert));
 
@@ -263,7 +287,7 @@ async function handleToggle(alert, active) {
 
 async function handleDelete(alert) {
   const confirmed = window.confirm(
-    `¿Eliminar la alerta de ${alert.ticker} (${presetLabel(alert.preset_or_custom)})? Esta acción no se puede deshacer.`,
+    `¿Eliminar la alerta de ${alert.ticker} (${alertDisplayLabel(alert)})? Esta acción no se puede deshacer.`,
   );
   if (!confirmed) return;
 
@@ -312,26 +336,113 @@ function selectPreset(id) {
   }
 }
 
-function openModal() {
+function setFormMode(mode) {
+  formMode = mode;
+  const isPreset = mode === "preset";
+  els.tabPreset.classList.toggle("is-active", isPreset);
+  els.tabCustom.classList.toggle("is-active", !isPreset);
+  els.tabPreset.setAttribute("aria-selected", String(isPreset));
+  els.tabCustom.setAttribute("aria-selected", String(!isPreset));
+  els.presetSection.classList.toggle("hidden", !isPreset);
+  els.customSection.classList.toggle("hidden", isPreset);
+  els.formError.classList.add("hidden");
+}
+
+function setCustomType(type) {
+  customType = type;
+  const isEma = type === "ema";
+  els.customEmaFields.classList.toggle("hidden", !isEma);
+  els.customRsiFields.classList.toggle("hidden", isEma);
+  for (const btn of document.querySelectorAll(".custom-type-btn")) {
+    const active = btn.dataset.customType === type;
+    btn.classList.toggle("is-active", active);
+    btn.setAttribute("aria-pressed", String(active));
+  }
+  els.formError.classList.add("hidden");
+}
+
+function resetCustomFields() {
+  els.emaFast.value = "9";
+  els.emaSlow.value = "21";
+  els.emaDirection.value = "up";
+  els.rsiPeriod.value = "14";
+  els.rsiThreshold.value = "30";
+  els.rsiOperator.value = "<";
+  setCustomType("ema");
+}
+
+function fillCustomFields(params) {
+  if (params?.type === "rsi") {
+    setCustomType("rsi");
+    els.rsiPeriod.value = String(params.period ?? 14);
+    els.rsiThreshold.value = String(params.threshold ?? 30);
+    els.rsiOperator.value = params.operator === ">" ? ">" : "<";
+    return;
+  }
+  setCustomType("ema");
+  els.emaFast.value = String(params?.ema_fast ?? 9);
+  els.emaSlow.value = String(params?.ema_slow ?? 21);
+  els.emaDirection.value = params?.direction === "down" ? "down" : "up";
+}
+
+function resetForm() {
+  editingAlertId = null;
   selectedPreset = null;
+  formMode = "preset";
+  els.formTitle.textContent = "Nueva alerta";
+  els.submitLabel.textContent = "Crear alerta";
   els.tickerInput.value = "";
+  els.tickerInput.disabled = false;
   els.tickerInput.classList.remove("input-text--error");
   els.tickerError.classList.add("hidden");
   els.formError.classList.add("hidden");
   els.tickerPreview.classList.add("hidden");
   els.tickerPreview.innerHTML = "";
+  els.tabPreset.disabled = false;
+  els.tabCustom.disabled = false;
   for (const card of els.presetGrid.querySelectorAll(".preset-card")) {
     card.classList.remove("is-selected");
     card.setAttribute("aria-selected", "false");
   }
+  resetCustomFields();
+  setFormMode("preset");
   setSubmitLoading(false);
+}
+
+function openCreateModal() {
+  resetForm();
   els.modalBackdrop.classList.remove("hidden");
   els.tickerInput.focus();
+}
+
+function openEditModal(alert) {
+  resetForm();
+  editingAlertId = alert.id;
+  els.formTitle.textContent = "Editar alerta";
+  els.submitLabel.textContent = "Guardar cambios";
+  els.tickerInput.value = alert.ticker;
+  els.tickerInput.disabled = true;
+
+  if (alert.preset_or_custom === "custom") {
+    setFormMode("custom");
+    fillCustomFields(alert.params);
+  } else {
+    setFormMode("preset");
+    selectPreset(alert.preset_or_custom);
+  }
+
+  els.modalBackdrop.classList.remove("hidden");
+  if (formMode === "preset") {
+    els.presetGrid.querySelector(".is-selected")?.focus();
+  } else {
+    (customType === "ema" ? els.emaFast : els.rsiPeriod).focus();
+  }
 }
 
 function closeModal() {
   if (els.submitBtn.classList.contains("is-loading")) return;
   els.modalBackdrop.classList.add("hidden");
+  resetForm();
 }
 
 function setSubmitLoading(loading) {
@@ -340,32 +451,75 @@ function setSubmitLoading(loading) {
   els.submitBtn.setAttribute("aria-busy", String(loading));
 }
 
-async function handleSubmit() {
-  const tickerValidation = validateTicker(els.tickerInput.value);
-  if (tickerValidation) {
-    els.tickerInput.classList.add("input-text--error");
-    els.tickerError.textContent = tickerValidation;
-    els.tickerError.classList.remove("hidden");
-    return;
+function validateFormPayload() {
+  if (!editingAlertId) {
+    const tickerValidation = validateTicker(els.tickerInput.value);
+    if (tickerValidation) {
+      els.tickerInput.classList.add("input-text--error");
+      els.tickerError.textContent = tickerValidation;
+      els.tickerError.classList.remove("hidden");
+      return null;
+    }
+    els.tickerInput.classList.remove("input-text--error");
+    els.tickerError.classList.add("hidden");
   }
-  els.tickerInput.classList.remove("input-text--error");
-  els.tickerError.classList.add("hidden");
 
-  if (!selectedPreset) {
-    els.formError.textContent = "Selecciona un preset de alerta.";
-    els.formError.classList.remove("hidden");
-    return;
+  if (formMode === "preset") {
+    if (!selectedPreset) {
+      els.formError.textContent = "Selecciona un preset de alerta.";
+      els.formError.classList.remove("hidden");
+      return null;
+    }
+    return {
+      presetOrCustom: selectedPreset,
+      params: {},
+    };
   }
+
+  if (customType === "ema") {
+    const error = validateEmaParams(els.emaFast.value, els.emaSlow.value, els.emaDirection.value);
+    if (error) {
+      els.formError.textContent = error;
+      els.formError.classList.remove("hidden");
+      return null;
+    }
+    return {
+      presetOrCustom: "custom",
+      params: buildEmaParams(els.emaFast.value, els.emaSlow.value, els.emaDirection.value),
+    };
+  }
+
+  const error = validateRsiParams(els.rsiPeriod.value, els.rsiThreshold.value, els.rsiOperator.value);
+  if (error) {
+    els.formError.textContent = error;
+    els.formError.classList.remove("hidden");
+    return null;
+  }
+  return {
+    presetOrCustom: "custom",
+    params: buildRsiParams(els.rsiPeriod.value, els.rsiThreshold.value, els.rsiOperator.value),
+  };
+}
+
+async function handleSubmit() {
+  const payload = validateFormPayload();
+  if (!payload) return;
 
   setSubmitLoading(true);
   els.formError.classList.add("hidden");
   try {
-    const ticker = normalizeTicker(els.tickerInput.value);
-    const created = await createAlert(ticker, selectedPreset);
-    alerts = [created, ...alerts].sort((a, b) => a.ticker.localeCompare(b.ticker));
+    if (editingAlertId) {
+      const updated = await updateAlert(editingAlertId, payload);
+      alerts = alerts.map((a) => (a.id === updated.id ? updated : a));
+      showBanner("success", `Alerta de ${updated.ticker} actualizada.`);
+    } else {
+      const ticker = normalizeTicker(els.tickerInput.value);
+      const created = await createAlert({ ticker, ...payload });
+      alerts = [created, ...alerts].sort((a, b) => a.ticker.localeCompare(b.ticker));
+      showBanner("success", `Alerta creada para ${ticker}.`);
+      void loadQuotes();
+    }
     renderAlerts();
-    void loadQuotes();
-    showBanner("success", `Alerta creada para ${ticker}.`);
     closeModal();
   } catch (error) {
     const raw = error instanceof Error ? error.message : "";
@@ -377,10 +531,15 @@ async function handleSubmit() {
 }
 
 function bindEvents() {
-  document.getElementById("btn-new-alert").addEventListener("click", openModal);
-  document.getElementById("btn-empty-create").addEventListener("click", openModal);
+  document.getElementById("btn-new-alert").addEventListener("click", openCreateModal);
+  document.getElementById("btn-empty-create").addEventListener("click", openCreateModal);
   document.getElementById("btn-cancel").addEventListener("click", closeModal);
   els.submitBtn.addEventListener("click", () => void handleSubmit());
+  els.tabPreset.addEventListener("click", () => setFormMode("preset"));
+  els.tabCustom.addEventListener("click", () => setFormMode("custom"));
+  for (const btn of document.querySelectorAll(".custom-type-btn")) {
+    btn.addEventListener("click", () => setCustomType(btn.dataset.customType));
+  }
   els.modalBackdrop.addEventListener("click", (e) => {
     if (e.target === els.modalBackdrop) closeModal();
   });

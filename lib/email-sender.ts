@@ -42,6 +42,7 @@ export async function sendAlertEmail(
     ticker: string;
     presetOrCustom: string;
     candleTimestamp: string;
+    alertParams?: Record<string, unknown>;
     transport?: Transporter;
   },
 ): Promise<void> {
@@ -49,6 +50,7 @@ export async function sendAlertEmail(
     ticker: params.ticker,
     presetOrCustom: params.presetOrCustom,
     candleTimestamp: params.candleTimestamp,
+    alertParams: params.alertParams,
   });
 
   const transport = params.transport ?? createTransport(params.config);

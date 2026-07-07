@@ -20,16 +20,32 @@ export async function fetchAlerts() {
   return data ?? [];
 }
 
-export async function createAlert(ticker, preset) {
+export async function createAlert({ ticker, presetOrCustom, params = {} }) {
   const { data, error } = await client
     .from("alerts")
     .insert({
       user_id: userId,
       ticker,
-      preset_or_custom: preset,
-      params: {},
+      preset_or_custom: presetOrCustom,
+      params,
       active: true,
     })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function updateAlert(id, { presetOrCustom, params = {} }) {
+  const { data, error } = await client
+    .from("alerts")
+    .update({
+      preset_or_custom: presetOrCustom,
+      params,
+    })
+    .eq("id", id)
+    .eq("user_id", userId)
     .select()
     .single();
 

@@ -60,7 +60,7 @@
         <section id="empty-state" class="card empty-state hidden">
           <h2 class="empty-state__title">Aún no tienes alertas</h2>
           <p class="empty-state__text">
-            Crea tu primera alerta con un preset técnico. Te avisaremos por correo cuando se cumpla la
+            Crea tu primera alerta con un preset o una configuración personalizada. Te avisaremos por correo cuando se cumpla la
             condición en velas de 15 minutos.
           </p>
           <button type="button" id="btn-empty-create" class="btn-primary">
@@ -100,8 +100,70 @@
         </div>
 
         <div class="form-field">
-          <span class="form-field__label">Preset</span>
-          <div id="preset-grid" class="preset-grid" role="listbox" aria-label="Presets de alerta"></div>
+          <span class="form-field__label" id="alert-type-label">Tipo de alerta</span>
+          <div class="form-mode-tabs" role="tablist" aria-labelledby="alert-type-label">
+            <button type="button" role="tab" id="tab-preset" class="form-mode-tab is-active" aria-selected="true" aria-controls="preset-section">
+              Preset
+            </button>
+            <button type="button" role="tab" id="tab-custom" class="form-mode-tab" aria-selected="false" aria-controls="custom-section">
+              Personalizada
+            </button>
+          </div>
+
+          <div id="preset-section" role="tabpanel" aria-labelledby="tab-preset">
+            <div id="preset-grid" class="preset-grid" role="listbox" aria-label="Presets de alerta"></div>
+          </div>
+
+          <div id="custom-section" class="hidden" role="tabpanel" aria-labelledby="tab-custom">
+            <div class="custom-type-tabs" role="group" aria-label="Indicador personalizado">
+              <button type="button" class="custom-type-btn is-active" data-custom-type="ema" aria-pressed="true">
+                Tendencia (EMA)
+              </button>
+              <button type="button" class="custom-type-btn" data-custom-type="rsi" aria-pressed="false">
+                Momentum (RSI)
+              </button>
+            </div>
+
+            <div id="custom-ema-fields" class="custom-fields">
+              <div class="form-row">
+                <label class="form-field" for="ema-fast">
+                  <span class="form-field__label">Media rápida</span>
+                  <input id="ema-fast" class="input-text" type="number" min="2" max="200" value="9" inputmode="numeric" />
+                </label>
+                <label class="form-field" for="ema-slow">
+                  <span class="form-field__label">Media lenta</span>
+                  <input id="ema-slow" class="input-text" type="number" min="2" max="200" value="21" inputmode="numeric" />
+                </label>
+              </div>
+              <label class="form-field" for="ema-direction">
+                <span class="form-field__label">Dirección del cruce</span>
+                <select id="ema-direction" class="input-text input-select">
+                  <option value="up">Cruce al alza</option>
+                  <option value="down">Cruce a la baja</option>
+                </select>
+              </label>
+            </div>
+
+            <div id="custom-rsi-fields" class="custom-fields hidden">
+              <div class="form-row">
+                <label class="form-field" for="rsi-period">
+                  <span class="form-field__label">Período</span>
+                  <input id="rsi-period" class="input-text" type="number" min="2" max="50" value="14" inputmode="numeric" />
+                </label>
+                <label class="form-field" for="rsi-threshold">
+                  <span class="form-field__label">Umbral</span>
+                  <input id="rsi-threshold" class="input-text" type="number" min="0" max="100" value="30" inputmode="numeric" />
+                </label>
+              </div>
+              <label class="form-field" for="rsi-operator">
+                <span class="form-field__label">Condición</span>
+                <select id="rsi-operator" class="input-text input-select">
+                  <option value="<">Menor que</option>
+                  <option value=">">Mayor que</option>
+                </select>
+              </label>
+            </div>
+          </div>
         </div>
 
         <p id="form-error" class="form-field__error hidden"></p>
@@ -109,7 +171,7 @@
         <div class="modal__footer">
           <button type="button" id="btn-cancel" class="btn-secondary">Cancelar</button>
           <button type="button" id="submit-alert" class="btn-primary">
-            <span class="btn-primary__label">Crear alerta</span>
+            <span class="btn-primary__label" id="submit-alert-label">Crear alerta</span>
             <span class="btn-primary__loader" aria-hidden="true"></span>
           </button>
         </div>

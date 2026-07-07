@@ -78,6 +78,7 @@ export async function runEvaluationCycle(
           ticker: alert.ticker,
           presetOrCustom: alert.preset_or_custom,
           candleTimestamp: evaluation.candleTimestamp,
+          alertParams: alert.params,
         });
         await store.recordEmailSent(alert, evaluation.candleTimestamp, today, now);
         emailSent = true;

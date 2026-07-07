@@ -88,4 +88,15 @@ describe("alert-email-template", () => {
     expect(email.text).toContain("15 minutos");
     expect(email.text).toContain(presetLabel("ema_cross_bull"));
   });
+
+  it("incluye etiqueta custom con params", () => {
+    const email = buildAlertEmail({
+      ticker: "MSFT",
+      presetOrCustom: "custom",
+      candleTimestamp: "2026-03-04T17:00:00.000Z",
+      alertParams: { type: "rsi", period: 10, threshold: 25, operator: "<" },
+    });
+    expect(email.subject).toContain("RSI(10) < 25");
+    expect(email.text).toContain("RSI(10) < 25");
+  });
 });

@@ -1,16 +1,6 @@
-const PRESET_LABELS: Record<string, string> = {
-  ema_cross_bull: "Impulso alcista corto",
-  ema_cross_bear: "Impulso bajista corto",
-  golden_cross: "Cruce alcista de largo plazo",
-  death_cross: "Cruce bajista de largo plazo",
-  rsi_oversold: "Sobreventa",
-  rsi_overbought: "Sobrecompra",
-  custom: "Alerta personalizada",
-};
+import { formatAlertLabel, presetLabel } from "./alert-labels.js";
 
-export function presetLabel(presetOrCustom: string): string {
-  return PRESET_LABELS[presetOrCustom] ?? presetOrCustom;
-}
+export { presetLabel };
 
 export function formatCandleForEmail(candleTimestamp: string): string {
   const date = new Date(candleTimestamp);
@@ -30,8 +20,9 @@ export function buildAlertEmail(params: {
   ticker: string;
   presetOrCustom: string;
   candleTimestamp: string;
+  alertParams?: Record<string, unknown>;
 }): AlertEmailContent {
-  const label = presetLabel(params.presetOrCustom);
+  const label = formatAlertLabel(params.presetOrCustom, params.alertParams ?? {});
   const vela = formatCandleForEmail(params.candleTimestamp);
 
   const subject = `Alerta ${params.ticker}: ${label}`;
