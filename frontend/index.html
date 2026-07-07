@@ -12,6 +12,12 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/css/main.css" />
+    <script>
+      (function () {
+        var size = localStorage.getItem("stock-alerts-text-size");
+        if (size) document.documentElement.setAttribute("data-text-size", size);
+      })();
+    </script>
   </head>
   <body>
     <div class="app-shell">
@@ -24,6 +30,21 @@
             </p>
           </div>
           <div class="page-header__meta">
+            <div class="text-size-control" role="group" aria-label="Tamaño del texto">
+              <span class="text-size-control__label">Texto</span>
+              <button type="button" class="text-size-btn" data-size="small" aria-pressed="false" title="Texto más pequeño">
+                A−
+              </button>
+              <button type="button" class="text-size-btn is-active" data-size="normal" aria-pressed="true" title="Texto normal">
+                A
+              </button>
+              <button type="button" class="text-size-btn" data-size="large" aria-pressed="false" title="Texto más grande">
+                A+
+              </button>
+              <button type="button" class="text-size-btn" data-size="xlarge" aria-pressed="false" title="Texto muy grande">
+                A++
+              </button>
+            </div>
             <span id="ticker-counter" class="ticker-counter">0 / 15 tickers activos</span>
             <button type="button" id="btn-new-alert" class="btn-primary">
               <span class="btn-primary__label">Nueva alerta</span>

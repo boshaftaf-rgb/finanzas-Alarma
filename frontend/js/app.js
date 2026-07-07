@@ -1,3 +1,4 @@
+import { initTextSize } from "./text-size.js";
 import { loadAppConfig } from "./config.js";
 import {
   countUniqueActiveTickers,
@@ -398,6 +399,7 @@ function bindEvents() {
 }
 
 async function main() {
+  initTextSize();
   renderSkeleton();
   renderPresetGrid();
   bindEvents();

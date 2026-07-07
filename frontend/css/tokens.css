@@ -47,4 +47,23 @@
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 
   --layout-max: 1120px;
+
+  /* Escala de texto (accesibilidad) — normal por defecto */
+  --text-scale: 1;
+}
+
+html[data-text-size="small"] {
+  --text-scale: 0.875;
+}
+
+html[data-text-size="normal"] {
+  --text-scale: 1;
+}
+
+html[data-text-size="large"] {
+  --text-scale: 1.15;
+}
+
+html[data-text-size="xlarge"] {
+  --text-scale: 1.3;
 }

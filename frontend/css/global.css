@@ -14,7 +14,7 @@ body {
 body {
   margin: 0;
   font-family: var(--font-sans);
-  font-size: 15px;
+  font-size: calc(15px * var(--text-scale));
   line-height: 1.5;
   color: var(--color-ink);
   background: var(--color-canvas);
