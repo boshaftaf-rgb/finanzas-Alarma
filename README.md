@@ -22,6 +22,18 @@ cp .env.example .env
 
 Rellena `.env` con tus claves reales. No subas ese archivo a git.
 
+## Migraciones (issue #4)
+
+Con `DATABASE_URL` en `.env`:
+
+```bash
+pip install -r requirements-dev.txt
+python scripts/apply_migrations.py
+pytest tests/test_alert_triggers.py -v
+```
+
+Guía completa: [docs/supabase-migrations.md](docs/supabase-migrations.md)
+
 ## Estructura prevista
 
 ```
@@ -29,6 +41,7 @@ finanzas-Alarma/
 ├── frontend/              # React + Vite (Fase 3)
 ├── worker/                # Python + Docker
 ├── supabase/migrations/   # Esquema PostgreSQL
+├── scripts/               # Utilidades (p. ej. verify_services.py)
 ├── docker-compose.yml
 └── .env.example
 ```

@@ -1,6 +1,6 @@
 # Provisioning de servicios externos
 
-Guía para el **operador** del sistema. Corresponde al [Issue #1 — Servicios externos](issues/01-servicios-externos.md) (orden de implementación #1).
+Guía para el **operador** del sistema. Corresponde al [Issue #2 — Servicios externos](https://github.com/boshaftaf-rgb/finanzas-Alarma/issues/2) · [`issues/01-servicios-externos.md`](issues/01-servicios-externos.md) (orden de implementación #1).
 
 Objetivo: tener cuentas y claves listas **antes** de escribir código de producto (migraciones, worker, frontend).
 
@@ -23,7 +23,7 @@ Objetivo: tener cuentas y claves listas **antes** de escribir código de product
 2. **New project** → elige región cercana y contraseña de base de datos (guárdala en un gestor de contraseñas).
 3. Espera a que el proyecto termine de aprovisionarse.
 4. Ve a **Project Settings → API** y copia:
-   - **Project URL** → `SUPABASE_URL`
+   - **Project URL** → `SUPABASE_URL` (formato `https://<ref>.supabase.co`, **no** `.supabase.com`)
    - **anon public** → `SUPABASE_ANON_KEY`
    - **service_role** → `SUPABASE_SERVICE_ROLE_KEY`
 
@@ -66,6 +66,16 @@ cp .env.example .env
 
 Edita `.env` con todas las claves. El archivo `.env` está en `.gitignore` y no debe subirse a git.
 
+### Verificar conectividad
+
+Con `.env` rellenado, desde la raíz del repo:
+
+```bash
+python scripts/verify_services.py
+```
+
+Debe mostrar `OK` para Supabase, Twelve Data y Gmail SMTP. Si Supabase falla con error de DNS, revisa que `SUPABASE_URL` use el dominio exacto del dashboard (`.supabase.co`).
+
 ### Variables por componente
 
 | Variable | Worker Docker | Frontend (Vercel, Fase 3) |
@@ -96,7 +106,7 @@ No hace falta crear la cuenta Vercel en esta fase.
 
 ---
 
-## Checklist de aceptación (Issue #1)
+## Checklist de aceptación (Issue #2)
 
 - [ ] Proyecto Supabase creado y accesible
 - [ ] Claves Supabase (anon + service_role) obtenidas y guardadas **fuera del repo**
@@ -110,4 +120,4 @@ No hace falta crear la cuenta Vercel en esta fase.
 
 ## Siguiente paso
 
-Según [orden de implementación](issues/00-orden-implementacion.md): **migración `alerts` + seed SQL** (issue #2 en docs, GitHub #4 Fase 2a).
+Según [orden de implementación](issues/00-orden-implementacion.md): **migración `alerts` + seed SQL** (GitHub [#4](https://github.com/boshaftaf-rgb/finanzas-Alarma/issues/4) Fase 2a).
