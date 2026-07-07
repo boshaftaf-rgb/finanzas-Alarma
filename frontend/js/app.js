@@ -135,11 +135,14 @@ async function loadQuotes(tickers = null) {
 
   const raw = await fetchTickerQuotes(list);
   quotesByTicker = {};
-  for (const [key, value] of Object.entries(raw)) {
+  for (const [key, value] of Object.entries(raw.quotes)) {
     quotesByTicker[key.toUpperCase()] = value;
   }
 
   quotesLoading = false;
+  if (raw.error && Object.keys(raw.quotes).length === 0) {
+    showBanner("error", raw.error);
+  }
   renderAlerts();
 }
 
@@ -155,7 +158,7 @@ async function previewTickerQuote(rawTicker) {
   els.tickerPreview.innerHTML = `<span class="skeleton quote-skeleton" aria-busy="true"></span>`;
 
   const raw = await fetchTickerQuotes([ticker]);
-  const quote = raw[ticker];
+  const quote = raw.quotes[ticker];
   if (quote) {
     quotesByTicker[ticker] = quote;
     renderTickerPreview(ticker);

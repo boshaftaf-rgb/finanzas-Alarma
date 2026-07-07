@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { dedupeTickers } from "../../lib/twelve-data-fetcher.js";
-import { fetchBatchQuotes } from "../../lib/twelve-data-quotes.js";
+import { dedupeTickers } from "../lib/twelve-data-fetcher.js";
+import { fetchBatchQuotes } from "../lib/twelve-data-quotes.js";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "GET") {
