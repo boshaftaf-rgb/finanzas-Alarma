@@ -11,9 +11,89 @@
       href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Fira+Sans:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
+    <link rel="stylesheet" href="/css/main.css" />
   </head>
   <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <div class="app-shell">
+      <main class="app-container">
+        <header class="page-header">
+          <div>
+            <h1 class="page-header__title">Mis alertas</h1>
+            <p class="page-header__subtitle">
+              Monitoreo técnico en velas de 15 min. Notificaciones por correo con candle-lock.
+            </p>
+          </div>
+          <div class="page-header__meta">
+            <span id="ticker-counter" class="ticker-counter">0 / 15 tickers activos</span>
+            <button type="button" id="btn-new-alert" class="btn-primary">
+              <span class="btn-primary__label">Nueva alerta</span>
+              <span class="btn-primary__loader" aria-hidden="true"></span>
+            </button>
+          </div>
+        </header>
+
+        <div id="banner" class="alert-banner hidden" role="alert"></div>
+
+        <div id="skeleton" class="alert-list" aria-busy="true" aria-label="Cargando alertas"></div>
+
+        <section id="empty-state" class="card empty-state hidden">
+          <h2 class="empty-state__title">Aún no tienes alertas</h2>
+          <p class="empty-state__text">
+            Crea tu primera alerta con un preset técnico. Te avisaremos por correo cuando se cumpla la
+            condición en velas de 15 minutos.
+          </p>
+          <button type="button" id="btn-empty-create" class="btn-primary">
+            <span class="btn-primary__label">Nueva alerta</span>
+            <span class="btn-primary__loader" aria-hidden="true"></span>
+          </button>
+        </section>
+
+        <section id="alert-list" class="alert-list hidden" aria-label="Listado de alertas"></section>
+      </main>
+    </div>
+
+    <div id="modal-backdrop" class="modal-backdrop hidden" role="presentation">
+      <div
+        class="card modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="alert-form-title"
+      >
+        <h2 id="alert-form-title" class="modal__title">Nueva alerta</h2>
+        <p class="modal__subtitle">Timeframe fijo: 15 minutos. Máx. 5 alertas activas por ticker.</p>
+
+        <div class="form-field">
+          <label class="form-field__label" for="ticker-input">Ticker</label>
+          <input
+            id="ticker-input"
+            class="input-text"
+            type="text"
+            placeholder="AAPL"
+            autocomplete="off"
+            spellcheck="false"
+            maxlength="10"
+          />
+          <p class="form-field__hint">Símbolo de EE. UU. en mayúsculas (ej. MSFT, NVDA).</p>
+          <p id="ticker-error" class="form-field__error hidden"></p>
+        </div>
+
+        <div class="form-field">
+          <span class="form-field__label">Preset</span>
+          <div id="preset-grid" class="preset-grid" role="listbox" aria-label="Presets de alerta"></div>
+        </div>
+
+        <p id="form-error" class="form-field__error hidden"></p>
+
+        <div class="modal__footer">
+          <button type="button" id="btn-cancel" class="btn-secondary">Cancelar</button>
+          <button type="button" id="submit-alert" class="btn-primary">
+            <span class="btn-primary__label">Crear alerta</span>
+            <span class="btn-primary__loader" aria-hidden="true"></span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="/js/app.js"></script>
   </body>
 </html>

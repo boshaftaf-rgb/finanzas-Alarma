@@ -1,10 +1,10 @@
 const PRESET_LABELS: Record<string, string> = {
-  ema_cross_bull: "Cruce alcista rápido (EMA 9/21)",
-  ema_cross_bear: "Cruce bajista rápido (EMA 9/21)",
-  golden_cross: "Golden Cross (EMA 50/200)",
-  death_cross: "Death Cross (EMA 50/200)",
-  rsi_oversold: "RSI sobreventa (< 30)",
-  rsi_overbought: "RSI sobrecompra (> 70)",
+  ema_cross_bull: "Impulso alcista corto",
+  ema_cross_bear: "Impulso bajista corto",
+  golden_cross: "Cruce alcista de largo plazo",
+  death_cross: "Cruce bajista de largo plazo",
+  rsi_oversold: "Sobreventa",
+  rsi_overbought: "Sobrecompra",
   custom: "Alerta personalizada",
 };
 

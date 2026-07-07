@@ -7,7 +7,7 @@ Decisión: [ADR 001](adr/001-worker-en-vercel.md).
 
 | Ruta / pieza | Rol |
 |--------------|-----|
-| `frontend/` | Panel React (Fase 3) |
+| `frontend/` | Panel estático (HTML + CSS + JS, sin npm) |
 | `api/cron/evaluate` | Worker — evalúa alertas (invocado por HTTP) |
 | `lib/` | Lógica compartida (EMA, RSI, evaluador) |
 | `.github/workflows/evaluate-alerts.yml` | Cron gratuito cada 5 min (lun–vie) |
