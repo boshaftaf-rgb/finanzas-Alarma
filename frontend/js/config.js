@@ -23,7 +23,7 @@ export async function loadAppConfig() {
 function loadOptionalLocalConfig() {
   return new Promise((resolve) => {
     const script = document.createElement("script");
-    script.src = "/config.local.js";
+    script.src = new URL("../config.local.js", import.meta.url).href;
     script.onload = () => resolve();
     script.onerror = () => resolve();
     document.head.appendChild(script);
