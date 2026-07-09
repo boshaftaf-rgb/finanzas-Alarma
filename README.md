@@ -38,7 +38,10 @@ finanzas-Alarma/
 cp .env.example .env
 npm install
 npm test
+npm run dev
 ```
+
+Abre **http://localhost:3000** (sirve la carpeta `frontend/`). Si usas `npx serve` en la raíz del repo, entra en **http://localhost:3000/frontend/**.
 
 Worker TypeScript (tests): `npm test`  
 Worker Python (opcional): ver [worker/README.md](worker/README.md)

@@ -1,6 +1,15 @@
 import type { OhlcvBar } from "./types.js";
+import {
+  defaultSleep,
+  msUntilNextCreditMinute,
+  runSymbolBatches,
+  type SleepFn,
+  type SymbolBatchOptions,
+} from "./twelve-data-rate-limit.js";
 
 const TWELVE_DATA_BASE = "https://api.twelvedata.com/time_series";
+const DEBUG_LOG =
+  "http://127.0.0.1:7270/ingest/32cd8b27-58a1-4715-bdf4-65491b0657ce";
 const DEFAULT_OUTPUT_SIZE = 300;
 
 interface TwelveDataCandle {
@@ -71,22 +80,61 @@ function parseBatchResponse(
   return result;
 }
 
-export async function fetchBatchOhlcv(
-  tickers: string[],
-  apiKey: string,
-  options?: { outputsize?: number; fetchImpl?: typeof fetch },
-): Promise<Map<string, OhlcvBar[]>> {
-  const unique = dedupeTickers(tickers);
-  if (unique.length === 0) return new Map();
+function logTwelveDataOhlcv(
+  hypothesisId: string,
+  data: Record<string, unknown>,
+): void {
+  // #region agent log
+  fetch(DEBUG_LOG, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "73a3d6" },
+    body: JSON.stringify({
+      sessionId: "73a3d6",
+      location: "twelve-data-fetcher.ts",
+      message: "Twelve Data OHLCV",
+      hypothesisId,
+      data,
+      timestamp: Date.now(),
+    }),
+  }).catch(() => {});
+  // #endregion
+}
 
+async function fetchOhlcvChunk(
+  chunk: string[],
+  apiKey: string,
+  fetchImpl: typeof fetch,
+  outputsize: number,
+  sleepMs: SleepFn,
+): Promise<Map<string, OhlcvBar[]>> {
   const url = new URL(TWELVE_DATA_BASE);
-  url.searchParams.set("symbol", unique.join(","));
+  url.searchParams.set("symbol", chunk.join(","));
   url.searchParams.set("interval", "15min");
-  url.searchParams.set("outputsize", String(options?.outputsize ?? DEFAULT_OUTPUT_SIZE));
+  url.searchParams.set("outputsize", String(outputsize));
   url.searchParams.set("apikey", apiKey);
 
-  const fetchImpl = options?.fetchImpl ?? fetch;
-  const response = await fetchImpl(url.toString());
+  logTwelveDataOhlcv("A", { phase: "request", symbolCount: chunk.length, symbols: chunk });
+
+  let response = await fetchImpl(url.toString());
+  if (response.status === 429) {
+    logTwelveDataOhlcv("B", {
+      phase: "429-retry",
+      symbolCount: chunk.length,
+      creditsUsed: response.headers.get("api-credits-used"),
+      creditsLeft: response.headers.get("api-credits-left"),
+    });
+    await sleepMs(msUntilNextCreditMinute());
+    response = await fetchImpl(url.toString());
+  }
+
+  logTwelveDataOhlcv("A", {
+    phase: "response",
+    status: response.status,
+    symbolCount: chunk.length,
+    creditsUsed: response.headers?.get?.("api-credits-used") ?? null,
+    creditsLeft: response.headers?.get?.("api-credits-left") ?? null,
+  });
+
   if (!response.ok) {
     throw new Error(`Twelve Data HTTP ${response.status}`);
   }
@@ -96,7 +144,37 @@ export async function fetchBatchOhlcv(
     throw new Error(`Twelve Data: ${payload.message ?? "error de API"}`);
   }
 
-  return parseBatchResponse(unique, payload);
+  return parseBatchResponse(chunk, payload);
+}
+
+export async function fetchBatchOhlcv(
+  tickers: string[],
+  apiKey: string,
+  options?: {
+    outputsize?: number;
+    fetchImpl?: typeof fetch;
+    sleepMs?: SleepFn;
+    maxSymbolsPerBatch?: number;
+  },
+): Promise<Map<string, OhlcvBar[]>> {
+  const unique = dedupeTickers(tickers);
+  if (unique.length === 0) return new Map();
+
+  const fetchImpl = options?.fetchImpl ?? fetch;
+  const outputsize = options?.outputsize ?? DEFAULT_OUTPUT_SIZE;
+  const sleepMs = options?.sleepMs ?? defaultSleep;
+  const batchOptions: SymbolBatchOptions = {
+    sleepMs,
+    maxSymbolsPerBatch: options?.maxSymbolsPerBatch,
+  };
+
+  logTwelveDataOhlcv("A", { phase: "batch-start", totalSymbols: unique.length });
+
+  return runSymbolBatches(
+    unique,
+    (chunk) => fetchOhlcvChunk(chunk, apiKey, fetchImpl, outputsize, sleepMs),
+    batchOptions,
+  );
 }
 
 export function buildBatchUrl(tickers: string[], apiKey: string, outputsize = DEFAULT_OUTPUT_SIZE): string {
