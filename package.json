@@ -3,7 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "npx serve frontend -l 3000",
+    "dev": "npx tsx scripts/dev-server.mts",
+    "dev:vercel": "vercel dev --listen 3000",
+    "dev:static": "npx serve frontend -l 3000",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },

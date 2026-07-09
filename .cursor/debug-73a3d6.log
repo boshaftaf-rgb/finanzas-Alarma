@@ -24,3 +24,12 @@
 {"sessionId":"73a3d6","location":"twelve-data-fetcher.ts","message":"Twelve Data OHLCV","hypothesisId":"A","data":{"phase":"response","status":200,"symbolCount":8,"creditsUsed":"8","creditsLeft":"0"},"timestamp":1783620437893}
 {"sessionId":"73a3d6","location":"twelve-data-fetcher.ts","message":"Twelve Data OHLCV","hypothesisId":"A","data":{"phase":"request","symbolCount":2,"symbols":["INTC","NFLX"]},"timestamp":1783620481007}
 {"sessionId":"73a3d6","location":"twelve-data-fetcher.ts","message":"Twelve Data OHLCV","hypothesisId":"A","data":{"phase":"response","status":200,"symbolCount":2,"creditsUsed":"2","creditsLeft":"6"},"timestamp":1783620481259}
+{"sessionId":"73a3d6","location":"twelve-data-quotes.ts","message":"Twelve Data quote","hypothesisId":"B","data":{"phase":"batch-start","totalSymbols":2},"timestamp":1783621085258}
+{"sessionId":"73a3d6","location":"twelve-data-quotes.ts","message":"Twelve Data quote","hypothesisId":"B","data":{"phase":"request","symbolCount":2,"symbols":["AAPL","MSFT"]},"timestamp":1783621085266}
+{"sessionId":"73a3d6","location":"twelve-data-quotes.ts","message":"Twelve Data quote","hypothesisId":"B","data":{"phase":"response","status":200,"symbolCount":2,"creditsUsed":"4","creditsLeft":"4"},"timestamp":1783621085783}
+{"sessionId":"73a3d6","location":"twelve-data-quotes.ts","message":"Twelve Data quote","hypothesisId":"B","data":{"phase":"batch-start","totalSymbols":2},"timestamp":1783621098542}
+{"sessionId":"73a3d6","location":"twelve-data-quotes.ts","message":"Twelve Data quote","hypothesisId":"B","data":{"phase":"request","symbolCount":2,"symbols":["AAPL","MSFT"]},"timestamp":1783621098543}
+{"sessionId":"73a3d6","location":"twelve-data-quotes.ts","message":"Twelve Data quote","hypothesisId":"B","data":{"phase":"response","status":200,"symbolCount":2,"creditsUsed":"6","creditsLeft":"2"},"timestamp":1783621098945}
+{"sessionId":"73a3d6","location":"twelve-data-quotes.ts","message":"Twelve Data quote","hypothesisId":"B","data":{"phase":"batch-start","totalSymbols":2},"timestamp":1783621098969}
+{"sessionId":"73a3d6","location":"twelve-data-quotes.ts","message":"Twelve Data quote","hypothesisId":"B","data":{"phase":"request","symbolCount":2,"symbols":["AAPL","MSFT"]},"timestamp":1783621098970}
+{"sessionId":"73a3d6","location":"twelve-data-quotes.ts","message":"Twelve Data quote","hypothesisId":"B","data":{"phase":"response","status":200,"symbolCount":2,"creditsUsed":"8","creditsLeft":"0"},"timestamp":1783621099264}

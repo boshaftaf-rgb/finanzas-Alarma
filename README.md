@@ -41,7 +41,8 @@ npm test
 npm run dev
 ```
 
-Abre **http://localhost:3000** (sirve la carpeta `frontend/`). Si usas `npx serve` en la raíz del repo, entra en **http://localhost:3000/frontend/**.
+Abre **http://localhost:3000**. `npm run dev` sirve el panel y las rutas `/api/*` (cotizaciones, config).  
+Solo estáticos sin API: `npm run dev:static` (las cotizaciones fallarán con 404).
 
 Worker TypeScript (tests): `npm test`  
 Worker Python (opcional): ver [worker/README.md](worker/README.md)
