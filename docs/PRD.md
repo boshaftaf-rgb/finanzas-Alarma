@@ -127,7 +127,7 @@ El usuario quiere una plataforma donde pueda registrarse de forma controlada, el
 | death_cross | EMA(50) cruza abajo EMA(200) |
 | rsi_oversold | RSI(period) < threshold (defaults 14 / 30; editables) |
 | rsi_overbought | RSI(period) > threshold (defaults 14 / 70; editables) |
-| custom | Sub-form EMA o RSI, no combinados |
+| custom | Sub-form EMA, precio vs media (SMA/EMA), o RSI; timeframe 15m o 1D |
 
 Presets RSI persisten `params`: `{ period, threshold }`. Operador fijo: `<` (sobreventa) o `>` (sobrecompra).
 
@@ -144,8 +144,8 @@ Tras disparo: actualizar `last_triggered_candle`, incrementar `emails_sent_today
 
 ### Batching Twelve Data
 
-- Por ciclo: leer todas las alertas activas → deduplicar tickers → **1 request** con `symbols=AAPL,MSFT,...&interval=15min`.
-- Consumo: ~78 req/día (dentro de 800 free).
+- Por ciclo: leer alertas activas → agrupar por `timeframe` → **1 request por intervalo** (`15min`, `1day`) con símbolos deduplicados.
+- Consumo: ~78–156 req/día (dentro de 800 free).
 - Sin caché de velas en v1.
 
 ### Seguridad de claves
@@ -211,7 +211,7 @@ No hay tests previos en el repositorio (greenfield). Los patrones anteriores se 
 - Facturación, planes de pago, panel de administración.
 - Alertas por SMS, push o webhook.
 - Acciones fuera de EE. UU. o criptomonedas.
-- Timeframes distintos a 15 minutos.
+- Timeframes distintos a **15 min** y **diario** (1h, 4h, etc.).
 - App móvil nativa.
 - Histórico de disparos / auditoría de emails enviados.
 - OAuth (Google, etc.).

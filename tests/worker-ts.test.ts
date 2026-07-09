@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { evaluateAlert } from "../lib/alert-evaluator.js";
-import { computeEma, enrichBars } from "../lib/indicator-engine.js";
+import { computeEma, computeSma, enrichBars } from "../lib/indicator-engine.js";
 import type { OhlcvBar } from "../lib/types.js";
 
 function barsFromCloses(closes: number[]): OhlcvBar[] {
@@ -22,6 +22,14 @@ describe("indicator-engine", () => {
     const enriched = enrichBars(barsFromCloses(closes));
     expect(enriched[0].ema_9).toBeDefined();
     expect(enriched[0].rsi_14).toBeDefined();
+  });
+
+  it("calcula SMA con warmup en índice length-1", () => {
+    const closes = [10, 11, 12, 13, 14];
+    const sma3 = computeSma(closes, 3);
+    expect(sma3[1]).toBeNaN();
+    expect(sma3[2]).toBeCloseTo(11);
+    expect(sma3[4]).toBeCloseTo(13);
   });
 });
 

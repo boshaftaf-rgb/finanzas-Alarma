@@ -21,6 +21,12 @@ describe("alert-labels", () => {
     ).toBe("Cruce personalizado EMA 12/26 al alza");
   });
 
+  it("formatea etiqueta precio vs MA custom", () => {
+    expect(
+      formatCustomLabel({ type: "price_ma", ma_type: "sma", period: 12, direction: "up" }),
+    ).toBe("Precio cruza SMA(12) al alza");
+  });
+
   it("formatea etiqueta RSI custom", () => {
     expect(
       formatCustomLabel({ type: "rsi", period: 10, threshold: 25, operator: "<" }),
@@ -36,6 +42,9 @@ describe("alert-labels", () => {
       "Sobreventa — RSI(10) < 25",
     );
     expect(formatAlertLabel("rsi_overbought")).toBe("Sobrecompra — RSI(14) > 70");
+    expect(
+      formatAlertLabel("custom", { type: "price_ma", ma_type: "sma", period: 12, direction: "up" }, "1day"),
+    ).toBe("Precio cruza SMA(12) al alza · Diario");
   });
 });
 
@@ -52,6 +61,20 @@ describe("alert-evaluator custom", () => {
         ticker: "TEST",
         preset_or_custom: "custom",
         params: { type: "rsi", period: 10, threshold: 25, operator: "<" },
+      },
+      barsFromCloses(closes),
+    );
+    expect(result.conditionMet).toBe(true);
+  });
+
+  it("evalúa custom precio cruza SMA(12) al alza", () => {
+    const closes = [...Array(16).fill(100), 110];
+
+    const result = evaluateAlert(
+      {
+        ticker: "TEST",
+        preset_or_custom: "custom",
+        params: { type: "price_ma", ma_type: "sma", period: 12, direction: "up" },
       },
       barsFromCloses(closes),
     );

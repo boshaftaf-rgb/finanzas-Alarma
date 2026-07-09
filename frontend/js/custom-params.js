@@ -67,3 +67,30 @@ export function buildRsiPresetParams(periodRaw, thresholdRaw) {
     threshold: Number(thresholdRaw),
   };
 }
+
+export function validatePriceMaParams(periodRaw, maType, direction) {
+  const period = Number(periodRaw);
+  if (!Number.isInteger(period) || period < 2 || period > 200) {
+    return "El período debe ser un número entre 2 y 200.";
+  }
+  if (maType !== "sma" && maType !== "ema") {
+    return "Selecciona el tipo de media (SMA o EMA).";
+  }
+  if (direction !== "up" && direction !== "down") {
+    return "Selecciona la dirección del cruce.";
+  }
+  return null;
+}
+
+export function buildPriceMaParams(periodRaw, maType, direction) {
+  return {
+    type: "price_ma",
+    ma_type: maType,
+    period: Number(periodRaw),
+    direction,
+  };
+}
+
+export function normalizeTimeframe(value) {
+  return value === "1day" ? "1day" : "15min";
+}

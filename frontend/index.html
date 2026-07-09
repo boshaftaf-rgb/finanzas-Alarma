@@ -89,7 +89,7 @@
         aria-describedby="alert-form-subtitle"
       >
         <h2 id="alert-form-title" class="modal__title">Nueva alerta</h2>
-        <p id="alert-form-subtitle" class="modal__subtitle">Timeframe fijo: 15 minutos. Máx. 5 alertas activas por ticker.</p>
+        <p id="alert-form-subtitle" class="modal__subtitle">Máx. 5 alertas activas por ticker. Elige timeframe según tu estrategia.</p>
 
         <div class="modal__body">
         <div class="form-field">
@@ -106,6 +106,17 @@
           <p class="form-field__hint">Símbolo de EE. UU. en mayúsculas (ej. MSFT, NVDA).</p>
           <div id="ticker-preview" class="ticker-preview hidden" aria-live="polite"></div>
           <p id="ticker-error" class="form-field__error hidden"></p>
+        </div>
+
+        <div class="form-field">
+          <label class="form-field" for="timeframe-select">
+            <span class="form-field__label">Timeframe</span>
+            <select id="timeframe-select" class="input-text input-select">
+              <option value="15min">15 minutos</option>
+              <option value="1day">Diario (1D)</option>
+            </select>
+          </label>
+          <p id="timeframe-hint" class="form-field__hint">Presets usan 15 minutos. Para MA de N días (ej. 12), elige Diario.</p>
         </div>
 
         <div class="form-field">
@@ -139,7 +150,10 @@
           <div id="custom-section" class="hidden" role="tabpanel" aria-labelledby="tab-custom">
             <div class="custom-type-tabs" role="group" aria-label="Indicador personalizado">
               <button type="button" class="custom-type-btn is-active" data-custom-type="ema" aria-pressed="true">
-                Tendencia (EMA)
+                Cruce EMA
+              </button>
+              <button type="button" class="custom-type-btn" data-custom-type="price_ma" aria-pressed="false">
+                Precio vs media
               </button>
               <button type="button" class="custom-type-btn" data-custom-type="rsi" aria-pressed="false">
                 Momentum (RSI)
@@ -164,6 +178,30 @@
                   <option value="down">Cruce a la baja</option>
                 </select>
               </label>
+            </div>
+
+            <div id="custom-price-ma-fields" class="custom-fields hidden">
+              <div class="form-row">
+                <label class="form-field" for="price-ma-type">
+                  <span class="form-field__label">Tipo de media</span>
+                  <select id="price-ma-type" class="input-text input-select">
+                    <option value="sma">SMA (como TradingView)</option>
+                    <option value="ema">EMA</option>
+                  </select>
+                </label>
+                <label class="form-field" for="price-ma-period">
+                  <span class="form-field__label">Período</span>
+                  <input id="price-ma-period" class="input-text" type="number" min="2" max="200" value="12" inputmode="numeric" />
+                </label>
+              </div>
+              <label class="form-field" for="price-ma-direction">
+                <span class="form-field__label">Dirección</span>
+                <select id="price-ma-direction" class="input-text input-select">
+                  <option value="up">Precio cruza arriba de la media</option>
+                  <option value="down">Precio cruza abajo de la media</option>
+                </select>
+              </label>
+              <p class="form-field__hint">Ejemplo: SMA(12) diaria = media de 12 días en gráfico anual.</p>
             </div>
 
             <div id="custom-rsi-fields" class="custom-fields hidden">

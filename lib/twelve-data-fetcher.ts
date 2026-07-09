@@ -8,6 +8,8 @@ import {
 } from "./twelve-data-rate-limit.js";
 
 const TWELVE_DATA_BASE = "https://api.twelvedata.com/time_series";
+
+export type TwelveDataInterval = "15min" | "1day";
 const DEBUG_LOG =
   "http://127.0.0.1:7270/ingest/32cd8b27-58a1-4715-bdf4-65491b0657ce";
 const DEFAULT_OUTPUT_SIZE = 300;
@@ -106,10 +108,11 @@ async function fetchOhlcvChunk(
   fetchImpl: typeof fetch,
   outputsize: number,
   sleepMs: SleepFn,
+  interval: TwelveDataInterval,
 ): Promise<Map<string, OhlcvBar[]>> {
   const url = new URL(TWELVE_DATA_BASE);
   url.searchParams.set("symbol", chunk.join(","));
-  url.searchParams.set("interval", "15min");
+  url.searchParams.set("interval", interval);
   url.searchParams.set("outputsize", String(outputsize));
   url.searchParams.set("apikey", apiKey);
 
@@ -151,6 +154,7 @@ export async function fetchBatchOhlcv(
   tickers: string[],
   apiKey: string,
   options?: {
+    interval?: TwelveDataInterval;
     outputsize?: number;
     fetchImpl?: typeof fetch;
     sleepMs?: SleepFn;
@@ -161,6 +165,7 @@ export async function fetchBatchOhlcv(
   if (unique.length === 0) return new Map();
 
   const fetchImpl = options?.fetchImpl ?? fetch;
+  const interval = options?.interval ?? "15min";
   const outputsize = options?.outputsize ?? DEFAULT_OUTPUT_SIZE;
   const sleepMs = options?.sleepMs ?? defaultSleep;
   const batchOptions: SymbolBatchOptions = {
@@ -168,19 +173,24 @@ export async function fetchBatchOhlcv(
     maxSymbolsPerBatch: options?.maxSymbolsPerBatch,
   };
 
-  logTwelveDataOhlcv("A", { phase: "batch-start", totalSymbols: unique.length });
+  logTwelveDataOhlcv("A", { phase: "batch-start", totalSymbols: unique.length, interval });
 
   return runSymbolBatches(
     unique,
-    (chunk) => fetchOhlcvChunk(chunk, apiKey, fetchImpl, outputsize, sleepMs),
+    (chunk) => fetchOhlcvChunk(chunk, apiKey, fetchImpl, outputsize, sleepMs, interval),
     batchOptions,
   );
 }
 
-export function buildBatchUrl(tickers: string[], apiKey: string, outputsize = DEFAULT_OUTPUT_SIZE): string {
+export function buildBatchUrl(
+  tickers: string[],
+  apiKey: string,
+  outputsize = DEFAULT_OUTPUT_SIZE,
+  interval: TwelveDataInterval = "15min",
+): string {
   const url = new URL(TWELVE_DATA_BASE);
   url.searchParams.set("symbol", dedupeTickers(tickers).join(","));
-  url.searchParams.set("interval", "15min");
+  url.searchParams.set("interval", interval);
   url.searchParams.set("outputsize", String(outputsize));
   url.searchParams.set("apikey", apiKey);
   return url.toString();

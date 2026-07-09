@@ -5,7 +5,7 @@ Vocabulario acordado para código, documentación y UI. Usa estos términos de f
 ## Language
 
 **Alerta**:
-Regla de monitoreo sobre un ticker que evalúa una condición técnica (EMA o RSI) y puede disparar un correo.
+Regla de monitoreo sobre un ticker que evalúa una condición técnica (cruce EMA, precio vs media, o RSI) y puede disparar un correo.
 _Avoid_: regla, trigger genérico, notificación
 
 **Preset**:
@@ -13,7 +13,7 @@ Configuración predefinida de alerta (cruce alcista 9/21, Golden Cross, RSI sobr
 _Avoid_: plantilla, template
 
 **Alerta personalizada (custom)**:
-Alerta donde el usuario define parámetros EMA **o** RSI (no combinados en v1).
+Alerta donde el usuario define parámetros de cruce EMA, **precio vs media (SMA/EMA)**, o RSI (no combinados en v1).
 _Avoid_: alerta avanzada, regla custom
 
 **Ticker**:
@@ -21,12 +21,20 @@ Símbolo bursátil de EE. UU. (ej. AAPL, MSFT). Máximo 15 únicos por usuario.
 _Avoid_: símbolo, stock, acción (en contexto técnico)
 
 **Vela (candle)**:
-Barra OHLCV de 15 minutos usada para calcular indicadores y evaluar condiciones.
+Barra OHLCV (15 min o diaria según `timeframe` de la alerta) usada para calcular indicadores y evaluar condiciones.
 _Avoid_: barra, candlestick (en UI español)
 
 **Candle-lock**:
 Mecanismo que limita a un email por vela de 15 min por alerta, evitando spam mientras la condición persiste.
 _Avoid_: throttle, debounce
+
+**Cruce precio vs media (price_ma)**:
+Evento en el que el cierre cruza por encima o por debajo de una SMA o EMA de período N entre vela anterior y actual.
+_Avoid_: cruce de medias (cuando se habla solo de precio vs una línea)
+
+**Timeframe**:
+Intervalo de velas de la alerta: `15min` (presets y custom) o `1day` (solo custom). Determina qué significa el «período» de una media (ej. 12 velas diarias = 12 días).
+_Avoid_: interval, granularity (en UI español)
 
 **Cruce EMA**:
 Evento en el que una media móvil exponencial cruza por encima o por debajo de otra en la vela más reciente.

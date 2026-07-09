@@ -62,6 +62,7 @@ finanzas-Alarma/
 ### Tipos soportados
 
 - Cruces de **EMA** (alcista / bajista).
+- **Precio vs media** (SMA o EMA): cierre cruza la línea de la media.
 - Umbrales de **RSI** (sobreventa / sobrecompra).
 
 ### Presets (velas de 15 min)
@@ -74,9 +75,11 @@ finanzas-Alarma/
 | `death_cross` | Death Cross | EMA(50) cruza **abajo** EMA(200) |
 | `rsi_oversold` | RSI sobreventa | RSI(period) **< threshold** (defaults: 14 / 30; editables en panel) |
 | `rsi_overbought` | RSI sobrecompra | RSI(period) **> threshold** (defaults: 14 / 70; editables en panel) |
-| `custom` | Personalizado | Regla EMA **o** RSI (no combinadas) |
+| `custom` | Personalizado | Regla EMA, **precio vs media**, o RSI (no combinadas) |
 
-En modo **custom**, el usuario configura o bien períodos EMA + dirección de cruce, o bien período RSI + umbral + operador (`<` / `>`).
+En modo **custom**, el usuario elige timeframe **`15min`** o **`1day`**. Configura: períodos EMA + dirección de cruce; **precio vs SMA/EMA** + período + dirección; o período RSI + umbral + operador (`<` / `>`).
+
+Ejemplo alerta temprana (gráfico diario 1Y): `timeframe=1day`, `params={ "type": "price_ma", "ma_type": "sma", "period": 12, "direction": "up" }`.
 
 Los presets RSI guardan `params` como `{ "period": N, "threshold": N }` (sin `operator`; lo define el preset). Alertas existentes con `params: {}` usan los defaults 14 / 30 / 70.
 
@@ -92,7 +95,8 @@ Los presets RSI guardan `params` como `{ "period": N, "threshold": N }` (sin `op
 | `user_id` | `UUID` FK | Propietario |
 | `ticker` | `TEXT` | Símbolo (ej. `AAPL`) |
 | `preset_or_custom` | `TEXT` | Preset o `custom` |
-| `params` | `JSONB` | Parámetros (EMA fast/slow, RSI period/threshold, etc.) |
+| `timeframe` | `TEXT` | `15min` (default) o `1day` |
+| `params` | `JSONB` | Parámetros (EMA, price_ma, RSI, etc.) |
 | `active` | `BOOLEAN` | Alerta habilitada |
 | `emails_sent_today` | `INTEGER` | Contador diario (default 0) |
 | `email_count_date` | **`DATE`** | Fecha del contador diario (ver sección de cuotas) |
@@ -121,7 +125,7 @@ Los presets RSI guardan `params` como `{ "period": N, "threshold": N }` (sin `op
 | Intervalo de polling | Cada **5 minutos** |
 | Horario de mercado | Lun–vie **9:30–16:00 EST** |
 | Feriados NYSE (v1) | **No considerados** — solo día de semana + franja horaria |
-| Timeframe de análisis | Velas de **15 minutos** |
+| Timeframe de análisis | Presets: **15 min**. Custom: **15 min** o **diario** |
 
 El worker se ejecuta en **Vercel Cron** cada 5 minutos (`vercel.json`). `MarketScheduler` omite el ciclo fuera de horario de mercado.
 
@@ -142,10 +146,11 @@ El worker **no** itera ticker por ticker contra la API. En cada ciclo:
 
 1. Lee todas las alertas activas (vía `service_role`).
 2. **Deduplica** símbolos únicos (máx. 15).
-3. Llama **una sola vez** al endpoint de series temporales de Twelve Data con símbolos separados por comas:
+3. Agrupa alertas por `timeframe` y llama **una petición batch por intervalo** (máx. 2: `15min` y `1day`):
 
    ```
-   symbols=AAPL,MSFT,NVDA,...&interval=15min
+   symbols=AAPL,MSFT,...&interval=15min
+   symbols=AAPL,...&interval=1day
    ```
 
 4. Parsea la respuesta multi-símbolo y calcula indicadores localmente con `pandas` / `pandas-ta`.
@@ -154,8 +159,8 @@ El worker **no** itera ticker por ticker contra la API. En cada ciclo:
 
 | Métrica | Valor |
 |---------|-------|
-| Peticiones por ciclo | **1** |
-| Peticiones por día | **78** |
+| Peticiones por ciclo | **1–2** (por intervalo activo) |
+| Peticiones por día | **~78–156** |
 | Cuota free Twelve Data | 800/día → **margen amplio** |
 | Rate limit 8 req/min | **1 req/ciclo** → sin riesgo |
 

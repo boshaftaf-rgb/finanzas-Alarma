@@ -12,9 +12,12 @@ import {
 import { alertBadge, alertDisplayLabel, alertKind } from "./alert-labels.js";
 import {
   buildEmaParams,
+  buildPriceMaParams,
   buildRsiParams,
   buildRsiPresetParams,
+  normalizeTimeframe,
   validateEmaParams,
+  validatePriceMaParams,
   validateRsiParams,
   validateRsiPresetParams,
 } from "./custom-params.js";
@@ -48,6 +51,12 @@ const els = {
   emaFast: document.getElementById("ema-fast"),
   emaSlow: document.getElementById("ema-slow"),
   emaDirection: document.getElementById("ema-direction"),
+  timeframeSelect: document.getElementById("timeframe-select"),
+  timeframeHint: document.getElementById("timeframe-hint"),
+  customPriceMaFields: document.getElementById("custom-price-ma-fields"),
+  priceMaType: document.getElementById("price-ma-type"),
+  priceMaPeriod: document.getElementById("price-ma-period"),
+  priceMaDirection: document.getElementById("price-ma-direction"),
   rsiPeriod: document.getElementById("rsi-period"),
   rsiThreshold: document.getElementById("rsi-threshold"),
   rsiOperator: document.getElementById("rsi-operator"),
@@ -415,29 +424,64 @@ function setFormMode(mode) {
   els.tabCustom.setAttribute("aria-selected", String(!isPreset));
   els.presetSection.classList.toggle("hidden", !isPreset);
   els.customSection.classList.toggle("hidden", isPreset);
+  updateTimeframeHint();
   els.formError.classList.add("hidden");
 }
 
 function setCustomType(type) {
   customType = type;
   const isEma = type === "ema";
+  const isPriceMa = type === "price_ma";
+  const isRsi = type === "rsi";
   els.customEmaFields.classList.toggle("hidden", !isEma);
-  els.customRsiFields.classList.toggle("hidden", isEma);
+  els.customPriceMaFields.classList.toggle("hidden", !isPriceMa);
+  els.customRsiFields.classList.toggle("hidden", !isRsi);
   for (const btn of document.querySelectorAll(".custom-type-btn")) {
     const active = btn.dataset.customType === type;
     btn.classList.toggle("is-active", active);
     btn.setAttribute("aria-pressed", String(active));
   }
+  if (isPriceMa && els.timeframeSelect.value === "15min") {
+    els.timeframeSelect.value = "1day";
+    updateTimeframeHint();
+  }
   els.formError.classList.add("hidden");
+}
+
+function updateTimeframeHint() {
+  const tf = els.timeframeSelect.value;
+  if (formMode === "preset") {
+    els.timeframeSelect.value = "15min";
+    els.timeframeSelect.disabled = true;
+    els.timeframeHint.textContent = "Los presets se evalúan en velas de 15 minutos.";
+    return;
+  }
+  els.timeframeSelect.disabled = false;
+  if (customType === "price_ma") {
+    els.timeframeHint.textContent =
+      tf === "1day"
+        ? "Diario: período 12 = media de 12 días (como gráfico 1Y en TradingView)."
+        : "En 15m, el período cuenta velas de 15 min, no días calendario.";
+  } else {
+    els.timeframeHint.textContent =
+      tf === "1day"
+        ? "Alerta evaluada con velas diarias."
+        : "Alerta evaluada con velas de 15 minutos.";
+  }
 }
 
 function resetCustomFields() {
   els.emaFast.value = "9";
   els.emaSlow.value = "21";
   els.emaDirection.value = "up";
+  els.priceMaType.value = "sma";
+  els.priceMaPeriod.value = "12";
+  els.priceMaDirection.value = "up";
   els.rsiPeriod.value = "14";
   els.rsiThreshold.value = "30";
   els.rsiOperator.value = "<";
+  els.timeframeSelect.value = "15min";
+  els.timeframeSelect.disabled = false;
   setCustomType("ema");
 }
 
@@ -447,6 +491,13 @@ function fillCustomFields(params) {
     els.rsiPeriod.value = String(params.period ?? 14);
     els.rsiThreshold.value = String(params.threshold ?? 30);
     els.rsiOperator.value = params.operator === ">" ? ">" : "<";
+    return;
+  }
+  if (params?.type === "price_ma") {
+    setCustomType("price_ma");
+    els.priceMaType.value = params.ma_type === "ema" ? "ema" : "sma";
+    els.priceMaPeriod.value = String(params.period ?? 12);
+    els.priceMaDirection.value = params.direction === "down" ? "down" : "up";
     return;
   }
   setCustomType("ema");
@@ -496,20 +547,23 @@ function openEditModal(alert) {
 
   if (alert.preset_or_custom === "custom") {
     setFormMode("custom");
+    els.timeframeSelect.value = normalizeTimeframe(alert.timeframe);
     fillCustomFields(alert.params);
   } else {
     setFormMode("preset");
+    els.timeframeSelect.value = "15min";
     selectPreset(alert.preset_or_custom);
     if (isRsiPreset(alert.preset_or_custom)) {
       fillPresetRsiFields(alert.preset_or_custom, alert.params);
     }
   }
 
+  updateTimeframeHint();
   els.modalBackdrop.classList.remove("hidden");
   if (formMode === "preset") {
     els.presetGrid.querySelector(".is-selected")?.focus();
   } else {
-    (customType === "ema" ? els.emaFast : els.rsiPeriod).focus();
+    (customType === "rsi" ? els.rsiPeriod : customType === "price_ma" ? els.priceMaPeriod : els.emaFast).focus();
   }
 }
 
@@ -524,6 +578,11 @@ function setSubmitLoading(loading) {
   els.submitBtn.classList.toggle("is-loading", loading);
   els.submitBtn.setAttribute("aria-busy", String(loading));
   document.getElementById("btn-cancel").disabled = loading;
+}
+
+function resolveTimeframe() {
+  if (formMode === "preset") return "15min";
+  return normalizeTimeframe(els.timeframeSelect.value);
 }
 
 function validateFormPayload() {
@@ -555,11 +614,13 @@ function validateFormPayload() {
       return {
         presetOrCustom: selectedPreset,
         params: buildRsiPresetParams(els.presetRsiPeriod.value, els.presetRsiThreshold.value),
+        timeframe: "15min",
       };
     }
     return {
       presetOrCustom: selectedPreset,
       params: {},
+      timeframe: "15min",
     };
   }
 
@@ -573,6 +634,29 @@ function validateFormPayload() {
     return {
       presetOrCustom: "custom",
       params: buildEmaParams(els.emaFast.value, els.emaSlow.value, els.emaDirection.value),
+      timeframe: resolveTimeframe(),
+    };
+  }
+
+  if (customType === "price_ma") {
+    const error = validatePriceMaParams(
+      els.priceMaPeriod.value,
+      els.priceMaType.value,
+      els.priceMaDirection.value,
+    );
+    if (error) {
+      els.formError.textContent = error;
+      els.formError.classList.remove("hidden");
+      return null;
+    }
+    return {
+      presetOrCustom: "custom",
+      params: buildPriceMaParams(
+        els.priceMaPeriod.value,
+        els.priceMaType.value,
+        els.priceMaDirection.value,
+      ),
+      timeframe: resolveTimeframe(),
     };
   }
 
@@ -585,6 +669,7 @@ function validateFormPayload() {
   return {
     presetOrCustom: "custom",
     params: buildRsiParams(els.rsiPeriod.value, els.rsiThreshold.value, els.rsiOperator.value),
+    timeframe: resolveTimeframe(),
   };
 }
 
@@ -647,6 +732,7 @@ function bindEvents() {
   }
   els.presetRsiPeriod.addEventListener("input", updatePresetRsiHint);
   els.presetRsiThreshold.addEventListener("input", updatePresetRsiHint);
+  els.timeframeSelect.addEventListener("change", updateTimeframeHint);
   els.modalBackdrop.addEventListener("click", (e) => {
     if (e.target === els.modalBackdrop) closeModal();
   });

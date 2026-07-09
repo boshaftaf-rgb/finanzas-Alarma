@@ -99,4 +99,16 @@ describe("alert-email-template", () => {
     expect(email.subject).toContain("RSI(10) < 25");
     expect(email.text).toContain("RSI(10) < 25");
   });
+
+  it("incluye timeframe diario en el cuerpo", () => {
+    const email = buildAlertEmail({
+      ticker: "AAPL",
+      presetOrCustom: "custom",
+      candleTimestamp: "2026-03-04T17:00:00.000Z",
+      alertParams: { type: "price_ma", ma_type: "sma", period: 12, direction: "up" },
+      timeframe: "1day",
+    });
+    expect(email.text).toContain("Diario");
+    expect(email.text).toContain("Precio cruza SMA(12) al alza · Diario");
+  });
 });

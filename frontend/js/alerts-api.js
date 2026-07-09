@@ -20,7 +20,7 @@ export async function fetchAlerts() {
   return data ?? [];
 }
 
-export async function createAlert({ ticker, presetOrCustom, params = {} }) {
+export async function createAlert({ ticker, presetOrCustom, params = {}, timeframe = "15min" }) {
   const { data, error } = await client
     .from("alerts")
     .insert({
@@ -28,6 +28,7 @@ export async function createAlert({ ticker, presetOrCustom, params = {} }) {
       ticker,
       preset_or_custom: presetOrCustom,
       params,
+      timeframe,
       active: true,
     })
     .select()
@@ -37,13 +38,18 @@ export async function createAlert({ ticker, presetOrCustom, params = {} }) {
   return data;
 }
 
-export async function updateAlert(id, { presetOrCustom, params = {} }) {
+export async function updateAlert(id, { presetOrCustom, params = {}, timeframe }) {
+  const payload = {
+    preset_or_custom: presetOrCustom,
+    params,
+  };
+  if (timeframe !== undefined) {
+    payload.timeframe = timeframe;
+  }
+
   const { data, error } = await client
     .from("alerts")
-    .update({
-      preset_or_custom: presetOrCustom,
-      params,
-    })
+    .update(payload)
     .eq("id", id)
     .eq("user_id", userId)
     .select()

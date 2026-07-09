@@ -1,4 +1,4 @@
-import { computeEma, computeRsi, enrichBars } from "./indicator-engine.js";
+import { computeEma, computeRsi, computeSma, enrichBars } from "./indicator-engine.js";
 import type { AlertRow, EnrichedBar, EvaluationResult, OhlcvBar } from "./types.js";
 
 function emaCross(
@@ -10,6 +10,17 @@ function emaCross(
 ): boolean {
   if (direction === "up") return prevFast <= prevSlow && fast > slow;
   return prevFast >= prevSlow && fast < slow;
+}
+
+function priceMaCross(
+  prevClose: number,
+  prevMa: number,
+  close: number,
+  ma: number,
+  direction: "up" | "down",
+): boolean {
+  if (direction === "up") return prevClose <= prevMa && close > ma;
+  return prevClose >= prevMa && close < ma;
 }
 
 function rsiThreshold(value: number, threshold: number, operator: "<" | ">"): boolean {
@@ -75,6 +86,22 @@ function evaluateCustom(
     );
   }
 
+  if (type === "price_ma") {
+    const period = Number(params.period);
+    const direction = params.direction as "up" | "down";
+    const closes = enriched.map((b) => b.close);
+    const maSeries =
+      params.ma_type === "ema" ? computeEma(closes, period) : computeSma(closes, period);
+    const i = closes.length - 1;
+    const prevI = i - 1;
+    const ma = maSeries[i];
+    const prevMa = maSeries[prevI];
+    if (!Number.isFinite(ma) || !Number.isFinite(prevMa)) {
+      return false;
+    }
+    return priceMaCross(closes[prevI], prevMa, closes[i], ma, direction);
+  }
+
   if (type === "rsi") {
     const period = Number(params.period ?? 14);
     const rsiVal = resolveRsiValue(current, enriched, period);
@@ -85,7 +112,7 @@ function evaluateCustom(
     );
   }
 
-  throw new Error("Alerta custom sin tipo válido (ema o rsi).");
+  throw new Error("Alerta custom sin tipo válido (ema, price_ma o rsi).");
 }
 
 function evaluatePreset(

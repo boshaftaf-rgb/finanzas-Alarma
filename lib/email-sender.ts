@@ -43,6 +43,7 @@ export async function sendAlertEmail(
     presetOrCustom: string;
     candleTimestamp: string;
     alertParams?: Record<string, unknown>;
+    timeframe?: string | null;
     transport?: Transporter;
   },
 ): Promise<void> {
@@ -51,6 +52,7 @@ export async function sendAlertEmail(
     presetOrCustom: params.presetOrCustom,
     candleTimestamp: params.candleTimestamp,
     alertParams: params.alertParams,
+    timeframe: params.timeframe,
   });
 
   const transport = params.transport ?? createTransport(params.config);

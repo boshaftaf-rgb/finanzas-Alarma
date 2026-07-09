@@ -46,7 +46,14 @@ export interface CustomRsiParams {
   operator: "<" | ">";
 }
 
-export type CustomAlertParams = CustomEmaParams | CustomRsiParams;
+export interface CustomPriceMaParams {
+  type: "price_ma";
+  ma_type: "sma" | "ema";
+  period: number;
+  direction: "up" | "down";
+}
+
+export type CustomAlertParams = CustomEmaParams | CustomRsiParams | CustomPriceMaParams;
 
 export function formatCustomLabel(params: Record<string, unknown>): string {
   const type = params.type;
@@ -55,6 +62,12 @@ export function formatCustomLabel(params: Record<string, unknown>): string {
     const slow = Number(params.ema_slow);
     const direction = params.direction === "down" ? "a la baja" : "al alza";
     return `Cruce personalizado EMA ${fast}/${slow} ${direction}`;
+  }
+  if (type === "price_ma") {
+    const maType = params.ma_type === "ema" ? "EMA" : "SMA";
+    const period = Number(params.period);
+    const direction = params.direction === "down" ? "a la baja" : "al alza";
+    return `Precio cruza ${maType}(${period}) ${direction}`;
   }
   if (type === "rsi") {
     const period = Number(params.period ?? 14);
@@ -68,14 +81,21 @@ export function formatCustomLabel(params: Record<string, unknown>): string {
 export function formatAlertLabel(
   presetOrCustom: string,
   params: Record<string, unknown> = {},
+  timeframe?: string | null,
 ): string {
+  let label: string;
   if (presetOrCustom === "custom") {
-    return formatCustomLabel(params);
+    label = formatCustomLabel(params);
+  } else if (isRsiPreset(presetOrCustom)) {
+    label = formatRsiPresetLabel(presetOrCustom, params);
+  } else {
+    label = presetLabel(presetOrCustom);
   }
-  if (isRsiPreset(presetOrCustom)) {
-    return formatRsiPresetLabel(presetOrCustom, params);
+
+  if (timeframe === "1day") {
+    return `${label} · Diario`;
   }
-  return presetLabel(presetOrCustom);
+  return label;
 }
 
 export function alertKindFromRecord(
@@ -83,7 +103,9 @@ export function alertKindFromRecord(
   params: Record<string, unknown> = {},
 ): "ema" | "rsi" | "other" {
   if (presetOrCustom === "custom") {
-    return params.type === "rsi" ? "rsi" : "ema";
+    if (params.type === "rsi") return "rsi";
+    if (params.type === "price_ma") return "ema";
+    return "ema";
   }
   const presetKinds: Record<string, "ema" | "rsi"> = {
     ema_cross_bull: "ema",

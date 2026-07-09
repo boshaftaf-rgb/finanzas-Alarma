@@ -7,12 +7,23 @@ export interface OhlcvBar {
   volume: number;
 }
 
+export type AlertTimeframe = "15min" | "1day";
+
+export function normalizeTimeframe(timeframe?: string | null): AlertTimeframe {
+  return timeframe === "1day" ? "1day" : "15min";
+}
+
+export function timeframeLabel(timeframe?: string | null): string {
+  return normalizeTimeframe(timeframe) === "1day" ? "Diario" : "15 minutos";
+}
+
 export interface AlertRow {
   id: string;
   user_id: string;
   ticker: string;
   preset_or_custom: string;
   params: Record<string, unknown>;
+  timeframe?: AlertTimeframe | string | null;
   active: boolean;
   emails_sent_today: number;
   email_count_date: string | null;

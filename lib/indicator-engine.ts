@@ -25,6 +25,23 @@ export function computeEma(closes: number[], length: number): number[] {
   return result;
 }
 
+export function computeSma(closes: number[], length: number): number[] {
+  const result: number[] = new Array(closes.length).fill(NaN);
+  if (closes.length < length || length < 1) return result;
+
+  let sum = 0;
+  for (let i = 0; i < length; i++) {
+    sum += closes[i];
+  }
+  result[length - 1] = sum / length;
+
+  for (let i = length; i < closes.length; i++) {
+    sum += closes[i] - closes[i - length];
+    result[i] = sum / length;
+  }
+  return result;
+}
+
 export function computeRsi(closes: number[], length = 14): number[] {
   const result: number[] = new Array(closes.length).fill(NaN);
   if (closes.length <= length) return result;

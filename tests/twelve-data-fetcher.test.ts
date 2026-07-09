@@ -75,4 +75,9 @@ describe("twelve-data-fetcher", () => {
     expect(url).toContain("outputsize=300");
     expect(url).toContain("symbol=AAPL%2CMSFT");
   });
+
+  it("construye URL batch con intervalo diario", () => {
+    const url = buildBatchUrl(["AAPL"], "key-123", 300, "1day");
+    expect(url).toContain("interval=1day");
+  });
 });

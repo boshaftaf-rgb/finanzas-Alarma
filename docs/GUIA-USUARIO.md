@@ -9,7 +9,7 @@ Ficha operativa
 | Parámetro | Valor |
 |-----------|-------|
 | Universo | Acciones EE. UU. (ej. AAPL, BRK.B) |
-| Timeframe | 15 min (fijo) |
+| Timeframe | 15 min (presets) o **diario** (alertas personalizadas) |
 | Precio usado | Close de cada vela |
 | Evaluación | Cada 5 min, lun–vie 9:30–16:00 ET (America/New_York) |
 | Pre/post market | No |
@@ -107,8 +107,29 @@ Presets
 Golden/Death Cross en 15m ≠ mismo evento en gráfico diario (más ruido en intradía).
 
 Custom EMA: ema_fast y ema_slow (2–200, rápida < lenta), direction up/down.
+Custom **Precio vs media**: el cierre cruza SMA o EMA de período N (2–200), direction up/down. Recomendado **SMA** si comparas con TradingView (`ma`).
 Custom RSI: period (2–50), threshold (0–100), operator < o >.
 No se combina EMA + RSI en una sola alerta (v1).
+
+---
+
+Alerta temprana: precio vs media (ej. SMA 12 días)
+
+Para una vista anual en TradingView (gráfico **1Y** con velas **diarias**), una media de **12 días** significa SMA(12) sobre los últimos 12 cierres diarios.
+
+Configuración equivalente en Stock Alerts:
+
+| Campo | Valor |
+|-------|-------|
+| Tipo | Personalizada → **Precio vs media** |
+| Timeframe | **Diario (1D)** |
+| Tipo de media | **SMA** |
+| Período | **12** |
+| Dirección | Precio cruza arriba (o abajo) de la media |
+
+Se dispara cuando el **cierre** de la vela diaria cruza la línea de la media (vela actual vs anterior). Es una señal **más temprana** que un cruce EMA 9/21 en 15m, que actúa como confirmación intradía.
+
+**Importante:** en timeframe 15m, «período 12» son 12 velas de 15 min (~3 h), **no** 12 días. Para alinear con un gráfico diario, usa timeframe **Diario**.
 
 ---
 
@@ -116,17 +137,17 @@ Disparo del correo
 
 Un correo solo se envía si se cumplen las tres condiciones siguientes:
 
-1. La regla técnica se cumple (cruce EMA o umbral RSI).
-2. Candle-lock: no se repite correo por la misma vela de 15m (máx. 1 por vela por alerta).
+1. La regla técnica se cumple (cruce EMA, precio vs media, o umbral RSI).
+2. Candle-lock: no se repite correo por la misma vela (máx. 1 por vela por alerta).
 3. Límite diario: menos de 10 correos esa alerta en el día (reset a medianoche).
 
-Correo incluye: ticker, tipo de alerta, timeframe 15m, timestamp de la vela (ET).
+Correo incluye: ticker, tipo de alerta, timeframe (15m o diario), timestamp de la vela (ET).
 
 ---
 
 Panel y límites
 
-Crear, editar, activar/desactivar y eliminar alertas. Etiqueta Tendencia = EMA; Momentum = RSI (solo clasificación visual).
+Crear, editar, activar/desactivar y eliminar alertas. Etiquetas: Tendencia = cruce EMA; Precio = precio vs media; Momentum = RSI.
 
 | Límite | Valor |
 |--------|-------|
@@ -134,7 +155,7 @@ Crear, editar, activar/desactivar y eliminar alertas. Etiqueta Tendencia = EMA; 
 | Alertas por ticker | 5 |
 | Correos por alerta/día | 10 |
 | Correos por vela | 1 |
-| Timeframes alternativos | No (v1) |
+| Timeframes | 15 min (presets) y diario (personalizadas) |
 | SMS / push / webhook | No (v1) |
 | Histórico de disparos | No (v1) |
 | Auth en panel | Planificado |
@@ -170,8 +191,8 @@ No. Notificación informativa.
 ¿Qué tickers acepta?
 Símbolos US: letras, números, punto o guion (máx. 10 caracteres). Ej. AAPL, BRK.B.
 
-¿Puedo usar 1h o daily?
-No en v1. Solo 15m.
+¿Puedo usar gráfico diario o solo 15m?
+Los presets usan 15m. Las alertas personalizadas pueden elegir **15 minutos** o **Diario (1D)**. Para una MA de N días (ej. 12), elige Diario.
 
 ¿Puedo combinar EMA y RSI en una alerta?
 No en v1.
