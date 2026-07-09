@@ -72,11 +72,13 @@ finanzas-Alarma/
 | `ema_cross_bear` | Cruce bajista rápido | EMA(9) cruza **abajo** EMA(21) |
 | `golden_cross` | Golden Cross | EMA(50) cruza **arriba** EMA(200) |
 | `death_cross` | Death Cross | EMA(50) cruza **abajo** EMA(200) |
-| `rsi_oversold` | RSI sobreventa | RSI(14) **< 30** |
-| `rsi_overbought` | RSI sobrecompra | RSI(14) **> 70** |
+| `rsi_oversold` | RSI sobreventa | RSI(period) **< threshold** (defaults: 14 / 30; editables en panel) |
+| `rsi_overbought` | RSI sobrecompra | RSI(period) **> threshold** (defaults: 14 / 70; editables en panel) |
 | `custom` | Personalizado | Regla EMA **o** RSI (no combinadas) |
 
 En modo **custom**, el usuario configura o bien períodos EMA + dirección de cruce, o bien período RSI + umbral + operador (`<` / `>`).
+
+Los presets RSI guardan `params` como `{ "period": N, "threshold": N }` (sin `operator`; lo define el preset). Alertas existentes con `params: {}` usan los defaults 14 / 30 / 70.
 
 ---
 

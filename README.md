@@ -4,6 +4,7 @@ Plataforma de alertas técnicas sobre acciones de EE. UU.: el worker evalúa EMA
 
 Documentación principal:
 
+- [Guía de usuario](docs/GUIA-USUARIO.md) — especificaciones y FAQ para perfil financiero
 - [PRD](docs/PRD.md) — requisitos y decisiones de producto
 - [ARCHITECTURE.md](docs/ARCHITECTURE.md) — arquitectura, esquema y flujos
 - [Deploy Vercel](docs/vercel-deploy.md) — panel + worker cron

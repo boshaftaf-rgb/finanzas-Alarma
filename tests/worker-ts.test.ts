@@ -56,4 +56,23 @@ describe("alert-evaluator", () => {
     );
     expect(result.conditionMet).toBe(true);
   });
+
+  it("detecta RSI sobreventa con params personalizados", () => {
+    let price = 200;
+    const closes = [price];
+    for (let i = 0; i < 60; i++) {
+      price *= 0.975;
+      closes.push(price);
+    }
+    const resultDefault = evaluateAlert(
+      { ticker: "TEST", preset_or_custom: "rsi_oversold", params: {} },
+      barsFromCloses(closes),
+    );
+    const resultCustom = evaluateAlert(
+      { ticker: "TEST", preset_or_custom: "rsi_oversold", params: { period: 10, threshold: 25 } },
+      barsFromCloses(closes),
+    );
+    expect(resultDefault.conditionMet).toBe(true);
+    expect(resultCustom.conditionMet).toBe(true);
+  });
 });

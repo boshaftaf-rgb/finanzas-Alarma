@@ -48,3 +48,22 @@ export function buildRsiParams(periodRaw, thresholdRaw, operator) {
     operator,
   };
 }
+
+export function validateRsiPresetParams(periodRaw, thresholdRaw) {
+  const period = Number(periodRaw);
+  const threshold = Number(thresholdRaw);
+  if (!Number.isInteger(period) || period < 2 || period > 50) {
+    return "El período RSI debe ser un número entre 2 y 50.";
+  }
+  if (!Number.isFinite(threshold) || threshold < 0 || threshold > 100) {
+    return "El umbral debe estar entre 0 y 100.";
+  }
+  return null;
+}
+
+export function buildRsiPresetParams(periodRaw, thresholdRaw) {
+  return {
+    period: Number(periodRaw),
+    threshold: Number(thresholdRaw),
+  };
+}

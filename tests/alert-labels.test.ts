@@ -32,6 +32,10 @@ describe("alert-labels", () => {
     expect(
       formatAlertLabel("custom", { type: "rsi", period: 10, threshold: 25, operator: "<" }),
     ).toBe("RSI(10) < 25");
+    expect(formatAlertLabel("rsi_oversold", { period: 10, threshold: 25 })).toBe(
+      "Sobreventa — RSI(10) < 25",
+    );
+    expect(formatAlertLabel("rsi_overbought")).toBe("Sobrecompra — RSI(14) > 70");
   });
 });
 

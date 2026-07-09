@@ -35,6 +35,9 @@ export const PRESETS = [
     description: "El precio cayó con fuerza en velas recientes",
     kind: "rsi",
     badge: "Momentum",
+    defaultPeriod: 14,
+    defaultThreshold: 30,
+    operator: "<",
   },
   {
     id: "rsi_overbought",
@@ -42,8 +45,25 @@ export const PRESETS = [
     description: "El precio subió con fuerza en velas recientes",
     kind: "rsi",
     badge: "Momentum",
+    defaultPeriod: 14,
+    defaultThreshold: 70,
+    operator: ">",
   },
 ];
+
+export function isRsiPreset(id) {
+  return id === "rsi_oversold" || id === "rsi_overbought";
+}
+
+export function rsiPresetDefaults(id) {
+  const preset = PRESETS.find((p) => p.id === id);
+  if (!preset || !isRsiPreset(id)) return null;
+  return {
+    period: preset.defaultPeriod,
+    threshold: preset.defaultThreshold,
+    operator: preset.operator,
+  };
+}
 
 export function presetLabel(id) {
   return PRESETS.find((p) => p.id === id)?.name ?? id;

@@ -125,9 +125,11 @@ El usuario quiere una plataforma donde pueda registrarse de forma controlada, el
 | ema_cross_bear | EMA(9) cruza abajo EMA(21) |
 | golden_cross | EMA(50) cruza arriba EMA(200) |
 | death_cross | EMA(50) cruza abajo EMA(200) |
-| rsi_oversold | RSI(14) < 30 |
-| rsi_overbought | RSI(14) > 70 |
+| rsi_oversold | RSI(period) < threshold (defaults 14 / 30; editables) |
+| rsi_overbought | RSI(period) > threshold (defaults 14 / 70; editables) |
 | custom | Sub-form EMA o RSI, no combinados |
+
+Presets RSI persisten `params`: `{ period, threshold }`. Operador fijo: `<` (sobreventa) o `>` (sobrecompra).
 
 ### Regla de disparo (AlertEvaluator)
 

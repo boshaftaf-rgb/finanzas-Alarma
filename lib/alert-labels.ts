@@ -7,6 +7,27 @@ const PRESET_LABELS: Record<string, string> = {
   rsi_overbought: "Sobrecompra",
 };
 
+const RSI_PRESET_DEFAULTS: Record<string, { period: number; threshold: number; operator: "<" | ">" }> = {
+  rsi_oversold: { period: 14, threshold: 30, operator: "<" },
+  rsi_overbought: { period: 14, threshold: 70, operator: ">" },
+};
+
+function isRsiPreset(presetOrCustom: string): boolean {
+  return presetOrCustom === "rsi_oversold" || presetOrCustom === "rsi_overbought";
+}
+
+export function formatRsiPresetLabel(
+  presetOrCustom: string,
+  params: Record<string, unknown> = {},
+): string {
+  const defaults = RSI_PRESET_DEFAULTS[presetOrCustom];
+  if (!defaults) return presetLabel(presetOrCustom);
+  const period = Number(params.period ?? defaults.period);
+  const threshold = Number(params.threshold ?? defaults.threshold);
+  const name = presetLabel(presetOrCustom);
+  return `${name} — RSI(${period}) ${defaults.operator} ${threshold}`;
+}
+
 export function presetLabel(presetOrCustom: string): string {
   return PRESET_LABELS[presetOrCustom] ?? presetOrCustom;
 }
@@ -50,6 +71,9 @@ export function formatAlertLabel(
 ): string {
   if (presetOrCustom === "custom") {
     return formatCustomLabel(params);
+  }
+  if (isRsiPreset(presetOrCustom)) {
+    return formatRsiPresetLabel(presetOrCustom, params);
   }
   return presetLabel(presetOrCustom);
 }

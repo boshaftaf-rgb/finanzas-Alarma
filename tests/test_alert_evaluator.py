@@ -77,6 +77,20 @@ def test_rsi_oversold_detected() -> None:
     assert result.condition_met
 
 
+def test_rsi_oversold_custom_params() -> None:
+    closes = [200.0]
+    for _ in range(60):
+        closes.append(closes[-1] * 0.975)
+    df = _df_from_closes(closes)
+    alert = {
+        "ticker": "TEST",
+        "preset_or_custom": "rsi_oversold",
+        "params": {"period": 10, "threshold": 25},
+    }
+    result = AlertEvaluator().evaluate(alert, df)
+    assert result.condition_met
+
+
 def test_rsi_overbought_detected() -> None:
     closes = [50.0]
     for _ in range(60):

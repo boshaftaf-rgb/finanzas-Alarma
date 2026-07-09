@@ -1,4 +1,4 @@
-import { PRESETS } from "./presets.js";
+import { PRESETS, isRsiPreset, rsiPresetDefaults } from "./presets.js";
 
 export function formatCustomLabel(params) {
   if (!params || typeof params !== "object") return "Alerta personalizada";
@@ -13,9 +13,22 @@ export function formatCustomLabel(params) {
   return "Alerta personalizada";
 }
 
+export function formatRsiPresetLabel(presetId, params) {
+  const preset = PRESETS.find((p) => p.id === presetId);
+  const defaults = rsiPresetDefaults(presetId);
+  if (!preset || !defaults) return presetId;
+  const period = params?.period ?? defaults.period;
+  const threshold = params?.threshold ?? defaults.threshold;
+  const op = defaults.operator;
+  return `${preset.name} — RSI(${period}) ${op} ${threshold}`;
+}
+
 export function alertDisplayLabel(alert) {
   if (alert.preset_or_custom === "custom") {
     return formatCustomLabel(alert.params);
+  }
+  if (isRsiPreset(alert.preset_or_custom)) {
+    return formatRsiPresetLabel(alert.preset_or_custom, alert.params);
   }
   const preset = PRESETS.find((p) => p.id === alert.preset_or_custom);
   return preset?.name ?? alert.preset_or_custom;

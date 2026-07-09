@@ -126,12 +126,39 @@ class AlertEvaluator:
                 direction="down",
             )
         if preset == "rsi_oversold":
-            return _rsi_threshold(current["rsi_14"], 30, "<")
+            return self._evaluate_rsi_preset("rsi_oversold", params, current, ohlcv)
         if preset == "rsi_overbought":
-            return _rsi_threshold(current["rsi_14"], 70, ">")
+            return self._evaluate_rsi_preset("rsi_overbought", params, current, ohlcv)
         if preset == "custom":
             return self._evaluate_custom(params, current, previous, ohlcv)
         raise ValueError(f"Preset no soportado: {preset}")
+
+    def _resolve_rsi_value(
+        self,
+        current: pd.Series,
+        ohlcv: pd.DataFrame,
+        period: int,
+    ) -> float:
+        rsi_col = f"rsi_{period}"
+        if rsi_col not in ohlcv.columns:
+            ohlcv = ohlcv.copy()
+            ohlcv[rsi_col] = self._engine.rsi(ohlcv, period)
+            current = ohlcv.iloc[-1]
+        return float(current[rsi_col])
+
+    def _evaluate_rsi_preset(
+        self,
+        preset: str,
+        params: dict[str, Any],
+        current: pd.Series,
+        ohlcv: pd.DataFrame,
+    ) -> bool:
+        period = int(params.get("period", 14))
+        default_threshold = 30 if preset == "rsi_oversold" else 70
+        threshold = float(params.get("threshold", default_threshold))
+        operator = "<" if preset == "rsi_oversold" else ">"
+        rsi_val = self._resolve_rsi_value(current, ohlcv, period)
+        return _rsi_threshold(rsi_val, threshold, operator)
 
     def _evaluate_custom(
         self,
@@ -162,13 +189,9 @@ class AlertEvaluator:
             )
         if alert_type == "rsi":
             period = int(params.get("period", 14))
-            rsi_col = f"rsi_{period}"
-            if rsi_col not in ohlcv.columns:
-                ohlcv = ohlcv.copy()
-                ohlcv[rsi_col] = self._engine.rsi(ohlcv, period)
-                current = ohlcv.iloc[-1]
+            rsi_val = self._resolve_rsi_value(current, ohlcv, period)
             return _rsi_threshold(
-                current[rsi_col],
+                rsi_val,
                 float(params["threshold"]),
                 params["operator"],
             )

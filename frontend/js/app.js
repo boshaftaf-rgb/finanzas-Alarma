@@ -13,12 +13,14 @@ import { alertBadge, alertDisplayLabel, alertKind } from "./alert-labels.js";
 import {
   buildEmaParams,
   buildRsiParams,
+  buildRsiPresetParams,
   validateEmaParams,
   validateRsiParams,
+  validateRsiPresetParams,
 } from "./custom-params.js";
 import { formatEvaluatedAt, formatPercentChange, formatPrice, formatVolume, mapDbError } from "./format.js";
 import { fetchTickerQuotes } from "./quotes-api.js";
-import { MAX_UNIQUE_TICKERS, PRESETS } from "./presets.js";
+import { MAX_UNIQUE_TICKERS, PRESETS, isRsiPreset, rsiPresetDefaults } from "./presets.js";
 import { normalizeTicker, validateTicker } from "./ticker-validation.js";
 
 const els = {
@@ -34,6 +36,10 @@ const els = {
   formError: document.getElementById("form-error"),
   presetGrid: document.getElementById("preset-grid"),
   presetSection: document.getElementById("preset-section"),
+  presetRsiFields: document.getElementById("preset-rsi-fields"),
+  presetRsiPeriod: document.getElementById("preset-rsi-period"),
+  presetRsiThreshold: document.getElementById("preset-rsi-threshold"),
+  presetRsiHint: document.getElementById("preset-rsi-hint"),
   customSection: document.getElementById("custom-section"),
   tabPreset: document.getElementById("tab-preset"),
   tabCustom: document.getElementById("tab-custom"),
@@ -364,6 +370,40 @@ function selectPreset(id) {
     card.classList.toggle("is-selected", isSelected);
     card.setAttribute("aria-selected", String(isSelected));
   }
+  if (isRsiPreset(id)) {
+    const defaults = rsiPresetDefaults(id);
+    els.presetRsiPeriod.value = String(defaults.period);
+    els.presetRsiThreshold.value = String(defaults.threshold);
+    els.presetRsiFields.classList.remove("hidden");
+    updatePresetRsiHint();
+  } else {
+    els.presetRsiFields.classList.add("hidden");
+  }
+}
+
+function updatePresetRsiHint() {
+  if (!selectedPreset || !isRsiPreset(selectedPreset)) return;
+  const defaults = rsiPresetDefaults(selectedPreset);
+  const period = Number(els.presetRsiPeriod.value) || defaults.period;
+  const threshold = Number(els.presetRsiThreshold.value);
+  const thresholdText = Number.isFinite(threshold) ? threshold : defaults.threshold;
+  const opLabel = defaults.operator === ">" ? "mayor que" : "menor que";
+  els.presetRsiHint.textContent = `RSI(${period}) ${opLabel} ${thresholdText}`;
+}
+
+function fillPresetRsiFields(presetId, params) {
+  const defaults = rsiPresetDefaults(presetId);
+  if (!defaults) return;
+  els.presetRsiPeriod.value = String(params?.period ?? defaults.period);
+  els.presetRsiThreshold.value = String(params?.threshold ?? defaults.threshold);
+  updatePresetRsiHint();
+}
+
+function resetPresetRsiFields() {
+  els.presetRsiPeriod.value = "14";
+  els.presetRsiThreshold.value = "30";
+  els.presetRsiFields.classList.add("hidden");
+  els.presetRsiHint.textContent = "RSI(14) menor que 30";
 }
 
 function setFormMode(mode) {
@@ -434,6 +474,7 @@ function resetForm() {
     card.classList.remove("is-selected");
     card.setAttribute("aria-selected", "false");
   }
+  resetPresetRsiFields();
   resetCustomFields();
   setFormMode("preset");
   setSubmitLoading(false);
@@ -459,6 +500,9 @@ function openEditModal(alert) {
   } else {
     setFormMode("preset");
     selectPreset(alert.preset_or_custom);
+    if (isRsiPreset(alert.preset_or_custom)) {
+      fillPresetRsiFields(alert.preset_or_custom, alert.params);
+    }
   }
 
   els.modalBackdrop.classList.remove("hidden");
@@ -500,6 +544,18 @@ function validateFormPayload() {
       els.formError.textContent = "Selecciona una alerta predefinida.";
       els.formError.classList.remove("hidden");
       return null;
+    }
+    if (isRsiPreset(selectedPreset)) {
+      const error = validateRsiPresetParams(els.presetRsiPeriod.value, els.presetRsiThreshold.value);
+      if (error) {
+        els.formError.textContent = error;
+        els.formError.classList.remove("hidden");
+        return null;
+      }
+      return {
+        presetOrCustom: selectedPreset,
+        params: buildRsiPresetParams(els.presetRsiPeriod.value, els.presetRsiThreshold.value),
+      };
     }
     return {
       presetOrCustom: selectedPreset,
@@ -589,6 +645,8 @@ function bindEvents() {
   for (const btn of document.querySelectorAll(".custom-type-btn")) {
     btn.addEventListener("click", () => setCustomType(btn.dataset.customType));
   }
+  els.presetRsiPeriod.addEventListener("input", updatePresetRsiHint);
+  els.presetRsiThreshold.addEventListener("input", updatePresetRsiHint);
   els.modalBackdrop.addEventListener("click", (e) => {
     if (e.target === els.modalBackdrop) closeModal();
   });

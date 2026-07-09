@@ -121,6 +121,19 @@
 
           <div id="preset-section" role="tabpanel" aria-labelledby="tab-preset">
             <div id="preset-grid" class="preset-grid" role="listbox" aria-label="Alertas predefinidas"></div>
+            <div id="preset-rsi-fields" class="custom-fields hidden">
+              <div class="form-row">
+                <label class="form-field" for="preset-rsi-period">
+                  <span class="form-field__label">Período</span>
+                  <input id="preset-rsi-period" class="input-text" type="number" min="2" max="50" value="14" inputmode="numeric" />
+                </label>
+                <label class="form-field" for="preset-rsi-threshold">
+                  <span class="form-field__label">Umbral</span>
+                  <input id="preset-rsi-threshold" class="input-text" type="number" min="0" max="100" value="30" inputmode="numeric" />
+                </label>
+              </div>
+              <p id="preset-rsi-hint" class="form-field__hint">RSI(14) menor que 30</p>
+            </div>
           </div>
 
           <div id="custom-section" class="hidden" role="tabpanel" aria-labelledby="tab-custom">

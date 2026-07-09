@@ -16,6 +16,33 @@ function rsiThreshold(value: number, threshold: number, operator: "<" | ">"): bo
   return operator === "<" ? value < threshold : value > threshold;
 }
 
+function resolveRsiValue(
+  current: EnrichedBar,
+  enriched: EnrichedBar[],
+  period: number,
+): number {
+  const rsiKey = `rsi_${period}` as keyof EnrichedBar;
+  let rsiVal = current[rsiKey] as number | undefined;
+  if (rsiVal === undefined) {
+    rsiVal = computeRsi(enriched.map((b) => b.close), period).at(-1)!;
+  }
+  return rsiVal;
+}
+
+function evaluateRsiPreset(
+  preset: "rsi_oversold" | "rsi_overbought",
+  params: Record<string, unknown>,
+  current: EnrichedBar,
+  enriched: EnrichedBar[],
+): boolean {
+  const period = Number(params.period ?? 14);
+  const defaultThreshold = preset === "rsi_oversold" ? 30 : 70;
+  const threshold = Number(params.threshold ?? defaultThreshold);
+  const operator = preset === "rsi_oversold" ? "<" : ">";
+  const rsiVal = resolveRsiValue(current, enriched, period);
+  return rsiThreshold(rsiVal, threshold, operator);
+}
+
 function evaluateCustom(
   params: Record<string, unknown>,
   enriched: EnrichedBar[],
@@ -50,11 +77,7 @@ function evaluateCustom(
 
   if (type === "rsi") {
     const period = Number(params.period ?? 14);
-    const rsiKey = `rsi_${period}` as keyof EnrichedBar;
-    let rsiVal = current[rsiKey] as number | undefined;
-    if (rsiVal === undefined) {
-      rsiVal = computeRsi(enriched.map((b) => b.close), period).at(-1)!;
-    }
+    const rsiVal = resolveRsiValue(current, enriched, period);
     return rsiThreshold(
       rsiVal,
       Number(params.threshold),
@@ -82,9 +105,9 @@ function evaluatePreset(
     case "death_cross":
       return emaCross(previous.ema_50!, previous.ema_200!, current.ema_50!, current.ema_200!, "down");
     case "rsi_oversold":
-      return rsiThreshold(current.rsi_14!, 30, "<");
+      return evaluateRsiPreset("rsi_oversold", params, current, enriched);
     case "rsi_overbought":
-      return rsiThreshold(current.rsi_14!, 70, ">");
+      return evaluateRsiPreset("rsi_overbought", params, current, enriched);
     case "custom":
       return evaluateCustom(params, enriched);
     default:
