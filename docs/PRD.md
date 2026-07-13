@@ -56,6 +56,8 @@ El usuario quiere una plataforma donde pueda registrarse de forma controlada, el
 36. As a **usuario registrado**, I want to **editar parámetros de una alerta existente**, so that **ajuste estrategia sin recrear desde cero**.
 37. As a **operador del sistema**, I want to **un archivo .env.example documentando todas las variables necesarias**, so that **configure frontend, worker y Supabase sin adivinar**.
 38. As a **operador del sistema**, I want to **que Vercel Cron invoque el worker cada 5 minutos**, so that **el polling funcione sin Docker ni Task Scheduler local**.
+39. As a **usuario registrado**, I want to **ver en el panel cada disparo (correo enviado) agrupado por ticker hasta que lo borre**, so that **tenga un historial visible sin depender solo del email**.
+40. As a **usuario registrado**, I want to **abrir los disparos desde un icono de campana y ver qué alertas quedaron marcadas como disparadas**, so that **entienda qué reglas ya avisaron**.
 
 ## Implementation Decisions
 
@@ -213,7 +215,6 @@ No hay tests previos en el repositorio (greenfield). Los patrones anteriores se 
 - Acciones fuera de EE. UU. o criptomonedas.
 - Timeframes distintos a **15 min** y **diario** (1h, 4h, etc.).
 - App móvil nativa.
-- Histórico de disparos / auditoría de emails enviados.
 - OAuth (Google, etc.).
 
 ## Further Notes

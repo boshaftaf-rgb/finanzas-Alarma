@@ -9,6 +9,13 @@ import {
   setAlertActive,
   updateAlert,
 } from "./alerts-api.js";
+import {
+  alertIdsWithFirings,
+  countFirings,
+  deleteFiring,
+  fetchFirings,
+  initFiringsApi,
+} from "./firings-api.js";
 import { alertBadge, alertDisplayLabel, alertKind } from "./alert-labels.js";
 import {
   buildEmaParams,
@@ -21,17 +28,34 @@ import {
   validateRsiParams,
   validateRsiPresetParams,
 } from "./custom-params.js";
-import { formatEvaluatedAt, formatPercentChange, formatPrice, formatVolume, mapDbError } from "./format.js";
+import {
+  formatEvaluatedAt,
+  formatFiringAt,
+  formatPercentChange,
+  formatPrice,
+  formatVolume,
+  mapDbError,
+} from "./format.js";
 import { fetchTickerQuotes } from "./quotes-api.js";
 import { MAX_UNIQUE_TICKERS, PRESETS, isRsiPreset, rsiPresetDefaults } from "./presets.js";
 import { normalizeTicker, validateTicker } from "./ticker-validation.js";
 
 const els = {
   banner: document.getElementById("banner"),
+  pageTitle: document.getElementById("page-title"),
+  pageSubtitle: document.getElementById("page-subtitle"),
   tickerCounter: document.getElementById("ticker-counter"),
+  alertsView: document.getElementById("alerts-view"),
+  firingsView: document.getElementById("firings-view"),
   skeleton: document.getElementById("skeleton"),
   emptyState: document.getElementById("empty-state"),
   alertList: document.getElementById("alert-list"),
+  firingsList: document.getElementById("firings-list"),
+  firingsEmpty: document.getElementById("firings-empty"),
+  firingsBadge: document.getElementById("firings-badge"),
+  btnFirings: document.getElementById("btn-firings"),
+  btnBackAlerts: document.getElementById("btn-back-alerts"),
+  btnNewAlert: document.getElementById("btn-new-alert"),
   modalBackdrop: document.getElementById("modal-backdrop"),
   formTitle: document.getElementById("alert-form-title"),
   tickerInput: document.getElementById("ticker-input"),
@@ -66,6 +90,9 @@ const els = {
 };
 
 let alerts = [];
+let firings = [];
+let firedAlertIds = new Set();
+let currentView = "alerts";
 let busyId = null;
 let selectedPreset = null;
 let quotesByTicker = {};
@@ -73,6 +100,11 @@ let quotesLoading = false;
 let editingAlertId = null;
 let formMode = "preset";
 let customType = "ema";
+
+const ALERTS_SUBTITLE =
+  "Monitoreo técnico en velas de 15 min. Precios con datos de mercado (pueden tener ligero retraso).";
+const FIRINGS_SUBTITLE =
+  "Correos enviados. Permanecen aquí agrupados por ticker hasta que los borres.";
 
 function showBanner(type, text) {
   els.banner.className = `alert-banner alert-banner--${type}`;
@@ -96,6 +128,48 @@ function updateTickerCounter() {
   const count = countUniqueActiveTickers(alerts);
   els.tickerCounter.textContent = `${count} / ${MAX_UNIQUE_TICKERS} tickers activos`;
   els.tickerCounter.classList.toggle("ticker-counter--warning", count >= MAX_UNIQUE_TICKERS);
+}
+
+function updateFiringsBadge() {
+  const count = countFirings(firings);
+  if (count > 0) {
+    els.firingsBadge.textContent = count > 99 ? "99+" : String(count);
+    els.firingsBadge.classList.remove("hidden");
+    els.btnFirings.setAttribute("aria-label", `Ver disparos (${count})`);
+  } else {
+    els.firingsBadge.classList.add("hidden");
+    els.btnFirings.setAttribute("aria-label", "Ver disparos");
+  }
+}
+
+function showAlertsView() {
+  currentView = "alerts";
+  els.alertsView.classList.remove("hidden");
+  els.firingsView.classList.add("hidden");
+  els.btnFirings.classList.remove("is-active");
+  els.pageTitle.textContent = "Mis alertas";
+  els.pageSubtitle.textContent = ALERTS_SUBTITLE;
+  els.tickerCounter.classList.remove("hidden");
+  els.btnNewAlert.classList.remove("hidden");
+  renderAlerts();
+}
+
+function showFiringsView() {
+  currentView = "firings";
+  els.alertsView.classList.add("hidden");
+  els.firingsView.classList.remove("hidden");
+  els.btnFirings.classList.add("is-active");
+  els.pageTitle.textContent = "Disparos";
+  els.pageSubtitle.textContent = FIRINGS_SUBTITLE;
+  els.tickerCounter.classList.add("hidden");
+  els.btnNewAlert.classList.add("hidden");
+  renderFirings();
+}
+
+function syncFiringsState(list) {
+  firings = list;
+  firedAlertIds = alertIdsWithFirings(firings);
+  updateFiringsBadge();
 }
 
 function renderSkeleton() {
@@ -184,7 +258,7 @@ async function loadQuotes(tickers = null) {
   }
 
   quotesLoading = true;
-  renderAlerts();
+  if (currentView === "alerts") renderAlerts();
 
   const raw = await fetchTickerQuotes(list);
   quotesByTicker = {};
@@ -196,7 +270,7 @@ async function loadQuotes(tickers = null) {
   if (raw.error && Object.keys(raw.quotes).length === 0) {
     showBanner("error", raw.error);
   }
-  renderAlerts();
+  if (currentView === "alerts") renderAlerts();
 }
 
 async function previewTickerQuote(rawTicker) {
@@ -231,6 +305,67 @@ function badgeHtml(variant, text) {
   return `<span class="badge badge--${variant}">${text}</span>`;
 }
 
+function statusBadgeHtml(alert) {
+  if (firedAlertIds.has(alert.id)) {
+    return badgeHtml("fired", "Disparada");
+  }
+  return badgeHtml(alert.active ? "active" : "inactive", alert.active ? "Activa" : "Inactiva");
+}
+
+function groupByTicker(items) {
+  const groups = new Map();
+  for (const item of items) {
+    const key = String(item.ticker || "").toUpperCase();
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(item);
+  }
+  return [...groups.entries()].sort(([a], [b]) => a.localeCompare(b));
+}
+
+function createAlertRow(alert) {
+  if (busyId === alert.id) {
+    const row = document.createElement("article");
+    row.className = "alert-row alert-row--busy alert-row--nested";
+    row.dataset.id = alert.id;
+    row.setAttribute("aria-busy", "true");
+    row.setAttribute("aria-label", `Actualizando alerta ${alert.ticker}`);
+    row.innerHTML = alertRowSkeletonHtml();
+    return row;
+  }
+
+  const label = alertDisplayLabel(alert);
+  const kind = alertKind(alert);
+  const badgeText = alertBadge(alert);
+  const kindBadge =
+    kind === "ema" ? badgeHtml("ema", badgeText) : kind === "rsi" ? badgeHtml("rsi", badgeText) : "";
+
+  const row = document.createElement("article");
+  row.className = `alert-row alert-row--nested ${alert.active ? "" : "alert-row--inactive"}`.trim();
+  row.dataset.id = alert.id;
+  row.innerHTML = `
+    <div>
+      <div class="alert-row__preset">
+        <span class="alert-row__preset-label alert-row__preset-label--truncate" title="${escapeAttr(label)}">${label}</span>
+        ${kindBadge}
+      </div>
+      <div class="alert-row__meta">Última evaluación: ${formatEvaluatedAt(alert.last_evaluated_at)}</div>
+    </div>
+    ${statusBadgeHtml(alert)}
+    <div class="alert-row__actions">
+      <button type="button" class="btn-ghost btn-ghost--accent btn-edit" aria-label="Editar alerta ${alert.ticker}">Editar</button>
+      <button type="button" class="toggle" role="switch" aria-checked="${alert.active}" aria-label="${alert.active ? "Desactivar" : "Activar"} alerta ${alert.ticker}">
+        <span class="toggle__thumb"></span>
+      </button>
+      <button type="button" class="btn-ghost btn-delete" aria-label="Eliminar alerta ${alert.ticker}">Eliminar</button>
+    </div>
+  `;
+
+  row.querySelector(".btn-edit").addEventListener("click", () => openEditModal(alert));
+  row.querySelector(".toggle").addEventListener("click", () => void handleToggle(alert, !alert.active));
+  row.querySelector(".btn-delete").addEventListener("click", () => void handleDelete(alert));
+  return row;
+}
+
 function renderAlerts() {
   updateTickerCounter();
   els.alertList.innerHTML = "";
@@ -244,58 +379,83 @@ function renderAlerts() {
   els.emptyState.classList.add("hidden");
   els.alertList.classList.remove("hidden");
 
-  for (const alert of alerts) {
-    if (busyId === alert.id) {
-      const row = document.createElement("article");
-      row.className = "alert-row alert-row--busy";
-      row.dataset.id = alert.id;
-      row.setAttribute("aria-busy", "true");
-      row.setAttribute("aria-label", `Actualizando alerta ${alert.ticker}`);
-      row.innerHTML = alertRowSkeletonHtml();
-      els.alertList.appendChild(row);
-      continue;
-    }
+  for (const [ticker, groupAlerts] of groupByTicker(alerts)) {
+    const group = document.createElement("section");
+    group.className = "ticker-group";
+    group.setAttribute("aria-label", `Alertas de ${ticker}`);
 
-    const label = alertDisplayLabel(alert);
-    const kind = alertKind(alert);
-    const badgeText = alertBadge(alert);
-    const kindBadge =
-      kind === "ema" ? badgeHtml("ema", badgeText) : kind === "rsi" ? badgeHtml("rsi", badgeText) : "";
-
-    const row = document.createElement("article");
-    row.className = `alert-row ${alert.active ? "" : "alert-row--inactive"}`.trim();
-    row.dataset.id = alert.id;
-    row.innerHTML = `
-      <div class="alert-row__symbol">
-        <div class="alert-row__ticker">${alert.ticker}</div>
-        ${quoteBlockHtml(alert.ticker)}
-      </div>
-      <div>
-        <div class="alert-row__preset">
-          <span class="alert-row__preset-label alert-row__preset-label--truncate" title="${escapeAttr(label)}">${label}</span>
-          ${kindBadge}
-        </div>
-        <div class="alert-row__meta">Última evaluación: ${formatEvaluatedAt(alert.last_evaluated_at)}</div>
-      </div>
-      ${badgeHtml(alert.active ? "active" : "inactive", alert.active ? "Activa" : "Inactiva")}
-      <div class="alert-row__actions">
-        <button type="button" class="btn-ghost btn-ghost--accent btn-edit" aria-label="Editar alerta ${alert.ticker}">Editar</button>
-        <button type="button" class="toggle" role="switch" aria-checked="${alert.active}" aria-label="${alert.active ? "Desactivar" : "Activar"} alerta ${alert.ticker}">
-          <span class="toggle__thumb"></span>
-        </button>
-        <button type="button" class="btn-ghost btn-delete" aria-label="Eliminar alerta ${alert.ticker}">Eliminar</button>
-      </div>
+    const header = document.createElement("div");
+    header.className = "ticker-group__header";
+    header.innerHTML = `
+      <span class="ticker-group__ticker">${ticker}</span>
+      <div class="ticker-group__quote">${quoteBlockHtml(ticker)}</div>
     `;
+    group.appendChild(header);
 
-    const toggle = row.querySelector(".toggle");
-    const editBtn = row.querySelector(".btn-edit");
-    const deleteBtn = row.querySelector(".btn-delete");
+    for (const alert of groupAlerts) {
+      group.appendChild(createAlertRow(alert));
+    }
+    els.alertList.appendChild(group);
+  }
+}
 
-    editBtn.addEventListener("click", () => openEditModal(alert));
-    toggle.addEventListener("click", () => void handleToggle(alert, !alert.active));
-    deleteBtn.addEventListener("click", () => void handleDelete(alert));
+function renderFirings() {
+  els.firingsList.innerHTML = "";
+  updateFiringsBadge();
 
-    els.alertList.appendChild(row);
+  if (firings.length === 0) {
+    els.firingsList.classList.add("hidden");
+    els.firingsEmpty.classList.remove("hidden");
+    return;
+  }
+
+  els.firingsEmpty.classList.add("hidden");
+  els.firingsList.classList.remove("hidden");
+
+  for (const [ticker, groupFirings] of groupByTicker(firings)) {
+    const group = document.createElement("section");
+    group.className = "ticker-group";
+    group.setAttribute("aria-label", `Disparos de ${ticker}`);
+
+    const header = document.createElement("div");
+    header.className = "ticker-group__header";
+    header.innerHTML = `<span class="ticker-group__ticker">${ticker}</span>`;
+    group.appendChild(header);
+
+    const sorted = [...groupFirings].sort(
+      (a, b) => new Date(b.sent_at).getTime() - new Date(a.sent_at).getTime(),
+    );
+
+    for (const firing of sorted) {
+      const tfLabel = firing.timeframe === "1day" ? "Diario" : "15 min";
+      const row = document.createElement("article");
+      row.className = "firing-row";
+      row.dataset.id = firing.id;
+      row.innerHTML = `
+        <div>
+          <div class="firing-row__label">${escapeAttr(firing.label)}</div>
+          <div class="firing-row__meta">
+            ${tfLabel} · Vela ${formatFiringAt(firing.candle_timestamp, firing.timeframe)} ET · Enviado ${formatFiringAt(firing.sent_at, firing.timeframe)} ET
+          </div>
+        </div>
+        <button type="button" class="btn-ghost btn-delete-firing" aria-label="Borrar disparo de ${ticker}">Borrar</button>
+      `;
+      row.querySelector(".btn-delete-firing").addEventListener("click", () => void handleDeleteFiring(firing));
+      group.appendChild(row);
+    }
+    els.firingsList.appendChild(group);
+  }
+}
+
+async function loadFirings() {
+  try {
+    const list = await fetchFirings();
+    syncFiringsState(list);
+    if (currentView === "firings") renderFirings();
+    else renderAlerts();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Error desconocido";
+    showBanner("error", mapDbError(message));
   }
 }
 
@@ -303,14 +463,35 @@ async function loadAlerts() {
   setLoading(true);
   hideBanner();
   try {
-    alerts = await fetchAlerts();
+    const [alertRows, firingRows] = await Promise.all([fetchAlerts(), fetchFirings()]);
+    alerts = alertRows;
+    syncFiringsState(firingRows);
     setLoading(false);
-    renderAlerts();
+    if (currentView === "firings") renderFirings();
+    else renderAlerts();
     void loadQuotes();
   } catch (error) {
     setLoading(false);
     const message = error instanceof Error ? error.message : "Error desconocido";
     showBanner("error", mapDbError(message));
+  }
+}
+
+async function handleDeleteFiring(firing) {
+  const confirmed = window.confirm(
+    `¿Borrar el disparo de ${firing.ticker} (${firing.label})? Esta acción no se puede deshacer.`,
+  );
+  if (!confirmed) return;
+
+  hideBanner();
+  try {
+    await deleteFiring(firing.id);
+    syncFiringsState(firings.filter((f) => f.id !== firing.id));
+    renderFirings();
+    showBanner("success", `Disparo de ${firing.ticker} borrado.`);
+  } catch (error) {
+    const raw = error instanceof Error ? error.message : "";
+    showBanner("error", mapDbError(raw));
   }
 }
 
@@ -710,9 +891,14 @@ async function handleSubmit() {
 }
 
 function bindEvents() {
-  document.getElementById("btn-new-alert").addEventListener("click", openCreateModal);
+  els.btnNewAlert.addEventListener("click", openCreateModal);
   document.getElementById("btn-empty-create").addEventListener("click", openCreateModal);
   document.getElementById("btn-cancel").addEventListener("click", closeModal);
+  els.btnFirings.addEventListener("click", () => {
+    showFiringsView();
+    void loadFirings();
+  });
+  els.btnBackAlerts.addEventListener("click", () => showAlertsView());
   els.submitBtn.addEventListener("click", () => void handleSubmit());
   els.tabPreset.addEventListener("click", () => setFormMode("preset"));
   els.tabCustom.addEventListener("click", () => setFormMode("custom"));
@@ -760,6 +946,7 @@ async function main() {
   try {
     const config = await loadAppConfig();
     initAlertsApi(config);
+    initFiringsApi(config);
     await loadAlerts();
   } catch (error) {
     setLoading(false);

@@ -80,6 +80,10 @@ _Avoid_: dashboard (preferir panel o listado)
 Estado de una alerta; inactiva no se evalúa ni envía correos, pero se conserva en BD.
 _Avoid_: enabled/disabled (en UI español)
 
+**Disparo**:
+Registro en el panel de un correo ya enviado por una alerta; permanece visible (agrupado por ticker) hasta que el usuario lo borre. No es la alerta misma.
+_Avoid_: notificación (como entidad), aviso de sistema, toast
+
 **last_evaluated_at**:
 Timestamp de la última vez que el worker evaluó una alerta.
 _Avoid_: last_check, updated_at genérico

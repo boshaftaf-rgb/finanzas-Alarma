@@ -31,6 +31,18 @@ export interface AlertRow {
   last_evaluated_at: string | null;
 }
 
+export interface AlertFiringInsert {
+  user_id: string;
+  alert_id: string;
+  ticker: string;
+  preset_or_custom: string;
+  params: Record<string, unknown>;
+  timeframe: AlertTimeframe;
+  candle_timestamp: string;
+  label: string;
+  sent_at?: string;
+}
+
 export interface EvaluationResult {
   conditionMet: boolean;
   candleTimestamp: string;

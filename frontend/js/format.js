@@ -19,6 +19,17 @@ export function formatEvaluatedAt(iso) {
   }).format(new Date(iso));
 }
 
+/** Fecha/hora del disparo en hora del mercado (ET). */
+export function formatFiringAt(iso, timeframe) {
+  if (!iso) return "—";
+  const isDaily = timeframe === "1day";
+  return new Intl.DateTimeFormat("es-MX", {
+    timeZone: "America/New_York",
+    dateStyle: "short",
+    ...(isDaily ? {} : { timeStyle: "short" }),
+  }).format(new Date(iso));
+}
+
 export function formatPrice(value) {
   if (value == null || !Number.isFinite(value)) return "—";
   return new Intl.NumberFormat("es-MX", {

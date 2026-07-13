@@ -157,7 +157,7 @@ Crear, editar, activar/desactivar y eliminar alertas. Etiquetas: Tendencia = cru
 | Correos por vela | 1 |
 | Timeframes | 15 min (presets) y diario (personalizadas) |
 | SMS / push / webhook | No (v1) |
-| Histórico de disparos | No (v1) |
+| Histórico de disparos | Sí (campana → sección Disparos; borrar a mano) |
 | Auth en panel | Planificado |
 
 ---

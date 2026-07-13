@@ -1,6 +1,7 @@
 import type { AlertRow } from "./types.js";
 import { decideFire, formatOutcome, todayMarketDate } from "./alert-fire-policy.js";
 import { evaluateAlert } from "./alert-evaluator.js";
+import { formatAlertLabel } from "./alert-labels.js";
 import { AlertStore } from "./alert-store.js";
 import { sendAlertEmail, smtpConfigFromEnv, type SmtpConfig } from "./email-sender.js";
 import { loadFixture } from "./fixture-loader.js";
@@ -109,6 +110,22 @@ export async function runEvaluationCycle(
           timeframe,
         });
         await store.recordEmailSent(alert, evaluation.candleTimestamp, today, now);
+        try {
+          await store.insertAlertFiring({
+            user_id: alert.user_id,
+            alert_id: alert.id,
+            ticker: alert.ticker.toUpperCase(),
+            preset_or_custom: alert.preset_or_custom,
+            params: alert.params ?? {},
+            timeframe,
+            candle_timestamp: evaluation.candleTimestamp,
+            label: formatAlertLabel(alert.preset_or_custom, alert.params ?? {}, timeframe),
+            sent_at: now.toISOString(),
+          });
+        } catch (firingError) {
+          const msg = firingError instanceof Error ? firingError.message : String(firingError);
+          console.error(`Disparo UI no registrado (email ya enviado) | alerta=${alert.id}: ${msg}`);
+        }
         emailSent = true;
         console.log(`Email enviado | ticker=${alert.ticker} | preset=${alert.preset_or_custom}`);
       } else if (decision.shouldSend && !sendEmails) {

@@ -57,9 +57,15 @@ Las políticas RLS son la barrera de aislamiento entre usuarios. Un agente puede
 - [ ] Activar **email/password** en Supabase Authentication
 - [ ] **Desactivar** registro público (solo con código de invitación)
 - [ ] Revisar RLS en `alerts`: `user_id = auth.uid()`
+- [ ] Revisar RLS en `alert_firings`: `user_id = auth.uid()` (SELECT/DELETE)
 - [ ] Revisar políticas en `invite_codes`
 - [ ] Crear códigos de invitación de prueba en BD
 - [ ] En Supabase → Authentication → URL Configuration: dominio Vercel en Site URL y redirect allow list
+
+### Migración actual (disparos UI)
+
+- [ ] Aplicar en el proyecto Supabase la migración `supabase/migrations/20260713180000_create_alert_firings.sql` (SQL editor o CLI)
+- [ ] Verificar grants: anon SELECT/DELETE en `alert_firings`; INSERT solo vía worker
 
 ### Entregables
 

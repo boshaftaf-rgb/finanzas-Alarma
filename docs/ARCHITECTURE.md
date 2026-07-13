@@ -103,6 +103,26 @@ Los presets RSI guardan `params` como `{ "period": N, "threshold": N }` (sin `op
 | `last_triggered_candle` | **`TIMESTAMPTZ`** | **Candle-lock:** timestamp de la vela que disparó la última notificación |
 | `last_evaluated_at` | `TIMESTAMPTZ` | Última evaluación del worker |
 
+### Tabla `alert_firings`
+
+Registro de cada email enviado para la bandeja de **disparos** del panel (persiste hasta borrado manual del usuario).
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `id` | `UUID` PK | Identificador |
+| `user_id` | `UUID` | Propietario (mismo patrón v1 que `alerts`) |
+| `alert_id` | `UUID` FK nullable | Alerta origen; `ON DELETE SET NULL` si se elimina la regla |
+| `ticker` | `TEXT` | Snapshot del ticker |
+| `preset_or_custom` | `TEXT` | Snapshot del tipo |
+| `params` | `JSONB` | Snapshot de parámetros |
+| `timeframe` | `TEXT` | `15min` o `1day` |
+| `candle_timestamp` | `TIMESTAMPTZ` | Vela que disparó |
+| `sent_at` | `TIMESTAMPTZ` | Hora del envío |
+| `label` | `TEXT` | Etiqueta legible (snapshot) |
+
+- Panel (anon): **SELECT** + **DELETE**.
+- Worker (`service_role`): **INSERT** tras email exitoso.
+
 ### Tabla `invite_codes`
 
 | Campo | Tipo | Descripción |
@@ -186,11 +206,13 @@ condición_cumplida
   AND emails_sent_today < 10
   → Disparar email
   → Actualizar last_triggered_candle = timestamp_vela_actual
+  → INSERT alert_firings (disparo para la UI)
 ```
 
 - `last_triggered_candle` es **obligatorio** en el esquema (nullable hasta el primer disparo).
 - Garantiza **como máximo un email por vela de 15 min** por alerta, independientemente del intervalo de polling.
 - Complementa (no reemplaza) el tope de 10 emails/alerta/día.
+- Si el INSERT de `alert_firings` falla tras el email, el worker deja log de error y **no** reenvía el correo.
 
 ---
 

@@ -26,6 +26,10 @@ class MockAlertStore {
       evaluatedAt,
     });
   }
+
+  async insertAlertFiring(firing: Record<string, unknown>) {
+    this.updates.push({ type: "firing", ...firing });
+  }
 }
 
 describe("run-cycle integration", () => {
@@ -65,7 +69,9 @@ describe("run-cycle integration", () => {
 
     expect(sendSpy).toHaveBeenCalledTimes(1);
     expect(results[0]?.outcome).toBe("EMAIL ENVIADO");
-    expect((store as unknown as MockAlertStore).updates.some((u) => u.type === "email")).toBe(true);
+    const mockStore = store as unknown as MockAlertStore;
+    expect(mockStore.updates.some((u) => u.type === "email")).toBe(true);
+    expect(mockStore.updates.some((u) => u.type === "firing" && u.alert_id === "a1")).toBe(true);
 
     sendSpy.mockRestore();
   });

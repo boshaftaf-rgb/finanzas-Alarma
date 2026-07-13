@@ -24,8 +24,8 @@
       <main class="app-container">
         <header class="page-header">
           <div>
-            <h1 class="page-header__title">Mis alertas</h1>
-            <p class="page-header__subtitle">
+            <h1 id="page-title" class="page-header__title">Mis alertas</h1>
+            <p id="page-subtitle" class="page-header__subtitle">
               Monitoreo técnico en velas de 15 min. Precios con datos de mercado (pueden tener ligero retraso).
             </p>
           </div>
@@ -45,6 +45,29 @@
                 A++
               </button>
             </div>
+            <button
+              type="button"
+              id="btn-firings"
+              class="bell-btn"
+              aria-label="Ver disparos"
+              title="Disparos"
+            >
+              <svg class="bell-btn__icon" width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path
+                  d="M12 3a5.5 5.5 0 0 0-5.5 5.5v2.1c0 .7-.23 1.38-.66 1.94L4.5 14.5h15l-1.34-1.96a3.2 3.2 0 0 1-.66-1.94V8.5A5.5 5.5 0 0 0 12 3Z"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linejoin="round"
+                />
+                <path
+                  d="M9.5 17.5a2.5 2.5 0 0 0 5 0"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                />
+              </svg>
+              <span id="firings-badge" class="bell-btn__badge hidden" aria-hidden="true">0</span>
+            </button>
             <span id="ticker-counter" class="ticker-counter">0 / 15 tickers activos</span>
             <button type="button" id="btn-new-alert" class="btn-primary">
               <span class="btn-primary__label">Nueva alerta</span>
@@ -55,28 +78,54 @@
 
         <div id="banner" class="alert-banner hidden" role="alert"></div>
 
-        <div id="skeleton" class="alert-list" aria-busy="true" aria-label="Cargando alertas"></div>
+        <div id="alerts-view">
+          <div id="skeleton" class="alert-list" aria-busy="true" aria-label="Cargando alertas"></div>
 
-        <section id="empty-state" class="card empty-state hidden">
-          <div class="empty-state__icon" aria-hidden="true">
-            <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="4" y="8" width="32" height="24" rx="4" stroke="currentColor" stroke-width="1.5" />
-              <path d="M12 28l6-8 5 6 4-5 6 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-              <circle cx="28" cy="14" r="2" fill="currentColor" />
-            </svg>
+          <section id="empty-state" class="card empty-state hidden">
+            <div class="empty-state__icon" aria-hidden="true">
+              <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="4" y="8" width="32" height="24" rx="4" stroke="currentColor" stroke-width="1.5" />
+                <path d="M12 28l6-8 5 6 4-5 6 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                <circle cx="28" cy="14" r="2" fill="currentColor" />
+              </svg>
+            </div>
+            <h2 class="empty-state__title">Aún no tienes alertas</h2>
+            <p class="empty-state__text">
+              Crea tu primera alerta con un preset o una configuración personalizada. Te avisaremos por correo cuando se cumpla la
+              condición en velas de 15 minutos.
+            </p>
+            <button type="button" id="btn-empty-create" class="btn-primary">
+              <span class="btn-primary__label">Nueva alerta</span>
+              <span class="btn-primary__loader" aria-hidden="true"></span>
+            </button>
+          </section>
+
+          <section id="alert-list" class="alert-list hidden" aria-label="Listado de alertas"></section>
+        </div>
+
+        <div id="firings-view" class="hidden">
+          <div class="firings-toolbar">
+            <button type="button" id="btn-back-alerts" class="btn-ghost btn-ghost--accent">← Mis alertas</button>
           </div>
-          <h2 class="empty-state__title">Aún no tienes alertas</h2>
-          <p class="empty-state__text">
-            Crea tu primera alerta con un preset o una configuración personalizada. Te avisaremos por correo cuando se cumpla la
-            condición en velas de 15 minutos.
-          </p>
-          <button type="button" id="btn-empty-create" class="btn-primary">
-            <span class="btn-primary__label">Nueva alerta</span>
-            <span class="btn-primary__loader" aria-hidden="true"></span>
-          </button>
-        </section>
-
-        <section id="alert-list" class="alert-list hidden" aria-label="Listado de alertas"></section>
+          <section id="firings-empty" class="card empty-state hidden">
+            <div class="empty-state__icon" aria-hidden="true">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path
+                  d="M12 3a5.5 5.5 0 0 0-5.5 5.5v2.1c0 .7-.23 1.38-.66 1.94L4.5 14.5h15l-1.34-1.96a3.2 3.2 0 0 1-.66-1.94V8.5A5.5 5.5 0 0 0 12 3Z"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linejoin="round"
+                />
+                <path d="M9.5 17.5a2.5 2.5 0 0 0 5 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+              </svg>
+            </div>
+            <h2 class="empty-state__title">Sin disparos</h2>
+            <p class="empty-state__text">
+              Cuando una alerta envíe un correo, aparecerá aquí agrupada por ticker hasta que la borres.
+            </p>
+          </section>
+          <section id="firings-list" class="alert-list hidden" aria-label="Listado de disparos"></section>
+        </div>
       </main>
     </div>
 
