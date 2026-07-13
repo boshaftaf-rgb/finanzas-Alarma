@@ -65,7 +65,8 @@ Las políticas RLS son la barrera de aislamiento entre usuarios. Un agente puede
 ### Migración actual (disparos UI)
 
 - [ ] Aplicar en el proyecto Supabase la migración `supabase/migrations/20260713180000_create_alert_firings.sql` (SQL editor o CLI)
-- [ ] Verificar grants: anon SELECT/DELETE en `alert_firings`; INSERT solo vía worker
+- [ ] Si la campana/Disparos no muestra filas (RLS activo): aplicar también `supabase/migrations/20260713190000_repair_alert_firings_anon_access.sql`
+- [ ] Verificar grants: anon SELECT/DELETE en `alert_firings`; INSERT solo vía worker; RLS **desactivado** en v1 (igual que `alerts`)
 
 ### Entregables
 
