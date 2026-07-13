@@ -1,0 +1,215 @@
+import {
+  normalizeTimeframe,
+} from "./custom-params.js";
+import { isRsiPreset } from "./presets.js";
+import { normalizeTicker } from "./ticker-validation.js";
+import { els } from "./dom.js";
+import { appState } from "./app-state.js";
+import {
+  fillPresetRsiFields,
+  resetPresetRsiFields,
+  selectPreset,
+} from "./form-presets.js";
+
+export function setFormMode(mode) {
+  appState.formMode = mode;
+  const isPreset = mode === "preset";
+  els.tabPreset.classList.toggle("is-active", isPreset);
+  els.tabCustom.classList.toggle("is-active", !isPreset);
+  els.tabPreset.setAttribute("aria-selected", String(isPreset));
+  els.tabCustom.setAttribute("aria-selected", String(!isPreset));
+  els.presetSection.classList.toggle("hidden", !isPreset);
+  els.customSection.classList.toggle("hidden", isPreset);
+  updateTimeframeHint();
+  els.formError.classList.add("hidden");
+}
+
+export function setCustomType(type) {
+  appState.customType = type;
+  const blocksByType = {
+    ema: els.customEmaFields,
+    price_ma: els.customPriceMaFields,
+    price_level: els.customPriceLevelFields,
+    rsi: els.customRsiFields,
+  };
+  const fieldBlocks = Object.values(blocksByType);
+  for (const block of fieldBlocks) {
+    block.classList.remove("is-enter");
+    block.classList.add("hidden");
+  }
+  const activeBlock = blocksByType[type] ?? els.customRsiFields;
+  activeBlock.classList.remove("hidden");
+  // Force reflow so enter animation replays on each tab change.
+  void activeBlock.offsetWidth;
+  activeBlock.classList.add("is-enter");
+  for (const btn of document.querySelectorAll(".custom-type-btn")) {
+    const active = btn.dataset.customType === type;
+    btn.classList.toggle("is-active", active);
+    btn.setAttribute("aria-pressed", String(active));
+  }
+  if (type === "price_ma" && els.timeframeSelect.value === "15min") {
+    els.timeframeSelect.value = "1day";
+    updateTimeframeHint();
+  }
+  els.formError.classList.add("hidden");
+}
+
+export function syncPriceLevelOperator(operator) {
+  const value = operator === "<=" ? "<=" : ">=";
+  els.priceLevelOperator.value = value;
+  for (const btn of document.querySelectorAll(".operator-seg__btn")) {
+    const active = btn.dataset.operator === value;
+    btn.classList.toggle("is-active", active);
+    btn.setAttribute("aria-pressed", String(active));
+  }
+}
+
+export function updateTimeframeHint() {
+  const tf = els.timeframeSelect.value;
+  if (appState.formMode === "preset") {
+    els.timeframeSelect.value = "15min";
+    els.timeframeSelect.disabled = true;
+    els.timeframeHint.textContent = "Los presets se evalúan en velas de 15 minutos.";
+    return;
+  }
+  els.timeframeSelect.disabled = false;
+  if (appState.customType === "price_ma") {
+    els.timeframeHint.textContent =
+      tf === "1day"
+        ? "Diario: período 12 = media de 12 días (como gráfico 1Y en TradingView)."
+        : "En 15m, el período cuenta velas de 15 min, no días calendario.";
+  } else {
+    els.timeframeHint.textContent =
+      tf === "1day"
+        ? "Alerta evaluada con velas diarias."
+        : "Alerta evaluada con velas de 15 minutos.";
+  }
+}
+
+export function resetCustomFields() {
+  els.emaFast.value = "9";
+  els.emaSlow.value = "21";
+  els.emaDirection.value = "up";
+  els.priceMaType.value = "sma";
+  els.priceMaPeriod.value = "12";
+  els.priceMaDirection.value = "up";
+  els.priceLevelValue.value = "100";
+  syncPriceLevelOperator(">=");
+  els.rsiPeriod.value = "14";
+  els.rsiThreshold.value = "30";
+  els.rsiOperator.value = "<";
+  els.timeframeSelect.value = "15min";
+  els.timeframeSelect.disabled = false;
+  setCustomType("ema");
+}
+
+export function fillCustomFields(params) {
+  if (params?.type === "rsi") {
+    setCustomType("rsi");
+    els.rsiPeriod.value = String(params.period ?? 14);
+    els.rsiThreshold.value = String(params.threshold ?? 30);
+    els.rsiOperator.value = params.operator === ">" ? ">" : "<";
+    return;
+  }
+  if (params?.type === "price_ma") {
+    setCustomType("price_ma");
+    els.priceMaType.value = params.ma_type === "ema" ? "ema" : "sma";
+    els.priceMaPeriod.value = String(params.period ?? 12);
+    els.priceMaDirection.value = params.direction === "down" ? "down" : "up";
+    return;
+  }
+  if (params?.type === "price_level") {
+    setCustomType("price_level");
+    els.priceLevelValue.value = String(params.level ?? 100);
+    syncPriceLevelOperator(params.operator === "<=" ? "<=" : ">=");
+    return;
+  }
+  setCustomType("ema");
+  els.emaFast.value = String(params?.ema_fast ?? 9);
+  els.emaSlow.value = String(params?.ema_slow ?? 21);
+  els.emaDirection.value = params?.direction === "down" ? "down" : "up";
+}
+
+export function setSubmitLoading(loading) {
+  els.submitBtn.disabled = loading;
+  els.submitBtn.classList.toggle("is-loading", loading);
+  els.submitBtn.setAttribute("aria-busy", String(loading));
+  document.getElementById("btn-cancel").disabled = loading;
+}
+
+export function resetForm() {
+  appState.editingAlertId = null;
+  appState.selectedPreset = null;
+  appState.formMode = "preset";
+  els.formTitle.textContent = "Nueva alerta";
+  els.submitLabel.textContent = "Crear alerta";
+  els.tickerInput.value = "";
+  els.tickerInput.disabled = false;
+  els.tickerInput.classList.remove("input-text--error");
+  els.tickerError.classList.add("hidden");
+  els.formError.classList.add("hidden");
+  els.tickerPreview.classList.add("hidden");
+  els.tickerPreview.innerHTML = "";
+  els.tabPreset.disabled = false;
+  els.tabCustom.disabled = false;
+  for (const card of els.presetGrid.querySelectorAll(".preset-card")) {
+    card.classList.remove("is-selected");
+    card.setAttribute("aria-selected", "false");
+  }
+  resetPresetRsiFields();
+  resetCustomFields();
+  setFormMode("preset");
+  setSubmitLoading(false);
+}
+
+export function openCreateModal() {
+  resetForm();
+  els.modalBackdrop.classList.remove("hidden");
+  els.tickerInput.focus();
+}
+
+export function openEditModal(alert) {
+  resetForm();
+  appState.editingAlertId = alert.id;
+  els.formTitle.textContent = "Editar alerta";
+  els.submitLabel.textContent = "Guardar cambios";
+  els.tickerInput.value = alert.ticker;
+  els.tickerInput.disabled = true;
+
+  if (alert.preset_or_custom === "custom") {
+    setFormMode("custom");
+    els.timeframeSelect.value = normalizeTimeframe(alert.timeframe);
+    fillCustomFields(alert.params);
+  } else {
+    setFormMode("preset");
+    els.timeframeSelect.value = "15min";
+    selectPreset(alert.preset_or_custom);
+    if (isRsiPreset(alert.preset_or_custom)) {
+      fillPresetRsiFields(alert.preset_or_custom, alert.params);
+    }
+  }
+
+  updateTimeframeHint();
+  els.modalBackdrop.classList.remove("hidden");
+  if (appState.formMode === "preset") {
+    els.presetGrid.querySelector(".is-selected")?.focus();
+    return;
+  }
+  const focusByType = {
+    rsi: els.rsiPeriod,
+    price_ma: els.priceMaPeriod,
+    price_level: els.priceLevelValue,
+    ema: els.emaFast,
+  };
+  (focusByType[appState.customType] ?? els.emaFast).focus();
+}
+
+export function closeModal({ force = false } = {}) {
+  if (!force && els.submitBtn.classList.contains("is-loading")) return;
+  els.modalBackdrop.classList.add("hidden");
+  resetForm();
+}
+
+export function readCreateTicker() {
+  return normalizeTicker(els.tickerInput.value);
+}

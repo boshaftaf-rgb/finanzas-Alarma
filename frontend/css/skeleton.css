@@ -7,12 +7,37 @@
   }
 }
 
+.list-stack {
+  display: grid;
+}
+
+.list-stack__layer {
+  grid-area: 1 / 1;
+  width: 100%;
+  transition: opacity var(--duration-normal) var(--ease-out);
+}
+
+.list-stack__layer.is-active {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+  position: relative;
+  z-index: 1;
+}
+
+.list-stack__layer.is-idle {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
 .skeleton {
   background: linear-gradient(
     90deg,
     var(--color-skeleton-base) 0%,
-    var(--color-skeleton-shine) 50%,
-    var(--color-skeleton-base) 100%
+    var(--color-skeleton-shine) 40%,
+    var(--color-skeleton-base) 80%
   );
   background-size: 200% 100%;
   animation: shimmer var(--duration-skeleton) ease-in-out infinite;
@@ -23,6 +48,25 @@
   .skeleton {
     animation: none;
   }
+
+  .list-stack__layer {
+    transition: none;
+  }
+}
+
+.skeleton-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.skeleton-group__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  padding: 4px 4px 2px;
 }
 
 .skeleton-row {
@@ -34,6 +78,15 @@
   border: 1px solid var(--color-border-default);
   border-radius: var(--radius-md);
   background: var(--color-surface);
+}
+
+.skeleton-row--nested {
+  grid-template-columns: 1fr auto auto;
+}
+
+.skeleton-row--firing {
+  grid-template-columns: 1fr auto;
+  padding: 14px 16px;
 }
 
 .skeleton-row__meta {
@@ -63,6 +116,7 @@
 .skeleton-row__label {
   height: 16px;
   width: 70%;
+  max-width: 280px;
 }
 
 .skeleton-row__badge {
@@ -77,10 +131,20 @@
   border-radius: var(--radius-full);
 }
 
+.skeleton-row__delete {
+  height: 32px;
+  width: 64px;
+  border-radius: var(--radius-full);
+}
+
 @media (max-width: 767px) {
   .skeleton-row {
     grid-template-columns: 1fr auto;
     grid-template-rows: auto auto auto;
+  }
+
+  .skeleton-row--nested {
+    grid-template-columns: 1fr auto;
   }
 
   .skeleton-row > div:nth-child(2) {
@@ -89,5 +153,6 @@
 
   .skeleton-row__label {
     grid-column: 1 / -1;
+    max-width: none;
   }
 }

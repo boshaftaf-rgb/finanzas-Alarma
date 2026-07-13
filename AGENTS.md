@@ -20,7 +20,7 @@ Antes de implementar alertas, worker, auth o frontend, lee en este orden:
 
 ## Seguridad (obligatorio)
 
-Antes de implementar o modificar auth, formularios, APIs, manejo de datos sensibles o integraciones externas, lee **`SECURITY.md` v1.0** en la raíz. Cubre OWASP Top 10, CWE, checklist de login/sesión y prácticas de código seguro.
+Antes de implementar o modificar auth, formularios, APIs, manejo de datos sensibles o integraciones externas, lee **`SECURITY.md` v1.1** en la raíz. Cubre OWASP Top 10, CWE, checklist de login/sesión, gestión de dependencias (**pnpm** obligatorio; sin npm/npx) y prácticas de código seguro.
 
 ## Código limpio (obligatorio)
 
@@ -50,6 +50,7 @@ Antes de nombrar variables, tablas o componentes UI, consulta **`CONTEXT.md`** p
 | Worker | TypeScript serverless → **Vercel Cron** |
 | Datos de mercado | Twelve Data (velas 15 min, batch) |
 | Email | Gmail SMTP |
+| Paquetes Node | **pnpm** (ver `SECURITY.md`; no usar npm/npx) |
 
 El frontend habla directo con Supabase; el worker cron usa `service_role` en variables server-side de Vercel (nunca en el bundle).
 

@@ -1,5 +1,5 @@
 ---
-version: "1.0"
+version: "1.1"
 name: stock-alerts-secure-coding-guide
 description: >-
   Guía obligatoria de código seguro para Stock Alerts (finanzas-Alarma). Basada en OWASP Top 10,
@@ -124,7 +124,7 @@ Strict-Transport-Security: max-age=31536000; includeSubDomains (solo HTTPS)
 **Prácticas:**
 - CORS: orígenes explícitos, no `*` con credenciales.
 - Deshabilitar endpoints de debug y consolas admin por defecto.
-- Mantener dependencias actualizadas; auditar con `npm audit` / `pip audit`.
+- Mantener dependencias actualizadas; auditar con `pnpm audit` / `pip audit`.
 
 ---
 
@@ -139,6 +139,7 @@ Strict-Transport-Security: max-age=31536000; includeSubDomains (solo HTTPS)
 **Prácticas:**
 - Fijar versiones; revisar advisories antes de merge.
 - CDN externos: usar **SRI** (`integrity` + `crossorigin`) en `<script>` y `<link>`.
+- Gestor de paquetes Node: solo **pnpm** (ver sección *Gestión de dependencias Node*).
 
 ---
 
@@ -172,6 +173,28 @@ Strict-Transport-Security: max-age=31536000; includeSubDomains (solo HTTPS)
 **Prácticas:**
 - Proteger pipelines CI/CD; secrets en vault, no en variables planas en logs.
 - Verificar checksums de dependencias críticas.
+- Lockfile único y versionado: `pnpm-lock.yaml` (nunca `package-lock.json`).
+
+---
+
+## Gestión de dependencias Node (pnpm obligatorio)
+
+Este repositorio **no usa npm ni npx** por política de supply-chain y reproducibilidad.
+
+| Obligatorio | Prohibido |
+|-------------|-----------|
+| Instalar y actualizar con **pnpm** | `npm`, `npx`, `npm install`, `npm ci`, `npm audit` |
+| Versionar **`pnpm-lock.yaml`** | Commitear **`package-lock.json`** |
+| CI/deploy: `pnpm install --frozen-lockfile` | Instalar sin lockfile o regenerándolo en CI sin revisión |
+| CLIs de desarrollo como **`devDependencies`** fijadas | `npx` / `pnpm dlx` en scripts del repo (descargas ad-hoc) |
+| Auditar con **`pnpm audit`** | Confiar en `npm audit` como flujo oficial |
+
+**Motivos (A05 / A06 / A08):**
+- Árbol de dependencias más estricto (menos dependencias fantasma).
+- Instalaciones reproducibles vía Corepack (`packageManager` en `package.json`) + lockfile.
+- Evitar ejecución accidental de CLIs no fijadas en el manifiesto.
+
+Al añadir una dependencia nueva: revisar su mantenimiento, advisories y **scripts de postinstall** antes del merge. El worker Python legacy (si se usa) se audita con `pip audit`.
 
 ---
 
@@ -285,7 +308,8 @@ Si un agente o desarrollador encuentra un secreto en el código: **alertar de in
 - [ ] Autorización verificada por recurso, no solo autenticación
 - [ ] Sin secretos, tokens ni PII innecesaria en código o logs
 - [ ] Sin `dangerouslySetInnerHTML` / `eval` con datos no confiables
-- [ ] Dependencias sin CVE críticos conocidos
+- [ ] Dependencias sin CVE críticos conocidos (`pnpm audit`)
+- [ ] Sin `npm`/`npx` en scripts; lockfile es `pnpm-lock.yaml`
 - [ ] Headers de seguridad configurados en Vercel (o plan documentado)
 - [ ] Errores de producción no exponen stack traces ni rutas internas
 - [ ] Límites de alertas (tickers, emails/día) no bypassables vía parámetros manipulados

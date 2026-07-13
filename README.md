@@ -34,18 +34,45 @@ finanzas-Alarma/
 
 ## Desarrollo local
 
+### Instalar pnpm (una vez)
+
+Este repo usa **pnpm** (no `npm` / `npx`). Con Node 22+:
+
 ```bash
-cp .env.example .env
-npm install
-npm test
-npm run dev
+corepack enable
+corepack prepare pnpm@9.15.9 --activate
 ```
 
-Abre **http://localhost:3000**. `npm run dev` sirve el panel y las rutas `/api/*` (cotizaciones, config).  
-Solo estáticos sin API: `npm run dev:static` (las cotizaciones fallarán con 404).
+Si en Windows `corepack enable` falla con **EPERM** (Program Files), instala pnpm en tu usuario:
 
-Worker TypeScript (tests): `npm test`  
+```powershell
+npm install -g pnpm@9.15.9
+```
+
+Cierra y vuelve a abrir PowerShell, luego comprueba:
+
+```powershell
+pnpm --version
+```
+
+Debe mostrar `9.15.9` (o compatible). El comando anterior solo sirve para **instalar el gestor**; el día a día del proyecto es solo con `pnpm`.
+
+### Arrancar el proyecto
+
+```bash
+cp .env.example .env
+pnpm install
+pnpm test
+pnpm run dev
+```
+
+Abre **http://localhost:3000**. `pnpm run dev` sirve el panel y las rutas `/api/*` (cotizaciones, config).  
+Solo estáticos sin API: `pnpm run dev:static` (las cotizaciones fallarán con 404).
+
+Worker TypeScript (tests): `pnpm test`  
 Worker Python (opcional): ver [worker/README.md](worker/README.md)
+
+Gestor de paquetes: **pnpm** únicamente (no `npm` / `npx` en scripts del repo). Ver [SECURITY.md](SECURITY.md).
 
 ## Deploy
 
