@@ -60,3 +60,4 @@
 {"sessionId":"73a3d6","location":"twelve-data-fetcher.ts","message":"Twelve Data OHLCV","hypothesisId":"A","data":{"phase":"batch-start","totalSymbols":3,"interval":"15min"},"timestamp":1783624654756}
 {"sessionId":"73a3d6","location":"twelve-data-fetcher.ts","message":"Twelve Data OHLCV","hypothesisId":"A","data":{"phase":"request","symbolCount":3,"symbols":["AAPL","MSFT","NVDA"]},"timestamp":1783624654757}
 {"sessionId":"73a3d6","location":"twelve-data-fetcher.ts","message":"Twelve Data OHLCV","hypothesisId":"A","data":{"phase":"response","status":200,"symbolCount":3,"creditsUsed":null,"creditsLeft":null},"timestamp":1783624654760}
+{"sessionId":"73a3d6","location":"quotes-api.js","message":"fetch quotes response","hypothesisId":"H1","data":{"url":"/api/quotes?tickers=AAPL%2CCIEN%2CMSFT%2CMU%2CNVDA%2CQUBT%2CSMCI%2CSNDK%2CSOXL%2CWDC","status":200,"ok":true,"tickerCount":10},"timestamp":1783970461881}
