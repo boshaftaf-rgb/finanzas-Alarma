@@ -204,6 +204,9 @@
               <button type="button" class="custom-type-btn" data-custom-type="price_ma" aria-pressed="false">
                 Precio vs media
               </button>
+              <button type="button" class="custom-type-btn" data-custom-type="price_level" aria-pressed="false">
+                Precio objetivo
+              </button>
               <button type="button" class="custom-type-btn" data-custom-type="rsi" aria-pressed="false">
                 Momentum (RSI)
               </button>
@@ -251,6 +254,23 @@
                 </select>
               </label>
               <p class="form-field__hint">Ejemplo: SMA(12) diaria = media de 12 días en gráfico anual.</p>
+            </div>
+
+            <div id="custom-price-level-fields" class="custom-fields hidden">
+              <div class="form-row">
+                <label class="form-field" for="price-level-value">
+                  <span class="form-field__label">Precio objetivo</span>
+                  <input id="price-level-value" class="input-text" type="number" min="0.01" step="any" value="100" inputmode="decimal" />
+                </label>
+                <label class="form-field" for="price-level-operator">
+                  <span class="form-field__label">Condición</span>
+                  <select id="price-level-operator" class="input-text input-select">
+                    <option value=">=">Cierre alcanza o supera (>=)</option>
+                    <option value="<=">Cierre baja hasta o por debajo (<=)</option>
+                  </select>
+                </label>
+              </div>
+              <p class="form-field__hint">Se dispara cuando el cierre cruza el nivel elegido (no mientras sigue en ese lado).</p>
             </div>
 
             <div id="custom-rsi-fields" class="custom-fields hidden">

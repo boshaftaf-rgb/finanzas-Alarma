@@ -27,6 +27,15 @@ describe("alert-labels", () => {
     ).toBe("Precio cruza SMA(12) al alza");
   });
 
+  it("formatea etiqueta precio objetivo custom", () => {
+    expect(
+      formatCustomLabel({ type: "price_level", level: 185.5, operator: ">=" }),
+    ).toBe("Precio >= 185.5");
+    expect(
+      formatCustomLabel({ type: "price_level", level: 150, operator: "<=" }),
+    ).toBe("Precio <= 150");
+  });
+
   it("formatea etiqueta RSI custom", () => {
     expect(
       formatCustomLabel({ type: "rsi", period: 10, threshold: 25, operator: "<" }),
@@ -45,6 +54,9 @@ describe("alert-labels", () => {
     expect(
       formatAlertLabel("custom", { type: "price_ma", ma_type: "sma", period: 12, direction: "up" }, "1day"),
     ).toBe("Precio cruza SMA(12) al alza · Diario");
+    expect(
+      formatAlertLabel("custom", { type: "price_level", level: 200, operator: ">=" }, "1day"),
+    ).toBe("Precio >= 200 · Diario");
   });
 });
 
@@ -79,5 +91,63 @@ describe("alert-evaluator custom", () => {
       barsFromCloses(closes),
     );
     expect(result.conditionMet).toBe(true);
+  });
+
+  it("evalúa custom precio cruza nivel al alza (>=)", () => {
+    const result = evaluateAlert(
+      {
+        ticker: "TEST",
+        preset_or_custom: "custom",
+        params: { type: "price_level", level: 100, operator: ">=" },
+      },
+      barsFromCloses([98, 101]),
+    );
+    expect(result.conditionMet).toBe(true);
+  });
+
+  it("evalúa custom precio cruza nivel a la baja (<=)", () => {
+    const result = evaluateAlert(
+      {
+        ticker: "TEST",
+        preset_or_custom: "custom",
+        params: { type: "price_level", level: 100, operator: "<=" },
+      },
+      barsFromCloses([102, 99]),
+    );
+    expect(result.conditionMet).toBe(true);
+  });
+
+  it("no dispara price_level si ya estaba del lado correcto", () => {
+    const stillAbove = evaluateAlert(
+      {
+        ticker: "TEST",
+        preset_or_custom: "custom",
+        params: { type: "price_level", level: 100, operator: ">=" },
+      },
+      barsFromCloses([105, 110]),
+    );
+    expect(stillAbove.conditionMet).toBe(false);
+
+    const stillBelow = evaluateAlert(
+      {
+        ticker: "TEST",
+        preset_or_custom: "custom",
+        params: { type: "price_level", level: 100, operator: "<=" },
+      },
+      barsFromCloses([95, 90]),
+    );
+    expect(stillBelow.conditionMet).toBe(false);
+  });
+
+  it("no dispara price_level sin cruce", () => {
+    const result = evaluateAlert(
+      {
+        ticker: "TEST",
+        preset_or_custom: "custom",
+        params: { type: "price_level", level: 100, operator: ">=" },
+      },
+      barsFromCloses([90, 95]),
+    );
+    expect(result.conditionMet).toBe(false);
   });
 });

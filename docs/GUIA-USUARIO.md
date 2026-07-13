@@ -108,8 +108,9 @@ Golden/Death Cross en 15m ≠ mismo evento en gráfico diario (más ruido en int
 
 Custom EMA: ema_fast y ema_slow (2–200, rápida < lenta), direction up/down.
 Custom **Precio vs media**: el cierre cruza SMA o EMA de período N (2–200), direction up/down. Recomendado **SMA** si comparas con TradingView (`ma`).
+Custom **Precio objetivo**: el cierre cruza un nivel fijo (`level` > 0) con operador `>=` o `<=` (evento de cruce entre vela anterior y actual).
 Custom RSI: period (2–50), threshold (0–100), operator < o >.
-No se combina EMA + RSI en una sola alerta (v1).
+No se combina EMA + RSI + precio en una sola alerta (v1).
 
 ---
 
@@ -133,11 +134,26 @@ Se dispara cuando el **cierre** de la vela diaria cruza la línea de la media (v
 
 ---
 
+Precio objetivo (nivel fijo)
+
+Para avisar cuando la acción **llega** a un precio que eliges tú (no una media móvil):
+
+| Campo | Valor |
+|-------|-------|
+| Tipo | Personalizada → **Precio objetivo** |
+| Timeframe | 15 min o **Diario (1D)** |
+| Precio objetivo | Nivel en USD (ej. 185.5) |
+| Condición | Cierre alcanza o supera (`>=`) o baja hasta o por debajo (`<=`) |
+
+Se dispara solo en el **cruce del nivel** (vela anterior en un lado, actual en el otro o en el nivel). Si el precio ya estaba por encima/debajo, no vuelve a avisar en cada vela.
+
+---
+
 Disparo del correo
 
 Un correo solo se envía si se cumplen las tres condiciones siguientes:
 
-1. La regla técnica se cumple (cruce EMA, precio vs media, o umbral RSI).
+1. La regla técnica se cumple (cruce EMA, precio vs media, precio objetivo, o umbral RSI).
 2. Candle-lock: no se repite correo por la misma vela (máx. 1 por vela por alerta).
 3. Límite diario: menos de 10 correos esa alerta en el día (reset a medianoche).
 
@@ -147,7 +163,7 @@ Correo incluye: ticker, tipo de alerta, timeframe (15m o diario), timestamp de l
 
 Panel y límites
 
-Crear, editar, activar/desactivar y eliminar alertas. Etiquetas: Tendencia = cruce EMA; Precio = precio vs media; Momentum = RSI.
+Crear, editar, activar/desactivar y eliminar alertas. Etiquetas: Tendencia = cruce EMA; Precio = precio vs media o precio objetivo; Momentum = RSI.
 
 | Límite | Valor |
 |--------|-------|

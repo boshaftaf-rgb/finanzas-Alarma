@@ -27,6 +27,16 @@ function rsiThreshold(value: number, threshold: number, operator: "<" | ">"): bo
   return operator === "<" ? value < threshold : value > threshold;
 }
 
+function priceLevelCross(
+  prevClose: number,
+  close: number,
+  level: number,
+  operator: ">=" | "<=",
+): boolean {
+  if (operator === ">=") return prevClose < level && close >= level;
+  return prevClose > level && close <= level;
+}
+
 function resolveRsiValue(
   current: EnrichedBar,
   enriched: EnrichedBar[],
@@ -112,7 +122,16 @@ function evaluateCustom(
     );
   }
 
-  throw new Error("Alerta custom sin tipo válido (ema, price_ma o rsi).");
+  if (type === "price_level") {
+    const level = Number(params.level);
+    const operator = params.operator as ">=" | "<=";
+    if (!Number.isFinite(level) || level <= 0) {
+      return false;
+    }
+    return priceLevelCross(previous.close, current.close, level, operator);
+  }
+
+  throw new Error("Alerta custom sin tipo válido (ema, price_ma, rsi o price_level).");
 }
 
 function evaluatePreset(

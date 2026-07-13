@@ -15,6 +15,10 @@ export function formatCustomLabel(params) {
     const direction = params.direction === "down" ? "a la baja" : "al alza";
     return `Precio cruza ${maType}(${params.period}) ${direction}`;
   }
+  if (params.type === "price_level") {
+    const op = params.operator === "<=" ? "<=" : ">=";
+    return `Precio ${op} ${params.level}`;
+  }
   if (params.type === "rsi") {
     const op = params.operator === ">" ? ">" : "<";
     return `RSI(${params.period ?? 14}) ${op} ${params.threshold}`;
@@ -48,7 +52,7 @@ export function alertDisplayLabel(alert) {
 export function alertKind(alert) {
   if (alert.preset_or_custom === "custom") {
     if (alert.params?.type === "rsi") return "rsi";
-    if (alert.params?.type === "price_ma") return "ema";
+    if (alert.params?.type === "price_ma" || alert.params?.type === "price_level") return "ema";
     return "ema";
   }
   const preset = PRESETS.find((p) => p.id === alert.preset_or_custom);
@@ -58,7 +62,7 @@ export function alertKind(alert) {
 export function alertBadge(alert) {
   if (alert.preset_or_custom === "custom") {
     if (alert.params?.type === "rsi") return "Momentum";
-    if (alert.params?.type === "price_ma") return "Precio";
+    if (alert.params?.type === "price_ma" || alert.params?.type === "price_level") return "Precio";
     return "Tendencia";
   }
   const preset = PRESETS.find((p) => p.id === alert.preset_or_custom);

@@ -19,11 +19,13 @@ import {
 import { alertBadge, alertDisplayLabel, alertKind } from "./alert-labels.js";
 import {
   buildEmaParams,
+  buildPriceLevelParams,
   buildPriceMaParams,
   buildRsiParams,
   buildRsiPresetParams,
   normalizeTimeframe,
   validateEmaParams,
+  validatePriceLevelParams,
   validatePriceMaParams,
   validateRsiParams,
   validateRsiPresetParams,
@@ -81,6 +83,9 @@ const els = {
   priceMaType: document.getElementById("price-ma-type"),
   priceMaPeriod: document.getElementById("price-ma-period"),
   priceMaDirection: document.getElementById("price-ma-direction"),
+  customPriceLevelFields: document.getElementById("custom-price-level-fields"),
+  priceLevelValue: document.getElementById("price-level-value"),
+  priceLevelOperator: document.getElementById("price-level-operator"),
   rsiPeriod: document.getElementById("rsi-period"),
   rsiThreshold: document.getElementById("rsi-threshold"),
   rsiOperator: document.getElementById("rsi-operator"),
@@ -613,9 +618,11 @@ function setCustomType(type) {
   customType = type;
   const isEma = type === "ema";
   const isPriceMa = type === "price_ma";
+  const isPriceLevel = type === "price_level";
   const isRsi = type === "rsi";
   els.customEmaFields.classList.toggle("hidden", !isEma);
   els.customPriceMaFields.classList.toggle("hidden", !isPriceMa);
+  els.customPriceLevelFields.classList.toggle("hidden", !isPriceLevel);
   els.customRsiFields.classList.toggle("hidden", !isRsi);
   for (const btn of document.querySelectorAll(".custom-type-btn")) {
     const active = btn.dataset.customType === type;
@@ -658,6 +665,8 @@ function resetCustomFields() {
   els.priceMaType.value = "sma";
   els.priceMaPeriod.value = "12";
   els.priceMaDirection.value = "up";
+  els.priceLevelValue.value = "100";
+  els.priceLevelOperator.value = ">=";
   els.rsiPeriod.value = "14";
   els.rsiThreshold.value = "30";
   els.rsiOperator.value = "<";
@@ -679,6 +688,12 @@ function fillCustomFields(params) {
     els.priceMaType.value = params.ma_type === "ema" ? "ema" : "sma";
     els.priceMaPeriod.value = String(params.period ?? 12);
     els.priceMaDirection.value = params.direction === "down" ? "down" : "up";
+    return;
+  }
+  if (params?.type === "price_level") {
+    setCustomType("price_level");
+    els.priceLevelValue.value = String(params.level ?? 100);
+    els.priceLevelOperator.value = params.operator === "<=" ? "<=" : ">=";
     return;
   }
   setCustomType("ema");
@@ -744,7 +759,15 @@ function openEditModal(alert) {
   if (formMode === "preset") {
     els.presetGrid.querySelector(".is-selected")?.focus();
   } else {
-    (customType === "rsi" ? els.rsiPeriod : customType === "price_ma" ? els.priceMaPeriod : els.emaFast).focus();
+    const focusEl =
+      customType === "rsi"
+        ? els.rsiPeriod
+        : customType === "price_ma"
+          ? els.priceMaPeriod
+          : customType === "price_level"
+            ? els.priceLevelValue
+            : els.emaFast;
+    focusEl.focus();
   }
 }
 
@@ -837,6 +860,20 @@ function validateFormPayload() {
         els.priceMaType.value,
         els.priceMaDirection.value,
       ),
+      timeframe: resolveTimeframe(),
+    };
+  }
+
+  if (customType === "price_level") {
+    const error = validatePriceLevelParams(els.priceLevelValue.value, els.priceLevelOperator.value);
+    if (error) {
+      els.formError.textContent = error;
+      els.formError.classList.remove("hidden");
+      return null;
+    }
+    return {
+      presetOrCustom: "custom",
+      params: buildPriceLevelParams(els.priceLevelValue.value, els.priceLevelOperator.value),
       timeframe: resolveTimeframe(),
     };
   }

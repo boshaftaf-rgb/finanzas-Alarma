@@ -5,7 +5,7 @@ Vocabulario acordado para código, documentación y UI. Usa estos términos de f
 ## Language
 
 **Alerta**:
-Regla de monitoreo sobre un ticker que evalúa una condición técnica (cruce EMA, precio vs media, o RSI) y puede disparar un correo.
+Regla de monitoreo sobre un ticker que evalúa una condición técnica (cruce EMA, precio vs media, precio objetivo, o RSI) y puede disparar un correo.
 _Avoid_: regla, trigger genérico, notificación
 
 **Preset**:
@@ -13,7 +13,7 @@ Configuración predefinida de alerta (cruce alcista 9/21, Golden Cross, RSI sobr
 _Avoid_: plantilla, template
 
 **Alerta personalizada (custom)**:
-Alerta donde el usuario define parámetros de cruce EMA, **precio vs media (SMA/EMA)**, o RSI (no combinados en v1).
+Alerta donde el usuario define parámetros de cruce EMA, **precio vs media (SMA/EMA)**, **precio objetivo (nivel)**, o RSI (no combinados en v1).
 _Avoid_: alerta avanzada, regla custom
 
 **Ticker**:
@@ -31,6 +31,10 @@ _Avoid_: throttle, debounce
 **Cruce precio vs media (price_ma)**:
 Evento en el que el cierre cruza por encima o por debajo de una SMA o EMA de período N entre vela anterior y actual.
 _Avoid_: cruce de medias (cuando se habla solo de precio vs una línea)
+
+**Precio objetivo (price_level)**:
+Evento en el que el cierre cruza un nivel de precio fijo elegido por el usuario (`>=` o `<=`) entre vela anterior y actual.
+_Avoid_: stop loss, take profit, alert absolute (en UI español)
 
 **Timeframe**:
 Intervalo de velas de la alerta: `15min` (presets y custom) o `1day` (solo custom). Determina qué significa el «período» de una media (ej. 12 velas diarias = 12 días).

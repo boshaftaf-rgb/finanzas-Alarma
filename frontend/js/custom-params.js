@@ -91,6 +91,25 @@ export function buildPriceMaParams(periodRaw, maType, direction) {
   };
 }
 
+export function validatePriceLevelParams(levelRaw, operator) {
+  const level = Number(levelRaw);
+  if (!Number.isFinite(level) || level <= 0) {
+    return "El precio objetivo debe ser un número mayor que 0.";
+  }
+  if (operator !== ">=" && operator !== "<=") {
+    return "Selecciona la condición del precio (>= o <=).";
+  }
+  return null;
+}
+
+export function buildPriceLevelParams(levelRaw, operator) {
+  return {
+    type: "price_level",
+    level: Number(levelRaw),
+    operator,
+  };
+}
+
 export function normalizeTimeframe(value) {
   return value === "1day" ? "1day" : "15min";
 }

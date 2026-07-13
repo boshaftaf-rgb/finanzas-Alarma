@@ -53,7 +53,17 @@ export interface CustomPriceMaParams {
   direction: "up" | "down";
 }
 
-export type CustomAlertParams = CustomEmaParams | CustomRsiParams | CustomPriceMaParams;
+export interface CustomPriceLevelParams {
+  type: "price_level";
+  level: number;
+  operator: ">=" | "<=";
+}
+
+export type CustomAlertParams =
+  | CustomEmaParams
+  | CustomRsiParams
+  | CustomPriceMaParams
+  | CustomPriceLevelParams;
 
 export function formatCustomLabel(params: Record<string, unknown>): string {
   const type = params.type;
@@ -68,6 +78,11 @@ export function formatCustomLabel(params: Record<string, unknown>): string {
     const period = Number(params.period);
     const direction = params.direction === "down" ? "a la baja" : "al alza";
     return `Precio cruza ${maType}(${period}) ${direction}`;
+  }
+  if (type === "price_level") {
+    const level = Number(params.level);
+    const operator = params.operator === "<=" ? "<=" : ">=";
+    return `Precio ${operator} ${level}`;
   }
   if (type === "rsi") {
     const period = Number(params.period ?? 14);
@@ -104,7 +119,7 @@ export function alertKindFromRecord(
 ): "ema" | "rsi" | "other" {
   if (presetOrCustom === "custom") {
     if (params.type === "rsi") return "rsi";
-    if (params.type === "price_ma") return "ema";
+    if (params.type === "price_ma" || params.type === "price_level") return "ema";
     return "ema";
   }
   const presetKinds: Record<string, "ema" | "rsi"> = {
