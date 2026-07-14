@@ -8,6 +8,9 @@ export function mapDbError(message) {
   if (message.includes("alerts_ticker_format")) {
     return "Formato de ticker inválido.";
   }
+  if (message.includes("alerts_preset_or_custom_valid")) {
+    return "Este tipo de alerta no está admitido aún en la base de datos.";
+  }
   return "No se pudo completar la operación. Inténtalo de nuevo.";
 }
 

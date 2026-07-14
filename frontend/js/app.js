@@ -208,7 +208,9 @@ async function handleSubmit() {
   } catch (error) {
     appState.busyId = null;
     renderAlerts();
-    const raw = error instanceof Error ? error.message : "";
+    const raw =
+      (error && typeof error === "object" && typeof error.message === "string" && error.message) ||
+      (error instanceof Error ? error.message : "");
     els.formError.textContent = mapDbError(raw);
     els.formError.classList.remove("hidden");
     setSubmitLoading(false);
