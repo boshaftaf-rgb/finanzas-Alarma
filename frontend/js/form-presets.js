@@ -1,4 +1,9 @@
-import { PRESETS, isRsiPreset, rsiPresetDefaults } from "./presets.js";
+import {
+  PRESETS,
+  isOscillatorPreset,
+  isStochPreset,
+  oscillatorPresetDefaults,
+} from "./presets.js";
 import { els } from "./dom.js";
 import { appState } from "./app-state.js";
 import { badgeHtml } from "./html-utils.js";
@@ -30,8 +35,8 @@ export function selectPreset(id) {
     card.classList.toggle("is-selected", isSelected);
     card.setAttribute("aria-selected", String(isSelected));
   }
-  if (isRsiPreset(id)) {
-    const defaults = rsiPresetDefaults(id);
+  if (isOscillatorPreset(id)) {
+    const defaults = oscillatorPresetDefaults(id);
     els.presetRsiPeriod.value = String(defaults.period);
     els.presetRsiThreshold.value = String(defaults.threshold);
     els.presetRsiFields.classList.remove("hidden");
@@ -42,17 +47,18 @@ export function selectPreset(id) {
 }
 
 export function updatePresetRsiHint() {
-  if (!appState.selectedPreset || !isRsiPreset(appState.selectedPreset)) return;
-  const defaults = rsiPresetDefaults(appState.selectedPreset);
+  if (!appState.selectedPreset || !isOscillatorPreset(appState.selectedPreset)) return;
+  const defaults = oscillatorPresetDefaults(appState.selectedPreset);
   const period = Number(els.presetRsiPeriod.value) || defaults.period;
   const threshold = Number(els.presetRsiThreshold.value);
   const thresholdText = Number.isFinite(threshold) ? threshold : defaults.threshold;
   const opLabel = defaults.operator === ">" ? "mayor que" : "menor que";
-  els.presetRsiHint.textContent = `RSI(${period}) ${opLabel} ${thresholdText}`;
+  const indicator = isStochPreset(appState.selectedPreset) ? "Stoch" : "RSI";
+  els.presetRsiHint.textContent = `${indicator}(${period}) ${opLabel} ${thresholdText}`;
 }
 
 export function fillPresetRsiFields(presetId, params) {
-  const defaults = rsiPresetDefaults(presetId);
+  const defaults = oscillatorPresetDefaults(presetId);
   if (!defaults) return;
   els.presetRsiPeriod.value = String(params?.period ?? defaults.period);
   els.presetRsiThreshold.value = String(params?.threshold ?? defaults.threshold);

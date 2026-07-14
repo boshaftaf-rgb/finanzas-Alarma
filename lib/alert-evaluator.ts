@@ -1,4 +1,4 @@
-import { computeEma, computeRsi, computeSma, enrichBars } from "./indicator-engine.js";
+import { computeEma, computeRsi, computeSma, computeStochastic, enrichBars } from "./indicator-engine.js";
 import type { AlertRow, EnrichedBar, EvaluationResult, OhlcvBar } from "./types.js";
 
 function emaCross(
@@ -50,6 +50,16 @@ function resolveRsiValue(
   return rsiVal;
 }
 
+function resolveStochasticValue(enriched: EnrichedBar[], period: number): number {
+  const stoch = computeStochastic(
+    enriched.map((b) => b.high),
+    enriched.map((b) => b.low),
+    enriched.map((b) => b.close),
+    period,
+  );
+  return stoch.at(-1)!;
+}
+
 function evaluateRsiPreset(
   preset: "rsi_oversold" | "rsi_overbought",
   params: Record<string, unknown>,
@@ -62,6 +72,20 @@ function evaluateRsiPreset(
   const operator = preset === "rsi_oversold" ? "<" : ">";
   const rsiVal = resolveRsiValue(current, enriched, period);
   return rsiThreshold(rsiVal, threshold, operator);
+}
+
+function evaluateStochPreset(
+  preset: "stoch_oversold" | "stoch_overbought",
+  params: Record<string, unknown>,
+  enriched: EnrichedBar[],
+): boolean {
+  const period = Number(params.period ?? 7);
+  const defaultThreshold = preset === "stoch_oversold" ? 20 : 80;
+  const threshold = Number(params.threshold ?? defaultThreshold);
+  const operator = preset === "stoch_oversold" ? "<" : ">";
+  const stochVal = resolveStochasticValue(enriched, period);
+  if (!Number.isFinite(stochVal)) return false;
+  return rsiThreshold(stochVal, threshold, operator);
 }
 
 function evaluateCustom(
@@ -122,6 +146,17 @@ function evaluateCustom(
     );
   }
 
+  if (type === "stochastic") {
+    const period = Number(params.period ?? 7);
+    const stochVal = resolveStochasticValue(enriched, period);
+    if (!Number.isFinite(stochVal)) return false;
+    return rsiThreshold(
+      stochVal,
+      Number(params.threshold),
+      params.operator as "<" | ">",
+    );
+  }
+
   if (type === "price_level") {
     const level = Number(params.level);
     const operator = params.operator as ">=" | "<=";
@@ -131,7 +166,9 @@ function evaluateCustom(
     return priceLevelCross(previous.close, current.close, level, operator);
   }
 
-  throw new Error("Alerta custom sin tipo válido (ema, price_ma, rsi o price_level).");
+  throw new Error(
+    "Alerta custom sin tipo válido (ema, price_ma, rsi, stochastic o price_level).",
+  );
 }
 
 function evaluatePreset(
@@ -154,6 +191,10 @@ function evaluatePreset(
       return evaluateRsiPreset("rsi_oversold", params, current, enriched);
     case "rsi_overbought":
       return evaluateRsiPreset("rsi_overbought", params, current, enriched);
+    case "stoch_oversold":
+      return evaluateStochPreset("stoch_oversold", params, enriched);
+    case "stoch_overbought":
+      return evaluateStochPreset("stoch_overbought", params, enriched);
     case "custom":
       return evaluateCustom(params, enriched);
     default:

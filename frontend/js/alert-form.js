@@ -1,7 +1,7 @@
 import {
   normalizeTimeframe,
 } from "./custom-params.js";
-import { isRsiPreset } from "./presets.js";
+import { isOscillatorPreset } from "./presets.js";
 import { normalizeTicker } from "./ticker-validation.js";
 import { els } from "./dom.js";
 import { appState } from "./app-state.js";
@@ -31,6 +31,7 @@ export function setCustomType(type) {
     price_ma: els.customPriceMaFields,
     price_level: els.customPriceLevelFields,
     rsi: els.customRsiFields,
+    stochastic: els.customStochFields,
   };
   const fieldBlocks = Object.values(blocksByType);
   for (const block of fieldBlocks) {
@@ -48,6 +49,10 @@ export function setCustomType(type) {
     btn.setAttribute("aria-pressed", String(active));
   }
   if (type === "price_ma" && els.timeframeSelect.value === "15min") {
+    els.timeframeSelect.value = "1day";
+    updateTimeframeHint();
+  }
+  if (type === "stochastic" && els.timeframeSelect.value === "15min") {
     els.timeframeSelect.value = "1day";
     updateTimeframeHint();
   }
@@ -78,6 +83,11 @@ export function updateTimeframeHint() {
       tf === "1day"
         ? "Diario: período 12 = media de 12 días (como gráfico 1Y en TradingView)."
         : "En 15m, el período cuenta velas de 15 min, no días calendario.";
+  } else if (appState.customType === "stochastic") {
+    els.timeframeHint.textContent =
+      tf === "1day"
+        ? "Diario: Stoch(7) usa el rango high–low de los últimos 7 días."
+        : "En 15m, el período cuenta velas de 15 min, no días calendario.";
   } else {
     els.timeframeHint.textContent =
       tf === "1day"
@@ -98,6 +108,9 @@ export function resetCustomFields() {
   els.rsiPeriod.value = "14";
   els.rsiThreshold.value = "30";
   els.rsiOperator.value = "<";
+  els.stochPeriod.value = "7";
+  els.stochThreshold.value = "20";
+  els.stochOperator.value = "<";
   els.timeframeSelect.value = "15min";
   els.timeframeSelect.disabled = false;
   setCustomType("ema");
@@ -109,6 +122,13 @@ export function fillCustomFields(params) {
     els.rsiPeriod.value = String(params.period ?? 14);
     els.rsiThreshold.value = String(params.threshold ?? 30);
     els.rsiOperator.value = params.operator === ">" ? ">" : "<";
+    return;
+  }
+  if (params?.type === "stochastic") {
+    setCustomType("stochastic");
+    els.stochPeriod.value = String(params.period ?? 7);
+    els.stochThreshold.value = String(params.threshold ?? 20);
+    els.stochOperator.value = params.operator === ">" ? ">" : "<";
     return;
   }
   if (params?.type === "price_ma") {
@@ -184,7 +204,7 @@ export function openEditModal(alert) {
     setFormMode("preset");
     els.timeframeSelect.value = "15min";
     selectPreset(alert.preset_or_custom);
-    if (isRsiPreset(alert.preset_or_custom)) {
+    if (isOscillatorPreset(alert.preset_or_custom)) {
       fillPresetRsiFields(alert.preset_or_custom, alert.params);
     }
   }
@@ -197,6 +217,7 @@ export function openEditModal(alert) {
   }
   const focusByType = {
     rsi: els.rsiPeriod,
+    stochastic: els.stochPeriod,
     price_ma: els.priceMaPeriod,
     price_level: els.priceLevelValue,
     ema: els.emaFast,

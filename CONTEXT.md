@@ -5,15 +5,15 @@ Vocabulario acordado para código, documentación y UI. Usa estos términos de f
 ## Language
 
 **Alerta**:
-Regla de monitoreo sobre un ticker que evalúa una condición técnica (cruce EMA, precio vs media, precio objetivo, o RSI) y puede disparar un correo.
+Regla de monitoreo sobre un ticker que evalúa una condición técnica (cruce EMA, precio vs media, precio objetivo, RSI o Stochastic) y puede disparar un correo.
 _Avoid_: regla, trigger genérico, notificación
 
 **Preset**:
-Configuración predefinida de alerta (cruce alcista 9/21, Golden Cross, RSI sobreventa, etc.) con parámetros fijos.
+Configuración predefinida de alerta (cruce alcista 9/21, Golden Cross, RSI/Stoch sobreventa, etc.) con parámetros fijos.
 _Avoid_: plantilla, template
 
 **Alerta personalizada (custom)**:
-Alerta donde el usuario define parámetros de cruce EMA, **precio vs media (SMA/EMA)**, **precio objetivo (nivel)**, o RSI (no combinados en v1).
+Alerta donde el usuario define parámetros de cruce EMA, **precio vs media (SMA/EMA)**, **precio objetivo (nivel)**, RSI o Stochastic (no combinados en v1).
 _Avoid_: alerta avanzada, regla custom
 
 **Ticker**:
@@ -51,6 +51,10 @@ _Avoid_: cruce largo, cruce mortal (traducción literal)
 **RSI**:
 Relative Strength Index; indicador de momentum en escala 0–100. Presets: sobreventa (<30), sobrecompra (>70).
 _Avoid_: índice de fuerza relativa (en UI; ok en docs técnicos)
+
+**Stochastic (Stoch)**:
+Fast Stochastic %K; posición del cierre en el rango high–low de las últimas N velas (0–100). Presets: sobreventa Stoch (<20), sobrecompra Stoch (>80); default período 7. Custom: período, umbral y operador.
+_Avoid_: estocástico lento, %D, cruce K/D (fuera de v1)
 
 **Worker**:
 Proceso Python en Docker que hace polling, descarga velas, evalúa alertas y envía correos.

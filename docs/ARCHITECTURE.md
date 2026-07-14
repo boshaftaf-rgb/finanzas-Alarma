@@ -1,6 +1,6 @@
 # Stock Alerts — Documento de Arquitectura
 
-Plataforma web de análisis técnico automatizado que monitorea el mercado bursátil de EE. UU. con datos de baja latencia (~15 min de retraso en plan gratuito). Los usuarios registrados seleccionan tickers y configuran condiciones técnicas (cruces EMA, umbrales RSI) para recibir alertas por correo cuando el mercado cumpla esas condiciones.
+Plataforma web de análisis técnico automatizado que monitorea el mercado bursátil de EE. UU. con datos de baja latencia (~15 min de retraso en plan gratuito). Los usuarios registrados seleccionan tickers y configuran condiciones técnicas (cruces EMA, umbrales RSI/Stochastic) para recibir alertas por correo cuando el mercado cumpla esas condiciones.
 
 ---
 
@@ -38,7 +38,7 @@ El frontend habla **directamente con Supabase** (`@supabase/supabase-js`, clave 
 finanzas-Alarma/
 ├── frontend/              # React + Vite → Vercel
 ├── api/cron/              # Worker serverless (Vercel Cron)
-├── lib/                   # EMA, RSI, evaluador, Supabase store
+├── lib/                   # EMA, RSI, Stochastic, evaluador, Supabase store
 ├── worker/                # Python — solo desarrollo local (legacy)
 ├── supabase/migrations/
 ├── vercel.json            # Cron cada 5 min
@@ -65,6 +65,7 @@ finanzas-Alarma/
 - **Precio vs media** (SMA o EMA): cierre cruza la línea de la media.
 - **Precio objetivo**: cierre cruza un nivel fijo (`>=` / `<=`).
 - Umbrales de **RSI** (sobreventa / sobrecompra).
+- Umbrales de **Stochastic %K** (sobreventa / sobrecompra).
 
 ### Presets (velas de 15 min)
 
@@ -76,15 +77,19 @@ finanzas-Alarma/
 | `death_cross` | Death Cross | EMA(50) cruza **abajo** EMA(200) |
 | `rsi_oversold` | RSI sobreventa | RSI(period) **< threshold** (defaults: 14 / 30; editables en panel) |
 | `rsi_overbought` | RSI sobrecompra | RSI(period) **> threshold** (defaults: 14 / 70; editables en panel) |
-| `custom` | Personalizado | Regla EMA, **precio vs media**, **precio objetivo**, o RSI (no combinadas) |
+| `stoch_oversold` | Sobreventa Stoch | Stoch(period) **< threshold** (defaults: 7 / 20; editables en panel) |
+| `stoch_overbought` | Sobrecompra Stoch | Stoch(period) **> threshold** (defaults: 7 / 80; editables en panel) |
+| `custom` | Personalizado | Regla EMA, **precio vs media**, **precio objetivo**, RSI o Stochastic (no combinadas) |
 
-En modo **custom**, el usuario elige timeframe **`15min`** o **`1day`**. Configura: períodos EMA + dirección de cruce; **precio vs SMA/EMA** + período + dirección; **precio objetivo** + nivel + operador (`>=` / `<=`); o período RSI + umbral + operador (`<` / `>`).
+En modo **custom**, el usuario elige timeframe **`15min`** o **`1day`**. Configura: períodos EMA + dirección de cruce; **precio vs SMA/EMA** + período + dirección; **precio objetivo** + nivel + operador (`>=` / `<=`); período RSI o Stochastic + umbral + operador (`<` / `>`).
 
 Ejemplo alerta temprana (gráfico diario 1Y): `timeframe=1day`, `params={ "type": "price_ma", "ma_type": "sma", "period": 12, "direction": "up" }`.
 
 Ejemplo precio objetivo: `timeframe=15min`, `params={ "type": "price_level", "level": 185.5, "operator": ">=" }` (cierre cruza el nivel desde abajo).
 
-Los presets RSI guardan `params` como `{ "period": N, "threshold": N }` (sin `operator`; lo define el preset). Alertas existentes con `params: {}` usan los defaults 14 / 30 / 70.
+Ejemplo Stoch diario: `timeframe=1day`, `params={ "type": "stochastic", "period": 7, "threshold": 20, "operator": "<" }`.
+
+Los presets RSI/Stoch guardan `params` como `{ "period": N, "threshold": N }` (sin `operator`; lo define el preset). Alertas RSI existentes con `params: {}` usan defaults 14 / 30 / 70; Stoch usa 7 / 20 / 80.
 
 ---
 
@@ -99,7 +104,7 @@ Los presets RSI guardan `params` como `{ "period": N, "threshold": N }` (sin `op
 | `ticker` | `TEXT` | Símbolo (ej. `AAPL`) |
 | `preset_or_custom` | `TEXT` | Preset o `custom` |
 | `timeframe` | `TEXT` | `15min` (default) o `1day` |
-| `params` | `JSONB` | Parámetros (EMA, price_ma, price_level, RSI, etc.) |
+| `params` | `JSONB` | Parámetros (EMA, price_ma, price_level, RSI, stochastic, etc.) |
 | `active` | `BOOLEAN` | Alerta habilitada |
 | `emails_sent_today` | `INTEGER` | Contador diario (default 0) |
 | `email_count_date` | **`DATE`** | Fecha del contador diario (ver sección de cuotas) |
@@ -264,7 +269,7 @@ flowchart TD
     A[Cada 5 min — horario mercado] --> B[Leer alertas activas — service_role]
     B --> C[Deduplicar tickers únicos]
     C --> D["1× Twelve Data batch (symbols=AAPL,MSFT,...)"]
-    D --> E[Calcular EMA / RSI con pandas-ta]
+    D --> E[Calcular EMA / RSI / Stoch]
     E --> F{¿Condición cumplida?}
     F -->|No| G[Actualizar last_evaluated_at]
     F -->|Sí| H{¿timestamp_vela > last_triggered_candle?}
@@ -319,7 +324,7 @@ flowchart LR
 
 - FastAPI u otro backend HTTP.
 - Feriados y early close del NYSE.
-- Combinación de condiciones EMA + RSI en una sola alerta.
+- Combinación de condiciones EMA + RSI + Stochastic en una sola alerta.
 - Caché de velas (innecesaria con batching).
 - i18n / inglés.
 

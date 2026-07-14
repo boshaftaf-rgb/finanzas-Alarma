@@ -42,6 +42,12 @@ describe("alert-labels", () => {
     ).toBe("RSI(10) < 25");
   });
 
+  it("formatea etiqueta Stochastic custom", () => {
+    expect(
+      formatCustomLabel({ type: "stochastic", period: 7, threshold: 20, operator: "<" }),
+    ).toBe("Stoch(7) < 20");
+  });
+
   it("formatAlertLabel usa preset o custom", () => {
     expect(formatAlertLabel("ema_cross_bull")).toBe("Impulso alcista corto");
     expect(
@@ -51,6 +57,17 @@ describe("alert-labels", () => {
       "Sobreventa — RSI(10) < 25",
     );
     expect(formatAlertLabel("rsi_overbought")).toBe("Sobrecompra — RSI(14) > 70");
+    expect(formatAlertLabel("stoch_oversold")).toBe("Sobreventa Stoch — Stoch(7) < 20");
+    expect(formatAlertLabel("stoch_overbought", { period: 5, threshold: 85 })).toBe(
+      "Sobrecompra Stoch — Stoch(5) > 85",
+    );
+    expect(
+      formatAlertLabel(
+        "custom",
+        { type: "stochastic", period: 7, threshold: 20, operator: "<" },
+        "1day",
+      ),
+    ).toBe("Stoch(7) < 20 · Diario");
     expect(
       formatAlertLabel("custom", { type: "price_ma", ma_type: "sma", period: 12, direction: "up" }, "1day"),
     ).toBe("Precio cruza SMA(12) al alza · Diario");

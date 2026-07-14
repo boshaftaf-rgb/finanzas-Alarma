@@ -4,14 +4,16 @@ import {
   buildPriceMaParams,
   buildRsiParams,
   buildRsiPresetParams,
+  buildStochasticParams,
   normalizeTimeframe,
   validateEmaParams,
   validatePriceLevelParams,
   validatePriceMaParams,
   validateRsiParams,
   validateRsiPresetParams,
+  validateStochasticParams,
 } from "./custom-params.js";
-import { isRsiPreset } from "./presets.js";
+import { isOscillatorPreset } from "./presets.js";
 import { validateTicker } from "./ticker-validation.js";
 import { els } from "./dom.js";
 import { appState } from "./app-state.js";
@@ -40,7 +42,7 @@ export function validateFormPayload() {
       els.formError.classList.remove("hidden");
       return null;
     }
-    if (isRsiPreset(appState.selectedPreset)) {
+    if (isOscillatorPreset(appState.selectedPreset)) {
       const error = validateRsiPresetParams(els.presetRsiPeriod.value, els.presetRsiThreshold.value);
       if (error) {
         els.formError.textContent = error;
@@ -106,6 +108,28 @@ export function validateFormPayload() {
     return {
       presetOrCustom: "custom",
       params: buildPriceLevelParams(els.priceLevelValue.value, els.priceLevelOperator.value),
+      timeframe: resolveTimeframe(),
+    };
+  }
+
+  if (appState.customType === "stochastic") {
+    const error = validateStochasticParams(
+      els.stochPeriod.value,
+      els.stochThreshold.value,
+      els.stochOperator.value,
+    );
+    if (error) {
+      els.formError.textContent = error;
+      els.formError.classList.remove("hidden");
+      return null;
+    }
+    return {
+      presetOrCustom: "custom",
+      params: buildStochasticParams(
+        els.stochPeriod.value,
+        els.stochThreshold.value,
+        els.stochOperator.value,
+      ),
       timeframe: resolveTimeframe(),
     };
   }

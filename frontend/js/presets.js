@@ -49,10 +49,40 @@ export const PRESETS = [
     defaultThreshold: 70,
     operator: ">",
   },
+  {
+    id: "stoch_oversold",
+    name: "Sobreventa Stoch",
+    description: "El cierre está cerca del mínimo del rango reciente",
+    kind: "rsi",
+    badge: "Momentum",
+    defaultPeriod: 7,
+    defaultThreshold: 20,
+    operator: "<",
+    indicator: "stoch",
+  },
+  {
+    id: "stoch_overbought",
+    name: "Sobrecompra Stoch",
+    description: "El cierre está cerca del máximo del rango reciente",
+    kind: "rsi",
+    badge: "Momentum",
+    defaultPeriod: 7,
+    defaultThreshold: 80,
+    operator: ">",
+    indicator: "stoch",
+  },
 ];
 
 export function isRsiPreset(id) {
   return id === "rsi_oversold" || id === "rsi_overbought";
+}
+
+export function isStochPreset(id) {
+  return id === "stoch_oversold" || id === "stoch_overbought";
+}
+
+export function isOscillatorPreset(id) {
+  return isRsiPreset(id) || isStochPreset(id);
 }
 
 export function rsiPresetDefaults(id) {
@@ -63,6 +93,20 @@ export function rsiPresetDefaults(id) {
     threshold: preset.defaultThreshold,
     operator: preset.operator,
   };
+}
+
+export function stochPresetDefaults(id) {
+  const preset = PRESETS.find((p) => p.id === id);
+  if (!preset || !isStochPreset(id)) return null;
+  return {
+    period: preset.defaultPeriod,
+    threshold: preset.defaultThreshold,
+    operator: preset.operator,
+  };
+}
+
+export function oscillatorPresetDefaults(id) {
+  return rsiPresetDefaults(id) ?? stochPresetDefaults(id);
 }
 
 export function presetLabel(id) {

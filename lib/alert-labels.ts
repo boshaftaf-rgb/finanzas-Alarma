@@ -5,6 +5,8 @@ const PRESET_LABELS: Record<string, string> = {
   death_cross: "Cruce bajista de largo plazo",
   rsi_oversold: "Sobreventa",
   rsi_overbought: "Sobrecompra",
+  stoch_oversold: "Sobreventa Stoch",
+  stoch_overbought: "Sobrecompra Stoch",
 };
 
 const RSI_PRESET_DEFAULTS: Record<string, { period: number; threshold: number; operator: "<" | ">" }> = {
@@ -12,8 +14,17 @@ const RSI_PRESET_DEFAULTS: Record<string, { period: number; threshold: number; o
   rsi_overbought: { period: 14, threshold: 70, operator: ">" },
 };
 
+const STOCH_PRESET_DEFAULTS: Record<string, { period: number; threshold: number; operator: "<" | ">" }> = {
+  stoch_oversold: { period: 7, threshold: 20, operator: "<" },
+  stoch_overbought: { period: 7, threshold: 80, operator: ">" },
+};
+
 function isRsiPreset(presetOrCustom: string): boolean {
   return presetOrCustom === "rsi_oversold" || presetOrCustom === "rsi_overbought";
+}
+
+function isStochPreset(presetOrCustom: string): boolean {
+  return presetOrCustom === "stoch_oversold" || presetOrCustom === "stoch_overbought";
 }
 
 export function formatRsiPresetLabel(
@@ -26,6 +37,18 @@ export function formatRsiPresetLabel(
   const threshold = Number(params.threshold ?? defaults.threshold);
   const name = presetLabel(presetOrCustom);
   return `${name} — RSI(${period}) ${defaults.operator} ${threshold}`;
+}
+
+export function formatStochPresetLabel(
+  presetOrCustom: string,
+  params: Record<string, unknown> = {},
+): string {
+  const defaults = STOCH_PRESET_DEFAULTS[presetOrCustom];
+  if (!defaults) return presetLabel(presetOrCustom);
+  const period = Number(params.period ?? defaults.period);
+  const threshold = Number(params.threshold ?? defaults.threshold);
+  const name = presetLabel(presetOrCustom);
+  return `${name} — Stoch(${period}) ${defaults.operator} ${threshold}`;
 }
 
 export function presetLabel(presetOrCustom: string): string {
@@ -41,6 +64,13 @@ export interface CustomEmaParams {
 
 export interface CustomRsiParams {
   type: "rsi";
+  period: number;
+  threshold: number;
+  operator: "<" | ">";
+}
+
+export interface CustomStochasticParams {
+  type: "stochastic";
   period: number;
   threshold: number;
   operator: "<" | ">";
@@ -62,6 +92,7 @@ export interface CustomPriceLevelParams {
 export type CustomAlertParams =
   | CustomEmaParams
   | CustomRsiParams
+  | CustomStochasticParams
   | CustomPriceMaParams
   | CustomPriceLevelParams;
 
@@ -90,6 +121,12 @@ export function formatCustomLabel(params: Record<string, unknown>): string {
     const operator = params.operator === ">" ? ">" : "<";
     return `RSI(${period}) ${operator} ${threshold}`;
   }
+  if (type === "stochastic") {
+    const period = Number(params.period ?? 7);
+    const threshold = Number(params.threshold);
+    const operator = params.operator === ">" ? ">" : "<";
+    return `Stoch(${period}) ${operator} ${threshold}`;
+  }
   return "Alerta personalizada";
 }
 
@@ -103,6 +140,8 @@ export function formatAlertLabel(
     label = formatCustomLabel(params);
   } else if (isRsiPreset(presetOrCustom)) {
     label = formatRsiPresetLabel(presetOrCustom, params);
+  } else if (isStochPreset(presetOrCustom)) {
+    label = formatStochPresetLabel(presetOrCustom, params);
   } else {
     label = presetLabel(presetOrCustom);
   }
@@ -118,7 +157,7 @@ export function alertKindFromRecord(
   params: Record<string, unknown> = {},
 ): "ema" | "rsi" | "other" {
   if (presetOrCustom === "custom") {
-    if (params.type === "rsi") return "rsi";
+    if (params.type === "rsi" || params.type === "stochastic") return "rsi";
     if (params.type === "price_ma" || params.type === "price_level") return "ema";
     return "ema";
   }
@@ -129,6 +168,8 @@ export function alertKindFromRecord(
     death_cross: "ema",
     rsi_oversold: "rsi",
     rsi_overbought: "rsi",
+    stoch_oversold: "rsi",
+    stoch_overbought: "rsi",
   };
   return presetKinds[presetOrCustom] ?? "other";
 }

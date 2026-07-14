@@ -1,4 +1,9 @@
-import { PRESETS, isRsiPreset, rsiPresetDefaults } from "./presets.js";
+import {
+  PRESETS,
+  isOscillatorPreset,
+  isStochPreset,
+  oscillatorPresetDefaults,
+} from "./presets.js";
 
 function timeframeSuffix(timeframe) {
   return timeframe === "1day" ? " · Diario" : "";
@@ -23,25 +28,34 @@ export function formatCustomLabel(params) {
     const op = params.operator === ">" ? ">" : "<";
     return `RSI(${params.period ?? 14}) ${op} ${params.threshold}`;
   }
+  if (params.type === "stochastic") {
+    const op = params.operator === ">" ? ">" : "<";
+    return `Stoch(${params.period ?? 7}) ${op} ${params.threshold}`;
+  }
   return "Alerta personalizada";
 }
 
-export function formatRsiPresetLabel(presetId, params) {
+export function formatOscillatorPresetLabel(presetId, params) {
   const preset = PRESETS.find((p) => p.id === presetId);
-  const defaults = rsiPresetDefaults(presetId);
+  const defaults = oscillatorPresetDefaults(presetId);
   if (!preset || !defaults) return presetId;
   const period = params?.period ?? defaults.period;
   const threshold = params?.threshold ?? defaults.threshold;
   const op = defaults.operator;
-  return `${preset.name} — RSI(${period}) ${op} ${threshold}`;
+  const indicator = isStochPreset(presetId) ? "Stoch" : "RSI";
+  return `${preset.name} — ${indicator}(${period}) ${op} ${threshold}`;
+}
+
+export function formatRsiPresetLabel(presetId, params) {
+  return formatOscillatorPresetLabel(presetId, params);
 }
 
 export function alertDisplayLabel(alert) {
   let label;
   if (alert.preset_or_custom === "custom") {
     label = formatCustomLabel(alert.params);
-  } else if (isRsiPreset(alert.preset_or_custom)) {
-    label = formatRsiPresetLabel(alert.preset_or_custom, alert.params);
+  } else if (isOscillatorPreset(alert.preset_or_custom)) {
+    label = formatOscillatorPresetLabel(alert.preset_or_custom, alert.params);
   } else {
     const preset = PRESETS.find((p) => p.id === alert.preset_or_custom);
     label = preset?.name ?? alert.preset_or_custom;
@@ -51,7 +65,7 @@ export function alertDisplayLabel(alert) {
 
 export function alertKind(alert) {
   if (alert.preset_or_custom === "custom") {
-    if (alert.params?.type === "rsi") return "rsi";
+    if (alert.params?.type === "rsi" || alert.params?.type === "stochastic") return "rsi";
     if (alert.params?.type === "price_ma" || alert.params?.type === "price_level") return "ema";
     return "ema";
   }
@@ -61,7 +75,7 @@ export function alertKind(alert) {
 
 export function alertBadge(alert) {
   if (alert.preset_or_custom === "custom") {
-    if (alert.params?.type === "rsi") return "Momentum";
+    if (alert.params?.type === "rsi" || alert.params?.type === "stochastic") return "Momentum";
     if (alert.params?.type === "price_ma" || alert.params?.type === "price_level") return "Precio";
     return "Tendencia";
   }

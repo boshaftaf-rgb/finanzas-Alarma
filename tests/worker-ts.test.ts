@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { evaluateAlert } from "../lib/alert-evaluator.js";
-import { computeEma, computeSma, enrichBars } from "../lib/indicator-engine.js";
+import { computeEma, computeSma, computeStochastic, enrichBars } from "../lib/indicator-engine.js";
 import type { OhlcvBar } from "../lib/types.js";
 
 function barsFromCloses(closes: number[]): OhlcvBar[] {
@@ -30,6 +30,21 @@ describe("indicator-engine", () => {
     expect(sma3[1]).toBeNaN();
     expect(sma3[2]).toBeCloseTo(11);
     expect(sma3[4]).toBeCloseTo(13);
+  });
+
+  it("calcula Stochastic %K con warmup y rango cero = 50", () => {
+    const highs = [10, 12, 14, 13, 15];
+    const lows = [8, 9, 10, 11, 12];
+    const closes = [9, 11, 13, 12, 14];
+    const stoch3 = computeStochastic(highs, lows, closes, 3);
+    expect(stoch3[1]).toBeNaN();
+    // i=2: HH=14, LL=8, close=13 → 100*(13-8)/(14-8) = 83.333...
+    expect(stoch3[2]).toBeCloseTo((100 * (13 - 8)) / (14 - 8));
+    // i=4: HH=15, LL=10, close=14 → 100*(14-10)/(15-10) = 80
+    expect(stoch3[4]).toBeCloseTo(80);
+
+    const flat = computeStochastic([5, 5, 5], [5, 5, 5], [5, 5, 5], 3);
+    expect(flat[2]).toBe(50);
   });
 });
 
@@ -82,5 +97,37 @@ describe("alert-evaluator", () => {
     );
     expect(resultDefault.conditionMet).toBe(true);
     expect(resultCustom.conditionMet).toBe(true);
+  });
+
+  it("detecta Stochastic sobreventa", () => {
+    let price = 100;
+    const closes = [price];
+    for (let i = 0; i < 20; i++) {
+      price *= 0.95;
+      closes.push(price);
+    }
+    const result = evaluateAlert(
+      { ticker: "TEST", preset_or_custom: "stoch_oversold", params: {} },
+      barsFromCloses(closes),
+    );
+    expect(result.conditionMet).toBe(true);
+  });
+
+  it("detecta Stochastic custom con umbral", () => {
+    let price = 100;
+    const closes = [price];
+    for (let i = 0; i < 20; i++) {
+      price *= 1.05;
+      closes.push(price);
+    }
+    const result = evaluateAlert(
+      {
+        ticker: "TEST",
+        preset_or_custom: "custom",
+        params: { type: "stochastic", period: 7, threshold: 80, operator: ">" },
+      },
+      barsFromCloses(closes),
+    );
+    expect(result.conditionMet).toBe(true);
   });
 });

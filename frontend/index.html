@@ -234,6 +234,9 @@
               <button type="button" class="custom-type-btn" data-custom-type="rsi" aria-pressed="false">
                 Momentum (RSI)
               </button>
+              <button type="button" class="custom-type-btn" data-custom-type="stochastic" aria-pressed="false">
+                Momentum (Stoch)
+              </button>
             </div>
 
             <div id="custom-ema-fields" class="custom-fields">
@@ -345,6 +348,29 @@
                   <option value=">">Mayor que</option>
                 </select>
               </label>
+            </div>
+
+            <div id="custom-stoch-fields" class="custom-fields hidden">
+              <div class="form-row">
+                <label class="form-field" for="stoch-period">
+                  <span class="form-field__label">Período</span>
+                  <input id="stoch-period" class="input-text" type="number" min="2" max="50" value="7" inputmode="numeric" />
+                </label>
+                <label class="form-field" for="stoch-threshold">
+                  <span class="form-field__label">Umbral</span>
+                  <input id="stoch-threshold" class="input-text" type="number" min="0" max="100" value="20" inputmode="numeric" />
+                </label>
+              </div>
+              <label class="form-field" for="stoch-operator">
+                <span class="form-field__label">Condición</span>
+                <select id="stoch-operator" class="input-text input-select">
+                  <option value="<">Menor que</option>
+                  <option value=">">Mayor que</option>
+                </select>
+              </label>
+              <p class="form-field__hint">
+                Fast Stochastic %K. En diario, período 7 = rango de los últimos 7 días.
+              </p>
             </div>
           </div>
         </div>

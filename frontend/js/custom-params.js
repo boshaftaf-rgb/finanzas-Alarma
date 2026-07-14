@@ -49,11 +49,35 @@ export function buildRsiParams(periodRaw, thresholdRaw, operator) {
   };
 }
 
+export function validateStochasticParams(periodRaw, thresholdRaw, operator) {
+  const period = Number(periodRaw);
+  const threshold = Number(thresholdRaw);
+  if (!Number.isInteger(period) || period < 2 || period > 50) {
+    return "El período Stochastic debe ser un número entre 2 y 50.";
+  }
+  if (!Number.isFinite(threshold) || threshold < 0 || threshold > 100) {
+    return "El umbral debe estar entre 0 y 100.";
+  }
+  if (operator !== "<" && operator !== ">") {
+    return "Selecciona el operador (menor o mayor que).";
+  }
+  return null;
+}
+
+export function buildStochasticParams(periodRaw, thresholdRaw, operator) {
+  return {
+    type: "stochastic",
+    period: Number(periodRaw),
+    threshold: Number(thresholdRaw),
+    operator,
+  };
+}
+
 export function validateRsiPresetParams(periodRaw, thresholdRaw) {
   const period = Number(periodRaw);
   const threshold = Number(thresholdRaw);
   if (!Number.isInteger(period) || period < 2 || period > 50) {
-    return "El período RSI debe ser un número entre 2 y 50.";
+    return "El período debe ser un número entre 2 y 50.";
   }
   if (!Number.isFinite(threshold) || threshold < 0 || threshold > 100) {
     return "El umbral debe estar entre 0 y 100.";

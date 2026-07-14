@@ -12,7 +12,7 @@ El usuario quiere una plataforma donde pueda registrarse de forma controlada, el
 
 1. Permite a usuarios invitados registrarse con email y contraseña usando un código de un solo uso.
 2. Ofrece un panel web (español) para crear, editar, activar y desactivar alertas sobre tickers de EE. UU.
-3. Ejecuta un **worker serverless en Vercel** (Cron cada 5 min) que, durante el horario de mercado, descarga datos de mercado en **una sola petición batch** (Twelve Data), calcula indicadores (EMA, RSI) sobre velas de 15 minutos, y envía correos vía Gmail SMTP cuando las condiciones se cumplen.
+3. Ejecuta un **worker serverless en Vercel** (Cron cada 5 min) que, durante el horario de mercado, descarga datos de mercado en **una sola petición batch** (Twelve Data), calcula indicadores (EMA, RSI, Stochastic) sobre velas de 15 minutos o diarias, y envía correos vía Gmail SMTP cuando las condiciones se cumplen.
 4. Protege contra spam de correos mediante **candle-lock** (máximo un email por vela de 15 min por alerta) y un tope de 10 emails por alerta por día.
 5. Almacena configuración y estado en Supabase (PostgreSQL + Auth + RLS), con el frontend hablando directamente con Supabase y el worker usando `service_role` de forma aislada.
 
@@ -23,10 +23,11 @@ El usuario quiere una plataforma donde pueda registrarse de forma controlada, el
 3. As a **usuario registrado**, I want to **cerrar sesión**, so that **nadie más use mi cuenta en un dispositivo compartido**.
 4. As a **usuario registrado**, I want to **ver un listado de todas mis alertas activas e inactivas**, so that **tenga una vista centralizada de lo que estoy monitoreando**.
 5. As a **usuario registrado**, I want to **crear una alerta seleccionando un ticker de EE. UU.**, so that **monitoree una acción concreta**.
-6. As a **usuario registrado**, I want to **elegir un preset de alerta** (cruce alcista 9/21, cruce bajista 9/21, Golden Cross, Death Cross, RSI sobreventa, RSI sobrecompra), so that **configure reglas comunes sin entender parámetros técnicos**.
+6. As a **usuario registrado**, I want to **elegir un preset de alerta** (cruce alcista 9/21, cruce bajista 9/21, Golden Cross, Death Cross, RSI sobreventa/sobrecompra, Stoch sobreventa/sobrecompra), so that **configure reglas comunes sin entender parámetros técnicos**.
 7. As a **usuario registrado**, I want to **crear una alerta personalizada de tipo EMA** con períodos rápido/lento y dirección de cruce configurables, so that **adapte cruces de medias a mi estrategia**.
 8. As a **usuario registrado**, I want to **crear una alerta personalizada de tipo RSI** con período, umbral y operador (< o >) configurables, so that **defina zonas de sobreventa/sobrecompra distintas a los presets**.
-9. As a **usuario registrado**, I want to **no poder combinar EMA y RSI en una sola alerta custom**, so that **el sistema permanezca simple y predecible en v1**.
+8b. As a **usuario registrado**, I want to **crear una alerta personalizada de tipo Stochastic** con período, umbral y operador (< o >) configurables, so that **vigile %K en zonas de sobreventa/sobrecompra**.
+9. As a **usuario registrado**, I want to **no poder combinar EMA, RSI y Stochastic en una sola alerta custom**, so that **el sistema permanezca simple y predecible en v1**.
 10. As a **usuario registrado**, I want to **activar y desactivar una alerta sin borrarla**, so that **pause temporalmente el monitoreo de un ticker**.
 11. As a **usuario registrado**, I want to **eliminar una alerta**, so that **deje de recibir notificaciones y libere cupo**.
 12. As a **usuario registrado**, I want to **recibir un mensaje claro si intento añadir un ticker número 16**, so that **entienda el límite de 15 símbolos únicos**.
@@ -46,6 +47,7 @@ El usuario quiere una plataforma donde pueda registrarse de forma controlada, el
 26. As a **operador del sistema**, I want to **aplicar migraciones versionadas de esquema Supabase**, so that **RLS, triggers y tablas sean reproducibles**.
 27. As a **usuario registrado**, I want to **que las alertas de cruce EMA se disparen cuando ocurre un cruce en la vela de 15 min más reciente**, so that **reciba señales de momentum o reversión oportunas**.
 28. As a **usuario registrado**, I want to **que las alertas RSI se disparen cuando el RSI cumple el umbral en la vela actual**, so that **detecte condiciones de sobreventa o sobrecompra**.
+28b. As a **usuario registrado**, I want to **que las alertas Stochastic se disparen cuando el %K cumple el umbral en la vela actual**, so that **detecte extremos del rango high–low reciente**.
 29. As a **usuario registrado**, I want to **que el correo incluya ticker, tipo de alerta, timeframe (15m) y timestamp de la vela**, so that **tenga contexto suficiente para actuar**.
 30. As a **usuario registrado**, I want to **acceder al panel desde cualquier navegador sin instalar software**, so that **gestione alertas desde cualquier dispositivo**.
 31. As a **operador del sistema**, I want to **ver logs del worker en español**, so that **depure problemas sin traducir mensajes**.
@@ -79,7 +81,7 @@ El usuario quiere una plataforma donde pueda registrarse de forma controlada, el
 | **Supabase — Migraciones** | Tablas, RLS, triggers de límites, tabla invite_codes |
 | **Worker — Scheduler** | Gate de horario (lun–vie 9:30–16:00 EST); sin feriados NYSE en v1 |
 | **Worker — DataFetcher** | Una petición batch a Twelve Data por ciclo; símbolos deduplicados separados por comas; intervalo 15min |
-| **Worker — IndicatorEngine** | Cálculo EMA y RSI con pandas/pandas-ta sobre OHLCV recibido |
+| **Worker — IndicatorEngine** | Cálculo EMA, RSI y Stochastic %K sobre OHLCV recibido |
 | **Worker — AlertEvaluator** | Evalúa condiciones, aplica candle-lock y tope diario, produce decisiones de disparo |
 | **Worker — EmailSender** | Envío vía Gmail SMTP con plantilla en español |
 | **Worker — AlertStore** | Lectura/escritura de alertas vía Supabase service_role |
@@ -129,9 +131,11 @@ El usuario quiere una plataforma donde pueda registrarse de forma controlada, el
 | death_cross | EMA(50) cruza abajo EMA(200) |
 | rsi_oversold | RSI(period) < threshold (defaults 14 / 30; editables) |
 | rsi_overbought | RSI(period) > threshold (defaults 14 / 70; editables) |
-| custom | Sub-form EMA, precio vs media (SMA/EMA), o RSI; timeframe 15m o 1D |
+| stoch_oversold | Stoch(period) < threshold (defaults 7 / 20; editables) |
+| stoch_overbought | Stoch(period) > threshold (defaults 7 / 80; editables) |
+| custom | Sub-form EMA, precio vs media (SMA/EMA), precio objetivo, RSI o Stochastic; timeframe 15m o 1D |
 
-Presets RSI persisten `params`: `{ period, threshold }`. Operador fijo: `<` (sobreventa) o `>` (sobrecompra).
+Presets RSI/Stoch persisten `params`: `{ period, threshold }`. Operador fijo: `<` (sobreventa) o `>` (sobrecompra).
 
 ### Regla de disparo (AlertEvaluator)
 
@@ -183,8 +187,8 @@ Solo probar **comportamiento observable externo**, no detalles de implementació
 
 | # | Costura | Qué se prueba | Tipo |
 |---|---------|---------------|------|
-| 1 | **AlertEvaluator** (módulo puro Python) | Dada una alerta + serie OHLCV + estado (`last_triggered_candle`, contadores), devuelve disparar/no disparar correctamente. Cubre: condición EMA cross, RSI threshold, candle-lock, reset diario DATE, tope 10 emails. | Unit |
-| 2 | **IndicatorEngine** (módulo puro Python) | Dado OHLCV conocido, produce EMA/RSI consistentes con valores de referencia (dataset fixture pequeño). | Unit |
+| 1 | **AlertEvaluator** (módulo puro) | Dada una alerta + serie OHLCV + estado (`last_triggered_candle`, contadores), devuelve disparar/no disparar correctamente. Cubre: condición EMA cross, RSI/Stoch threshold, candle-lock, reset diario DATE, tope 10 emails. | Unit |
+| 2 | **IndicatorEngine** (módulo puro) | Dado OHLCV conocido, produce EMA/RSI/Stochastic consistentes con valores de referencia (dataset fixture pequeño). | Unit |
 | 3 | **MarketScheduler** (módulo puro Python) | Dado un instante, responde si el mercado está abierto (lun–vie 9:30–16:00 EST). Casos: sábado, viernes 16:01, lunes 9:29, miércoles 12:00. | Unit |
 | 4 | **DataFetcher batching** (con mock HTTP) | Dadas N alertas con tickers solapados, realiza exactamente 1 request con todos los símbolos únicos. | Integration |
 | 5 | **Supabase RLS + triggers** (cliente de test) | Usuario A no lee alertas de B; inserción ticker #16 falla; inserción alerta #6 en mismo ticker falla. | Integration |
@@ -206,7 +210,7 @@ No hay tests previos en el repositorio (greenfield). Los patrones anteriores se 
 
 - Backend HTTP (FastAPI, Flask, Edge Functions) en v1.
 - Feriados y early close del NYSE.
-- Combinación de condiciones EMA + RSI en una sola alerta.
+- Combinación de condiciones EMA + RSI + Stochastic en una sola alerta.
 - Caché de velas (innecesaria con batching).
 - Internacionalización / inglés.
 - Registro público sin código de invitación.

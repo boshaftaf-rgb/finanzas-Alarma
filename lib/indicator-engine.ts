@@ -71,6 +71,32 @@ export function computeRsi(closes: number[], length = 14): number[] {
   return result;
 }
 
+/** Fast Stochastic %K over the last `length` bars. Range 0 = 50. */
+export function computeStochastic(
+  highs: number[],
+  lows: number[],
+  closes: number[],
+  length: number,
+): number[] {
+  const n = closes.length;
+  const result: number[] = new Array(n).fill(NaN);
+  if (highs.length !== n || lows.length !== n || length < 1 || n < length) {
+    return result;
+  }
+
+  for (let i = length - 1; i < n; i++) {
+    let highest = -Infinity;
+    let lowest = Infinity;
+    for (let j = i - length + 1; j <= i; j++) {
+      if (highs[j] > highest) highest = highs[j];
+      if (lows[j] < lowest) lowest = lows[j];
+    }
+    const range = highest - lowest;
+    result[i] = range === 0 ? 50 : (100 * (closes[i] - lowest)) / range;
+  }
+  return result;
+}
+
 export function enrichBars(bars: OhlcvBar[]): EnrichedBar[] {
   validateOhlcv(bars);
   const closes = bars.map((b) => b.close);
