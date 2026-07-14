@@ -8,8 +8,6 @@ import {
 } from "./twelve-data-rate-limit.js";
 
 const TWELVE_DATA_QUOTE = "https://api.twelvedata.com/quote";
-const DEBUG_LOG =
-  "http://127.0.0.1:7270/ingest/32cd8b27-58a1-4715-bdf4-65491b0657ce";
 
 export interface TickerQuote {
   ticker: string;
@@ -68,26 +66,6 @@ function parseBatchQuotes(tickers: string[], payload: Record<string, TwelveDataQ
   return result;
 }
 
-function logTwelveDataQuote(
-  hypothesisId: string,
-  data: Record<string, unknown>,
-): void {
-  // #region agent log
-  fetch(DEBUG_LOG, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "73a3d6" },
-    body: JSON.stringify({
-      sessionId: "73a3d6",
-      location: "twelve-data-quotes.ts",
-      message: "Twelve Data quote",
-      hypothesisId,
-      data,
-      timestamp: Date.now(),
-    }),
-  }).catch(() => {});
-  // #endregion
-}
-
 async function fetchQuotesChunk(
   chunk: string[],
   apiKey: string,
@@ -98,27 +76,11 @@ async function fetchQuotesChunk(
   url.searchParams.set("symbol", chunk.join(","));
   url.searchParams.set("apikey", apiKey);
 
-  logTwelveDataQuote("B", { phase: "request", symbolCount: chunk.length, symbols: chunk });
-
   let response = await fetchImpl(url.toString());
   if (response.status === 429) {
-    logTwelveDataQuote("B", {
-      phase: "429-retry",
-      symbolCount: chunk.length,
-      creditsUsed: response.headers.get("api-credits-used"),
-      creditsLeft: response.headers.get("api-credits-left"),
-    });
     await sleepMs(msUntilNextCreditMinute());
     response = await fetchImpl(url.toString());
   }
-
-  logTwelveDataQuote("B", {
-    phase: "response",
-    status: response.status,
-    symbolCount: chunk.length,
-    creditsUsed: response.headers?.get?.("api-credits-used") ?? null,
-    creditsLeft: response.headers?.get?.("api-credits-left") ?? null,
-  });
 
   if (!response.ok) {
     throw new Error(`Twelve Data HTTP ${response.status}`);
@@ -146,8 +108,6 @@ export async function fetchBatchQuotes(
     sleepMs,
     maxSymbolsPerBatch: options?.maxSymbolsPerBatch,
   };
-
-  logTwelveDataQuote("B", { phase: "batch-start", totalSymbols: unique.length });
 
   return runSymbolBatches(
     unique,
