@@ -5,7 +5,7 @@ Vocabulario acordado para código, documentación y UI. Usa estos términos de f
 ## Language
 
 **Alerta**:
-Regla de monitoreo sobre un ticker que evalúa una condición técnica (cruce EMA, precio vs media, precio objetivo, RSI o Stochastic) y puede disparar un correo.
+Regla de monitoreo sobre un ticker que evalúa una condición técnica (cruce EMA, precio vs media, precio objetivo, rango de precios, RSI o Stochastic) y puede disparar un correo.
 _Avoid_: regla, trigger genérico, notificación
 
 **Preset**:
@@ -13,7 +13,7 @@ Configuración predefinida de alerta (cruce alcista 9/21, Golden Cross, RSI/Stoc
 _Avoid_: plantilla, template
 
 **Alerta personalizada (custom)**:
-Alerta donde el usuario define parámetros de cruce EMA, **precio vs media (SMA/EMA)**, **precio objetivo (nivel)**, RSI o Stochastic (no combinados en v1).
+Alerta donde el usuario define parámetros de cruce EMA, **precio vs media (SMA/EMA)**, **precio objetivo (nivel)**, **rango de precios (piso/techo)**, RSI o Stochastic (no combinados en v1).
 _Avoid_: alerta avanzada, regla custom
 
 **Ticker**:
@@ -36,8 +36,12 @@ _Avoid_: cruce de medias (cuando se habla solo de precio vs una línea)
 Evento en el que el cierre cruza un nivel de precio fijo elegido por el usuario (`>=` o `<=`) entre vela anterior y actual.
 _Avoid_: stop loss, take profit, alert absolute (en UI español)
 
+**Rango de precios (price_range)**:
+Canal con piso y techo definidos por el usuario; se dispara cuando el cierre sale del rango al alza (techo) o a la baja (piso).
+_Avoid_: banda, channel breakout (en UI español)
+
 **Timeframe**:
-Intervalo de velas de la alerta: `15min` (presets y custom) o `1day` (solo custom). Determina qué significa el «período» de una media (ej. 12 velas diarias = 12 días).
+Intervalo de velas de la alerta: `15min` (mayoría de presets y custom) o `1day` (presets Stoch y custom). Determina qué significa el «período» (ej. Stoch 7 en diario = 7 días).
 _Avoid_: interval, granularity (en UI español)
 
 **Cruce EMA**:
@@ -53,7 +57,7 @@ Relative Strength Index; indicador de momentum en escala 0–100. Presets: sobre
 _Avoid_: índice de fuerza relativa (en UI; ok en docs técnicos)
 
 **Stochastic (Stoch)**:
-Fast Stochastic %K; posición del cierre en el rango high–low de las últimas N velas (0–100). Presets: sobreventa Stoch (<20), sobrecompra Stoch (>80); default período 7. Custom: período, umbral y operador.
+Fast Stochastic %K; posición del cierre en el rango high–low de las últimas N velas (0–100). Presets diarios: sobreventa Stoch (<20), sobrecompra Stoch (>80); default período 7 (= 7 días, como vista 1Y). Custom: período, umbral y operador.
 _Avoid_: estocástico lento, %D, cruce K/D (fuera de v1)
 
 **Worker**:

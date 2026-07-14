@@ -89,12 +89,21 @@ export interface CustomPriceLevelParams {
   operator: ">=" | "<=";
 }
 
+export interface CustomPriceRangeParams {
+  type: "price_range";
+  low: number;
+  high: number;
+  /** Siempre ambos lados (alza y baja). Se conserva en params por compatibilidad. */
+  sides: "both";
+}
+
 export type CustomAlertParams =
   | CustomEmaParams
   | CustomRsiParams
   | CustomStochasticParams
   | CustomPriceMaParams
-  | CustomPriceLevelParams;
+  | CustomPriceLevelParams
+  | CustomPriceRangeParams;
 
 export function formatCustomLabel(params: Record<string, unknown>): string {
   const type = params.type;
@@ -114,6 +123,11 @@ export function formatCustomLabel(params: Record<string, unknown>): string {
     const level = Number(params.level);
     const operator = params.operator === "<=" ? "<=" : ">=";
     return `Precio ${operator} ${level}`;
+  }
+  if (type === "price_range") {
+    const low = Number(params.low);
+    const high = Number(params.high);
+    return `Sale del rango ${low}–${high}`;
   }
   if (type === "rsi") {
     const period = Number(params.period ?? 14);
@@ -158,7 +172,9 @@ export function alertKindFromRecord(
 ): "ema" | "rsi" | "other" {
   if (presetOrCustom === "custom") {
     if (params.type === "rsi" || params.type === "stochastic") return "rsi";
-    if (params.type === "price_ma" || params.type === "price_level") return "ema";
+    if (params.type === "price_ma" || params.type === "price_level" || params.type === "price_range") {
+      return "ema";
+    }
     return "ema";
   }
   const presetKinds: Record<string, "ema" | "rsi"> = {

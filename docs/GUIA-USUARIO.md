@@ -9,7 +9,7 @@ Ficha operativa
 | Parámetro | Valor |
 |-----------|-------|
 | Universo | Acciones EE. UU. (ej. AAPL, BRK.B) |
-| Timeframe | 15 min (presets) o **diario** (alertas personalizadas) |
+| Timeframe | 15 min (presets EMA/RSI) o **diario** (presets Stoch y personalizadas) |
 | Precio usado | Close de cada vela |
 | Evaluación | Cada 5 min, lun–vie 9:30–16:00 ET (America/New_York) |
 | Pre/post market | No |
@@ -90,14 +90,12 @@ El Stochastic %K mide dónde está el cierre respecto al rango high–low de las
 - Mira solo la vela actual: si el %K ya cumple el umbral, la condición es verdadera.
 - No usa línea %D ni cruces K/D en v1.
 
-Preset sobreventa Stoch:  Stoch de la vela actual < umbral (por defecto 20)
-Preset sobrecompra Stoch: Stoch de la vela actual > umbral (por defecto 80)
+Preset sobreventa Stoch:  Stoch de la vela **diaria** actual < umbral (por defecto 20)
+Preset sobrecompra Stoch: Stoch de la vela **diaria** actual > umbral (por defecto 80)
 
-Período por defecto: **7**. Al crear o editar puedes ajustar período (2–50) y umbral (0–100).
+Período por defecto: **7** (= **7 días**, útil junto a un gráfico diario/1Y). Al crear o editar puedes ajustar período (2–50) y umbral (0–100).
 
-Para «7 días» en un gráfico diario: alerta personalizada → Momentum (Stoch) → timeframe **Diario (1D)** → período **7**.
-
-Custom Stoch: period (2–50), threshold (0–100), operator < o >.
+Custom Stoch: period (2–50), threshold (0–100), operator < o >; timeframe 15m o 1D.
 
 ---
 
@@ -121,14 +119,15 @@ Presets
 | Cruce bajista largo plazo | death_cross | EMA 50 y 200 | EMA(50) cruza abajo de EMA(200) |
 | Sobreventa | rsi_oversold | RSI(14) por defecto | RSI < umbral (default 30) en la vela actual; período y umbral editables |
 | Sobrecompra | rsi_overbought | RSI(14) por defecto | RSI > umbral (default 70) en la vela actual; período y umbral editables |
-| Sobreventa Stoch | stoch_oversold | Stoch(7) por defecto | Stoch < umbral (default 20) en la vela actual; período y umbral editables |
-| Sobrecompra Stoch | stoch_overbought | Stoch(7) por defecto | Stoch > umbral (default 80) en la vela actual; período y umbral editables |
+| Sobreventa Stoch | stoch_oversold | Stoch(7) **diario** | Stoch < umbral (default 20) en la vela diaria; período y umbral editables |
+| Sobrecompra Stoch | stoch_overbought | Stoch(7) **diario** | Stoch > umbral (default 80) en la vela diaria; período y umbral editables |
 
 Golden/Death Cross en 15m ≠ mismo evento en gráfico diario (más ruido en intradía).
 
 Custom EMA: ema_fast y ema_slow (2–200, rápida < lenta), direction up/down.
 Custom **Precio vs media**: el cierre cruza SMA o EMA de período N (2–200), direction up/down. Recomendado **SMA** si comparas con TradingView (`ma`).
 Custom **Precio objetivo**: el cierre cruza un nivel fijo (`level` > 0) con operador `>=` o `<=` (evento de cruce entre vela anterior y actual).
+Custom **Rango de precios**: piso (`low`) y techo (`high`); se dispara al salir del canal por arriba o por abajo.
 Custom RSI: period (2–50), threshold (0–100), operator < o >.
 Custom Stochastic: period (2–50), threshold (0–100), operator < o >. Recomendado timeframe **Diario** si el período representa días.
 No se combina EMA + RSI + Stochastic + precio en una sola alerta (v1).
@@ -170,11 +169,26 @@ Se dispara solo en el **cruce del nivel** (vela anterior en un lado, actual en e
 
 ---
 
+Rango de precios (piso y techo)
+
+Para avisar cuando la acción **sale** de un canal que tú defines:
+
+| Campo | Valor |
+|-------|-------|
+| Tipo | Personalizada → **Rango de precios** |
+| Timeframe | 15 min o **Diario (1D)** |
+| Piso (a la baja) | Precio inferior del canal (ej. 100) |
+| Techo (al alza) | Precio superior del canal (ej. 120) |
+
+Se dispara en el **cruce del techo** (≥) o del **piso** (≤). Mientras el cierre siga fuera del rango, no reenvía en cada vela (solo el evento de salida).
+
+---
+
 Disparo del correo
 
 Un correo solo se envía si se cumplen las tres condiciones siguientes:
 
-1. La regla técnica se cumple (cruce EMA, precio vs media, precio objetivo, o umbral RSI/Stoch).
+1. La regla técnica se cumple (cruce EMA, precio vs media, precio objetivo, rango, o umbral RSI/Stoch).
 2. Candle-lock: no se repite correo por la misma vela (máx. 1 por vela por alerta).
 3. Límite diario: menos de 10 correos esa alerta en el día (reset a medianoche).
 
@@ -184,7 +198,9 @@ Correo incluye: ticker, tipo de alerta, timeframe (15m o diario), timestamp de l
 
 Panel y límites
 
-Crear, editar, activar/desactivar y eliminar alertas. Etiquetas: Tendencia = cruce EMA; Precio = precio vs media o precio objetivo; Momentum = RSI o Stochastic.
+Crear, editar, activar/desactivar y eliminar alertas. Etiquetas: Tendencia = cruce EMA; Precio = precio vs media, precio objetivo o rango; Momentum = RSI o Stochastic.
+
+El listado agrupa alertas por ticker. Puedes **arrastrar el asidero** (⋮⋮) de cada grupo para cambiar el orden; el orden se guarda y se mantiene al recargar. Un ticker nuevo aparece al final hasta que lo muevas.
 
 | Límite | Valor |
 |--------|-------|
@@ -192,7 +208,7 @@ Crear, editar, activar/desactivar y eliminar alertas. Etiquetas: Tendencia = cru
 | Alertas por ticker | 5 |
 | Correos por alerta/día | 10 |
 | Correos por vela | 1 |
-| Timeframes | 15 min (presets) y diario (personalizadas) |
+| Timeframes | 15 min (presets EMA/RSI), diario (presets Stoch), y ambos en personalizadas |
 | SMS / push / webhook | No (v1) |
 | Histórico de disparos | Sí (campana → sección Disparos; borrar a mano) |
 | Auth en panel | Planificado |
@@ -229,7 +245,7 @@ No. Notificación informativa.
 Símbolos US: letras, números, punto o guion (máx. 10 caracteres). Ej. AAPL, BRK.B.
 
 ¿Puedo usar gráfico diario o solo 15m?
-Los presets usan 15m. Las alertas personalizadas pueden elegir **15 minutos** o **Diario (1D)**. Para una MA de N días (ej. 12), elige Diario.
+Los presets EMA/RSI usan 15m; los presets Stoch usan **Diario (1D)**. Las alertas personalizadas pueden elegir **15 minutos** o **Diario (1D)**. Para una MA de N días (ej. 12), elige Diario.
 
 ¿Puedo combinar EMA y RSI/Stoch en una alerta?
 No en v1.

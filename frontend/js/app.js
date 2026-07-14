@@ -14,6 +14,12 @@ import {
   fetchFirings,
   initFiringsApi,
 } from "./firings-api.js";
+import {
+  deleteTickerOrder,
+  fetchTickerOrder,
+  initTickerOrderApi,
+  saveTickerOrder,
+} from "./ticker-order-api.js";
 import { alertDisplayLabel } from "./alert-labels.js";
 import { mapDbError } from "./format.js";
 import { showBanner, hideBanner } from "./banner.js";
@@ -21,7 +27,7 @@ import { setLoading, setFiringsLoading } from "./loading.js";
 import { renderSkeleton, renderFiringsSkeleton } from "./skeletons.js";
 import { appState } from "./app-state.js";
 import { els } from "./dom.js";
-import { renderAlerts, bindAlertRowActions } from "./alerts-view.js";
+import { renderAlerts, bindAlertRowActions, bindTickerOrderActions } from "./alerts-view.js";
 import { renderFirings, bindFiringRowActions, updateFiringsBadge } from "./firings-view.js";
 import { showAlertsView, showFiringsView } from "./navigation.js";
 import { loadQuotes, previewTickerQuote } from "./quotes-controller.js";
@@ -34,6 +40,8 @@ import {
   setFormMode,
   setSubmitLoading,
   syncPriceLevelOperator,
+  updatePriceRangeBand,
+  updateStochHint,
   updateTimeframeHint,
 } from "./alert-form.js";
 import { renderPresetGrid, updatePresetRsiHint } from "./form-presets.js";
@@ -43,6 +51,11 @@ function syncFiringsState(list) {
   appState.firings = list;
   appState.firedAlertIds = alertIdsWithFirings(appState.firings);
   updateFiringsBadge();
+}
+
+function tickerHasRemainingAlerts(ticker) {
+  const key = String(ticker).toUpperCase();
+  return appState.alerts.some((a) => String(a.ticker).toUpperCase() === key);
 }
 
 async function loadFirings() {
@@ -65,8 +78,13 @@ async function loadAlerts() {
   setLoading(true);
   hideBanner();
   try {
-    const [alertRows, firingRows] = await Promise.all([fetchAlerts(), fetchFirings()]);
+    const [alertRows, firingRows, tickerOrder] = await Promise.all([
+      fetchAlerts(),
+      fetchFirings(),
+      fetchTickerOrder(),
+    ]);
     appState.alerts = alertRows;
+    appState.tickerOrder = tickerOrder;
     syncFiringsState(firingRows);
     setLoading(false);
     if (appState.currentView === "firings") renderFirings();
@@ -77,6 +95,21 @@ async function loadAlerts() {
     renderAlerts();
     const message = error instanceof Error ? error.message : "Error desconocido";
     showBanner("error", mapDbError(message));
+  }
+}
+
+async function handleTickerReorder(tickers) {
+  const previous = [...appState.tickerOrder];
+  appState.tickerOrder = tickers;
+  renderAlerts();
+  hideBanner();
+  try {
+    await saveTickerOrder(tickers);
+  } catch (error) {
+    appState.tickerOrder = previous;
+    renderAlerts();
+    const raw = error instanceof Error ? error.message : "";
+    showBanner("error", mapDbError(raw) || "No se pudo guardar el orden de tickers.");
   }
 }
 
@@ -126,6 +159,16 @@ async function handleDelete(alert) {
   try {
     await deleteAlert(alert.id);
     appState.alerts = appState.alerts.filter((a) => a.id !== alert.id);
+    if (!tickerHasRemainingAlerts(alert.ticker)) {
+      appState.tickerOrder = appState.tickerOrder.filter(
+        (t) => String(t).toUpperCase() !== String(alert.ticker).toUpperCase(),
+      );
+      try {
+        await deleteTickerOrder(alert.ticker);
+      } catch {
+        /* orden huérfano: no bloquea el borrado de la alerta */
+      }
+    }
     showBanner("success", `Alerta de ${alert.ticker} eliminada.`);
   } catch (error) {
     const raw = error instanceof Error ? error.message : "";
@@ -198,11 +241,16 @@ function bindEvents() {
   for (const btn of document.querySelectorAll(".custom-type-btn")) {
     btn.addEventListener("click", () => setCustomType(btn.dataset.customType));
   }
-  for (const btn of document.querySelectorAll(".operator-seg__btn")) {
+  for (const btn of document.querySelectorAll("#custom-price-level-fields .operator-seg__btn")) {
     btn.addEventListener("click", () => syncPriceLevelOperator(btn.dataset.operator));
   }
+  els.priceRangeLow.addEventListener("input", updatePriceRangeBand);
+  els.priceRangeHigh.addEventListener("input", updatePriceRangeBand);
   els.presetRsiPeriod.addEventListener("input", updatePresetRsiHint);
   els.presetRsiThreshold.addEventListener("input", updatePresetRsiHint);
+  els.stochPeriod.addEventListener("input", updateStochHint);
+  els.stochThreshold.addEventListener("input", updateStochHint);
+  els.stochOperator.addEventListener("change", updateStochHint);
   els.timeframeSelect.addEventListener("change", updateTimeframeHint);
   els.modalBackdrop.addEventListener("click", (e) => {
     if (e.target === els.modalBackdrop) closeModal();
@@ -227,6 +275,9 @@ async function main() {
     onToggle: (alert, active) => void handleToggle(alert, active),
     onDelete: (alert) => void handleDelete(alert),
   });
+  bindTickerOrderActions({
+    onReorder: (tickers) => void handleTickerReorder(tickers),
+  });
   bindFiringRowActions({
     onDelete: (firing) => void handleDeleteFiring(firing),
   });
@@ -242,6 +293,7 @@ async function main() {
     const config = await loadAppConfig();
     initAlertsApi(config);
     initFiringsApi(config);
+    initTickerOrderApi(config);
     await loadAlerts();
   } catch (error) {
     setLoading(false);

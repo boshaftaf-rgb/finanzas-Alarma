@@ -15,8 +15,18 @@ let rowActions = {
   onDelete: () => {},
 };
 
+let orderActions = {
+  onReorder: () => {},
+};
+
+let dragTicker = null;
+
 export function bindAlertRowActions(actions) {
   rowActions = { ...rowActions, ...actions };
+}
+
+export function bindTickerOrderActions(actions) {
+  orderActions = { ...orderActions, ...actions };
 }
 
 export function updateTickerCounter() {
@@ -76,6 +86,88 @@ function createAlertRow(alert) {
   return row;
 }
 
+function clearDropIndicators() {
+  for (const el of els.alertList.querySelectorAll(".ticker-group--drop-before, .ticker-group--drop-after")) {
+    el.classList.remove("ticker-group--drop-before", "ticker-group--drop-after");
+  }
+}
+
+function displayedTickerOrder() {
+  return groupByTicker(appState.alerts, appState.tickerOrder).map(([ticker]) => ticker);
+}
+
+function bindGroupDrag(group, ticker) {
+  const handle = group.querySelector(".ticker-group__drag");
+  group.draggable = false;
+
+  handle.addEventListener("mousedown", () => {
+    group.draggable = true;
+  });
+  handle.addEventListener("touchstart", () => {
+    group.draggable = true;
+  }, { passive: true });
+  handle.addEventListener("mouseup", () => {
+    if (!dragTicker) group.draggable = false;
+  });
+  handle.addEventListener("click", (event) => {
+    event.preventDefault();
+  });
+
+  group.addEventListener("dragstart", (event) => {
+    if (!group.draggable) {
+      event.preventDefault();
+      return;
+    }
+    dragTicker = ticker;
+    group.classList.add("ticker-group--dragging");
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", ticker);
+  });
+
+  group.addEventListener("dragend", () => {
+    dragTicker = null;
+    group.draggable = false;
+    group.classList.remove("ticker-group--dragging");
+    clearDropIndicators();
+  });
+
+  group.addEventListener("dragover", (event) => {
+    if (!dragTicker || dragTicker === ticker) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+    clearDropIndicators();
+    const rect = group.getBoundingClientRect();
+    const before = event.clientY < rect.top + rect.height / 2;
+    group.classList.add(before ? "ticker-group--drop-before" : "ticker-group--drop-after");
+  });
+
+  group.addEventListener("dragleave", (event) => {
+    if (!group.contains(event.relatedTarget)) {
+      group.classList.remove("ticker-group--drop-before", "ticker-group--drop-after");
+    }
+  });
+
+  group.addEventListener("drop", (event) => {
+    event.preventDefault();
+    clearDropIndicators();
+    if (!dragTicker || dragTicker === ticker) return;
+
+    const order = displayedTickerOrder();
+    const fromIdx = order.indexOf(dragTicker);
+    if (fromIdx < 0) return;
+
+    const rect = group.getBoundingClientRect();
+    const before = event.clientY < rect.top + rect.height / 2;
+    const [moved] = order.splice(fromIdx, 1);
+    const targetIdx = order.indexOf(ticker);
+    if (targetIdx < 0) return;
+    const insertAt = before ? targetIdx : targetIdx + 1;
+    order.splice(insertAt, 0, moved);
+
+    void orderActions.onReorder(order);
+  });
+}
+
 export function renderAlerts() {
   updateTickerCounter();
   els.alertList.innerHTML = "";
@@ -93,14 +185,23 @@ export function renderAlerts() {
   setStackLayer(els.skeleton, false);
   setStackLayer(els.alertList, true);
 
-  for (const [ticker, groupAlerts] of groupByTicker(appState.alerts)) {
+  for (const [ticker, groupAlerts] of groupByTicker(appState.alerts, appState.tickerOrder)) {
     const group = document.createElement("section");
     group.className = "ticker-group";
+    group.dataset.ticker = ticker;
     group.setAttribute("aria-label", `Alertas de ${ticker}`);
 
     const header = document.createElement("div");
     header.className = "ticker-group__header";
     header.innerHTML = `
+      <button
+        type="button"
+        class="ticker-group__drag"
+        aria-label="Reordenar ${ticker}"
+        title="Arrastra para reordenar"
+      >
+        <span class="ticker-group__drag-icon" aria-hidden="true"></span>
+      </button>
       <span class="ticker-group__ticker">${ticker}</span>
       <div class="ticker-group__quote">${quoteBlockHtml(ticker)}</div>
     `;
@@ -109,6 +210,8 @@ export function renderAlerts() {
     for (const alert of groupAlerts) {
       group.appendChild(createAlertRow(alert));
     }
+
+    bindGroupDrag(group, ticker);
     els.alertList.appendChild(group);
   }
 }

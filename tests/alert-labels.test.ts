@@ -36,6 +36,12 @@ describe("alert-labels", () => {
     ).toBe("Precio <= 150");
   });
 
+  it("formatea etiqueta rango de precios custom", () => {
+    expect(
+      formatCustomLabel({ type: "price_range", low: 100, high: 120, sides: "both" }),
+    ).toBe("Sale del rango 100–120");
+  });
+
   it("formatea etiqueta RSI custom", () => {
     expect(
       formatCustomLabel({ type: "rsi", period: 10, threshold: 25, operator: "<" }),
@@ -164,6 +170,42 @@ describe("alert-evaluator custom", () => {
         params: { type: "price_level", level: 100, operator: ">=" },
       },
       barsFromCloses([90, 95]),
+    );
+    expect(result.conditionMet).toBe(false);
+  });
+
+  it("evalúa price_range salida al alza", () => {
+    const result = evaluateAlert(
+      {
+        ticker: "TEST",
+        preset_or_custom: "custom",
+        params: { type: "price_range", low: 100, high: 120, sides: "both" },
+      },
+      barsFromCloses([118, 121]),
+    );
+    expect(result.conditionMet).toBe(true);
+  });
+
+  it("evalúa price_range salida a la baja", () => {
+    const result = evaluateAlert(
+      {
+        ticker: "TEST",
+        preset_or_custom: "custom",
+        params: { type: "price_range", low: 100, high: 120, sides: "both" },
+      },
+      barsFromCloses([102, 99]),
+    );
+    expect(result.conditionMet).toBe(true);
+  });
+
+  it("no dispara price_range si permanece dentro", () => {
+    const result = evaluateAlert(
+      {
+        ticker: "TEST",
+        preset_or_custom: "custom",
+        params: { type: "price_range", low: 100, high: 120, sides: "both" },
+      },
+      barsFromCloses([105, 110]),
     );
     expect(result.conditionMet).toBe(false);
   });

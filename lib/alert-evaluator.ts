@@ -37,6 +37,17 @@ function priceLevelCross(
   return prevClose > level && close <= level;
 }
 
+function priceRangeBreakout(
+  prevClose: number,
+  close: number,
+  low: number,
+  high: number,
+): boolean {
+  const brokeUp = priceLevelCross(prevClose, close, high, ">=");
+  const brokeDown = priceLevelCross(prevClose, close, low, "<=");
+  return brokeUp || brokeDown;
+}
+
 function resolveRsiValue(
   current: EnrichedBar,
   enriched: EnrichedBar[],
@@ -166,8 +177,17 @@ function evaluateCustom(
     return priceLevelCross(previous.close, current.close, level, operator);
   }
 
+  if (type === "price_range") {
+    const low = Number(params.low);
+    const high = Number(params.high);
+    if (!Number.isFinite(low) || !Number.isFinite(high) || low <= 0 || high <= 0 || low >= high) {
+      return false;
+    }
+    return priceRangeBreakout(previous.close, current.close, low, high);
+  }
+
   throw new Error(
-    "Alerta custom sin tipo válido (ema, price_ma, rsi, stochastic o price_level).",
+    "Alerta custom sin tipo válido (ema, price_ma, rsi, stochastic, price_level o price_range).",
   );
 }
 

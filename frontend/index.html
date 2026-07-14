@@ -208,11 +208,11 @@
             <div id="preset-rsi-fields" class="custom-fields hidden">
               <div class="form-row">
                 <label class="form-field" for="preset-rsi-period">
-                  <span class="form-field__label">Período</span>
+                  <span id="preset-rsi-period-label" class="form-field__label">Período</span>
                   <input id="preset-rsi-period" class="input-text" type="number" min="2" max="50" value="14" inputmode="numeric" />
                 </label>
                 <label class="form-field" for="preset-rsi-threshold">
-                  <span class="form-field__label">Umbral</span>
+                  <span id="preset-rsi-threshold-label" class="form-field__label">Umbral</span>
                   <input id="preset-rsi-threshold" class="input-text" type="number" min="0" max="100" value="30" inputmode="numeric" />
                 </label>
               </div>
@@ -230,6 +230,9 @@
               </button>
               <button type="button" class="custom-type-btn" data-custom-type="price_level" aria-pressed="false">
                 Precio objetivo
+              </button>
+              <button type="button" class="custom-type-btn" data-custom-type="price_range" aria-pressed="false">
+                Rango de precios
               </button>
               <button type="button" class="custom-type-btn" data-custom-type="rsi" aria-pressed="false">
                 Momentum (RSI)
@@ -330,6 +333,47 @@
               </p>
             </div>
 
+            <div id="custom-price-range-fields" class="custom-fields hidden">
+              <div class="form-row">
+                <label class="form-field" for="price-range-low">
+                  <span class="form-field__label">Piso (a la baja)</span>
+                  <input
+                    id="price-range-low"
+                    class="input-text input-text--mono"
+                    type="number"
+                    min="0.01"
+                    step="any"
+                    value="100"
+                    inputmode="decimal"
+                    placeholder="100.00"
+                  />
+                </label>
+                <label class="form-field" for="price-range-high">
+                  <span class="form-field__label">Techo (al alza)</span>
+                  <input
+                    id="price-range-high"
+                    class="input-text input-text--mono"
+                    type="number"
+                    min="0.01"
+                    step="any"
+                    value="120"
+                    inputmode="decimal"
+                    placeholder="120.00"
+                  />
+                </label>
+              </div>
+              <div class="range-band" aria-hidden="true">
+                <span class="range-band__label range-band__label--low" id="range-band-low">100</span>
+                <div class="range-band__track">
+                  <div class="range-band__fill"></div>
+                </div>
+                <span class="range-band__label range-band__label--high" id="range-band-high">120</span>
+              </div>
+              <p class="form-field__hint">
+                Aviso al cruzar el techo hacia arriba o el piso hacia abajo (salida del rango en ambos sentidos).
+              </p>
+            </div>
+
             <div id="custom-rsi-fields" class="custom-fields hidden">
               <div class="form-row">
                 <label class="form-field" for="rsi-period">
@@ -353,23 +397,23 @@
             <div id="custom-stoch-fields" class="custom-fields hidden">
               <div class="form-row">
                 <label class="form-field" for="stoch-period">
-                  <span class="form-field__label">Período</span>
+                  <span class="form-field__label">Período (días)</span>
                   <input id="stoch-period" class="input-text" type="number" min="2" max="50" value="7" inputmode="numeric" />
                 </label>
                 <label class="form-field" for="stoch-threshold">
-                  <span class="form-field__label">Umbral</span>
+                  <span class="form-field__label">Umbral (0–100)</span>
                   <input id="stoch-threshold" class="input-text" type="number" min="0" max="100" value="20" inputmode="numeric" />
                 </label>
               </div>
               <label class="form-field" for="stoch-operator">
                 <span class="form-field__label">Condición</span>
                 <select id="stoch-operator" class="input-text input-select">
-                  <option value="<">Menor que</option>
-                  <option value=">">Mayor que</option>
+                  <option value="<">Menor que (sobreventa)</option>
+                  <option value=">">Mayor que (sobrecompra)</option>
                 </select>
               </label>
-              <p class="form-field__hint">
-                Fast Stochastic %K. En diario, período 7 = rango de los últimos 7 días.
+              <p id="stoch-hint" class="form-field__hint">
+                Stoch de 7 días menor que 20 → zona de sobreventa (posible rebote).
               </p>
             </div>
           </div>

@@ -1,7 +1,7 @@
 import {
   normalizeTimeframe,
 } from "./custom-params.js";
-import { isOscillatorPreset } from "./presets.js";
+import { isOscillatorPreset, isStochPreset, presetDefaultTimeframe } from "./presets.js";
 import { normalizeTicker } from "./ticker-validation.js";
 import { els } from "./dom.js";
 import { appState } from "./app-state.js";
@@ -30,6 +30,7 @@ export function setCustomType(type) {
     ema: els.customEmaFields,
     price_ma: els.customPriceMaFields,
     price_level: els.customPriceLevelFields,
+    price_range: els.customPriceRangeFields,
     rsi: els.customRsiFields,
     stochastic: els.customStochFields,
   };
@@ -56,25 +57,52 @@ export function setCustomType(type) {
     els.timeframeSelect.value = "1day";
     updateTimeframeHint();
   }
+  if (type === "stochastic") updateStochHint();
   els.formError.classList.add("hidden");
 }
 
 export function syncPriceLevelOperator(operator) {
   const value = operator === "<=" ? "<=" : ">=";
   els.priceLevelOperator.value = value;
-  for (const btn of document.querySelectorAll(".operator-seg__btn")) {
+  for (const btn of document.querySelectorAll("#custom-price-level-fields .operator-seg__btn")) {
     const active = btn.dataset.operator === value;
     btn.classList.toggle("is-active", active);
     btn.setAttribute("aria-pressed", String(active));
   }
 }
 
+export function updatePriceRangeBand() {
+  const low = els.priceRangeLow.value.trim() || "—";
+  const high = els.priceRangeHigh.value.trim() || "—";
+  if (els.rangeBandLow) els.rangeBandLow.textContent = low;
+  if (els.rangeBandHigh) els.rangeBandHigh.textContent = high;
+}
+
+export function updateStochHint() {
+  if (!els.stochHint) return;
+  const period = Number(els.stochPeriod.value) || 7;
+  const threshold = Number(els.stochThreshold.value);
+  const thresholdText = Number.isFinite(threshold) ? threshold : 20;
+  const oversold = els.stochOperator.value !== ">";
+  const opLabel = oversold ? "menor que" : "mayor que";
+  const zone = oversold
+    ? "zona de sobreventa (posible rebote)"
+    : "zona de sobrecompra (posible recorte)";
+  els.stochHint.textContent = `Stoch de ${period} días ${opLabel} ${thresholdText} → ${zone}`;
+}
+
 export function updateTimeframeHint() {
   const tf = els.timeframeSelect.value;
   if (appState.formMode === "preset") {
-    els.timeframeSelect.value = "15min";
+    const presetTf = presetDefaultTimeframe(appState.selectedPreset);
+    els.timeframeSelect.value = presetTf;
     els.timeframeSelect.disabled = true;
-    els.timeframeHint.textContent = "Los presets se evalúan en velas de 15 minutos.";
+    if (isStochPreset(appState.selectedPreset)) {
+      els.timeframeHint.textContent =
+        "Preset Stoch diario: período 7 = últimos 7 días (como gráfico 1Y).";
+    } else {
+      els.timeframeHint.textContent = "Los presets se evalúan en velas de 15 minutos.";
+    }
     return;
   }
   els.timeframeSelect.disabled = false;
@@ -105,6 +133,9 @@ export function resetCustomFields() {
   els.priceMaDirection.value = "up";
   els.priceLevelValue.value = "100";
   syncPriceLevelOperator(">=");
+  els.priceRangeLow.value = "100";
+  els.priceRangeHigh.value = "120";
+  updatePriceRangeBand();
   els.rsiPeriod.value = "14";
   els.rsiThreshold.value = "30";
   els.rsiOperator.value = "<";
@@ -129,6 +160,7 @@ export function fillCustomFields(params) {
     els.stochPeriod.value = String(params.period ?? 7);
     els.stochThreshold.value = String(params.threshold ?? 20);
     els.stochOperator.value = params.operator === ">" ? ">" : "<";
+    updateStochHint();
     return;
   }
   if (params?.type === "price_ma") {
@@ -142,6 +174,13 @@ export function fillCustomFields(params) {
     setCustomType("price_level");
     els.priceLevelValue.value = String(params.level ?? 100);
     syncPriceLevelOperator(params.operator === "<=" ? "<=" : ">=");
+    return;
+  }
+  if (params?.type === "price_range") {
+    setCustomType("price_range");
+    els.priceRangeLow.value = String(params.low ?? 100);
+    els.priceRangeHigh.value = String(params.high ?? 120);
+    updatePriceRangeBand();
     return;
   }
   setCustomType("ema");
@@ -202,8 +241,8 @@ export function openEditModal(alert) {
     fillCustomFields(alert.params);
   } else {
     setFormMode("preset");
-    els.timeframeSelect.value = "15min";
     selectPreset(alert.preset_or_custom);
+    els.timeframeSelect.value = presetDefaultTimeframe(alert.preset_or_custom);
     if (isOscillatorPreset(alert.preset_or_custom)) {
       fillPresetRsiFields(alert.preset_or_custom, alert.params);
     }
@@ -220,6 +259,7 @@ export function openEditModal(alert) {
     stochastic: els.stochPeriod,
     price_ma: els.priceMaPeriod,
     price_level: els.priceLevelValue,
+    price_range: els.priceRangeLow,
     ema: els.emaFast,
   };
   (focusByType[appState.customType] ?? els.emaFast).focus();

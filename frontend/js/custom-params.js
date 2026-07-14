@@ -134,6 +134,30 @@ export function buildPriceLevelParams(levelRaw, operator) {
   };
 }
 
+export function validatePriceRangeParams(lowRaw, highRaw) {
+  const low = Number(lowRaw);
+  const high = Number(highRaw);
+  if (!Number.isFinite(low) || low <= 0) {
+    return "El piso del rango debe ser un número mayor que 0.";
+  }
+  if (!Number.isFinite(high) || high <= 0) {
+    return "El techo del rango debe ser un número mayor que 0.";
+  }
+  if (low >= high) {
+    return "El piso debe ser menor que el techo del rango.";
+  }
+  return null;
+}
+
+export function buildPriceRangeParams(lowRaw, highRaw) {
+  return {
+    type: "price_range",
+    low: Number(lowRaw),
+    high: Number(highRaw),
+    sides: "both",
+  };
+}
+
 export function normalizeTimeframe(value) {
   return value === "1day" ? "1day" : "15min";
 }

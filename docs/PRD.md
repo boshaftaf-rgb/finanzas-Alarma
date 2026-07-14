@@ -22,6 +22,7 @@ El usuario quiere una plataforma donde pueda registrarse de forma controlada, el
 2. As a **usuario registrado**, I want to **iniciar sesión con email y contraseña**, so that **acceda a mis alertas de forma segura**.
 3. As a **usuario registrado**, I want to **cerrar sesión**, so that **nadie más use mi cuenta en un dispositivo compartido**.
 4. As a **usuario registrado**, I want to **ver un listado de todas mis alertas activas e inactivas**, so that **tenga una vista centralizada de lo que estoy monitoreando**.
+4b. As a **usuario registrado**, I want to **reordenar por arrastre los grupos de ticker en el listado de alertas** y que ese orden se guarde, so that **vea primero las acciones que más me importan**.
 5. As a **usuario registrado**, I want to **crear una alerta seleccionando un ticker de EE. UU.**, so that **monitoree una acción concreta**.
 6. As a **usuario registrado**, I want to **elegir un preset de alerta** (cruce alcista 9/21, cruce bajista 9/21, Golden Cross, Death Cross, RSI sobreventa/sobrecompra, Stoch sobreventa/sobrecompra), so that **configure reglas comunes sin entender parámetros técnicos**.
 7. As a **usuario registrado**, I want to **crear una alerta personalizada de tipo EMA** con períodos rápido/lento y dirección de cruce configurables, so that **adapte cruces de medias a mi estrategia**.
@@ -103,6 +104,16 @@ El usuario quiere una plataforma donde pueda registrarse de forma controlada, el
 | last_triggered_candle | TIMESTAMPTZ (nullable hasta primer disparo) |
 | last_evaluated_at | TIMESTAMPTZ |
 
+**Tabla `user_ticker_order`:**
+
+| Campo | Tipo |
+|-------|------|
+| user_id | UUID (PK compuesta) |
+| ticker | TEXT (PK compuesta) |
+| sort_order | INTEGER |
+
+Orden de grupos de ticker en el panel; no lo usa el worker.
+
 **Tabla `invite_codes`:**
 
 | Campo | Tipo |
@@ -131,11 +142,11 @@ El usuario quiere una plataforma donde pueda registrarse de forma controlada, el
 | death_cross | EMA(50) cruza abajo EMA(200) |
 | rsi_oversold | RSI(period) < threshold (defaults 14 / 30; editables) |
 | rsi_overbought | RSI(period) > threshold (defaults 14 / 70; editables) |
-| stoch_oversold | Stoch(period) < threshold (defaults 7 / 20; editables) |
-| stoch_overbought | Stoch(period) > threshold (defaults 7 / 80; editables) |
+| stoch_oversold | Stoch(period) < threshold (defaults 7 / 20; editables; timeframe **1day**) |
+| stoch_overbought | Stoch(period) > threshold (defaults 7 / 80; editables; timeframe **1day**) |
 | custom | Sub-form EMA, precio vs media (SMA/EMA), precio objetivo, RSI o Stochastic; timeframe 15m o 1D |
 
-Presets RSI/Stoch persisten `params`: `{ period, threshold }`. Operador fijo: `<` (sobreventa) o `>` (sobrecompra).
+Presets RSI/Stoch persisten `params`: `{ period, threshold }`. Operador fijo: `<` (sobreventa) o `>` (sobrecompra). Presets Stoch se guardan con `timeframe=1day` (7 = 7 días).
 
 ### Regla de disparo (AlertEvaluator)
 

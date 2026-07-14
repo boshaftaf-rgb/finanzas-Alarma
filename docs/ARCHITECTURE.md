@@ -64,10 +64,13 @@ finanzas-Alarma/
 - Cruces de **EMA** (alcista / bajista).
 - **Precio vs media** (SMA o EMA): cierre cruza la línea de la media.
 - **Precio objetivo**: cierre cruza un nivel fijo (`>=` / `<=`).
+- **Rango de precios**: cierre sale del canal (piso/techo) al alza, a la baja o por ambos lados.
 - Umbrales de **RSI** (sobreventa / sobrecompra).
 - Umbrales de **Stochastic %K** (sobreventa / sobrecompra).
 
-### Presets (velas de 15 min)
+### Presets
+
+EMA/RSI: velas de **15 min**. Stoch: velas **diarias** (`1day`).
 
 | ID | Nombre en UI | Lógica |
 |----|--------------|--------|
@@ -77,17 +80,21 @@ finanzas-Alarma/
 | `death_cross` | Death Cross | EMA(50) cruza **abajo** EMA(200) |
 | `rsi_oversold` | RSI sobreventa | RSI(period) **< threshold** (defaults: 14 / 30; editables en panel) |
 | `rsi_overbought` | RSI sobrecompra | RSI(period) **> threshold** (defaults: 14 / 70; editables en panel) |
-| `stoch_oversold` | Sobreventa Stoch | Stoch(period) **< threshold** (defaults: 7 / 20; editables en panel) |
-| `stoch_overbought` | Sobrecompra Stoch | Stoch(period) **> threshold** (defaults: 7 / 80; editables en panel) |
-| `custom` | Personalizado | Regla EMA, **precio vs media**, **precio objetivo**, RSI o Stochastic (no combinadas) |
+| `stoch_oversold` | Sobreventa Stoch | Stoch(period) **< threshold** en **`1day`** (defaults: 7 / 20; editables) |
+| `stoch_overbought` | Sobrecompra Stoch | Stoch(period) **> threshold** en **`1day`** (defaults: 7 / 80; editables) |
+| `custom` | Personalizado | Regla EMA, **precio vs media**, **precio objetivo**, **rango**, RSI o Stochastic (no combinadas) |
 
-En modo **custom**, el usuario elige timeframe **`15min`** o **`1day`**. Configura: períodos EMA + dirección de cruce; **precio vs SMA/EMA** + período + dirección; **precio objetivo** + nivel + operador (`>=` / `<=`); período RSI o Stochastic + umbral + operador (`<` / `>`).
+En modo **custom**, el usuario elige timeframe **`15min`** o **`1day`**. Configura: períodos EMA + dirección de cruce; **precio vs SMA/EMA** + período + dirección; **precio objetivo** + nivel + operador (`>=` / `<=`); **rango de precios** + piso + techo (salida al alza o a la baja); período RSI o Stochastic + umbral + operador (`<` / `>`).
 
 Ejemplo alerta temprana (gráfico diario 1Y): `timeframe=1day`, `params={ "type": "price_ma", "ma_type": "sma", "period": 12, "direction": "up" }`.
 
 Ejemplo precio objetivo: `timeframe=15min`, `params={ "type": "price_level", "level": 185.5, "operator": ">=" }` (cierre cruza el nivel desde abajo).
 
+Ejemplo rango: `timeframe=15min`, `params={ "type": "price_range", "low": 100, "high": 120, "sides": "both" }` (salida del canal).
+
 Ejemplo Stoch diario: `timeframe=1day`, `params={ "type": "stochastic", "period": 7, "threshold": 20, "operator": "<" }`.
+
+Los presets EMA/RSI usan timeframe **`15min`**. Los presets Stoch usan **`1day`** (período 7 = 7 días).
 
 Los presets RSI/Stoch guardan `params` como `{ "period": N, "threshold": N }` (sin `operator`; lo define el preset). Alertas RSI existentes con `params: {}` usan defaults 14 / 30 / 70; Stoch usa 7 / 20 / 80.
 
@@ -104,7 +111,7 @@ Los presets RSI/Stoch guardan `params` como `{ "period": N, "threshold": N }` (s
 | `ticker` | `TEXT` | Símbolo (ej. `AAPL`) |
 | `preset_or_custom` | `TEXT` | Preset o `custom` |
 | `timeframe` | `TEXT` | `15min` (default) o `1day` |
-| `params` | `JSONB` | Parámetros (EMA, price_ma, price_level, RSI, stochastic, etc.) |
+| `params` | `JSONB` | Parámetros (EMA, price_ma, price_level, price_range, RSI, stochastic, etc.) |
 | `active` | `BOOLEAN` | Alerta habilitada |
 | `emails_sent_today` | `INTEGER` | Contador diario (default 0) |
 | `email_count_date` | **`DATE`** | Fecha del contador diario (ver sección de cuotas) |
@@ -130,6 +137,19 @@ Registro de cada email enviado para la bandeja de **disparos** del panel (persis
 
 - Panel (anon): **SELECT** + **DELETE**.
 - Worker (`service_role`): **INSERT** tras email exitoso.
+
+### Tabla `user_ticker_order`
+
+Orden personalizado de **grupos de ticker** en el listado de alertas del panel (drag-and-drop). No afecta al worker ni a la vista de disparos.
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `user_id` | `UUID` | Propietario (mismo patrón v1 que `alerts`) |
+| `ticker` | `TEXT` | Símbolo; PK compuesta con `user_id` |
+| `sort_order` | `INTEGER` | Posición 0-based (menor = más arriba) |
+
+- Panel (anon): **SELECT** + **INSERT** + **UPDATE** + **DELETE**.
+- Tickers sin fila aparecen al final del listado (A–Z entre ellos).
 
 ### Tabla `invite_codes`
 

@@ -2,6 +2,7 @@ import {
   buildEmaParams,
   buildPriceLevelParams,
   buildPriceMaParams,
+  buildPriceRangeParams,
   buildRsiParams,
   buildRsiPresetParams,
   buildStochasticParams,
@@ -9,17 +10,20 @@ import {
   validateEmaParams,
   validatePriceLevelParams,
   validatePriceMaParams,
+  validatePriceRangeParams,
   validateRsiParams,
   validateRsiPresetParams,
   validateStochasticParams,
 } from "./custom-params.js";
-import { isOscillatorPreset } from "./presets.js";
+import { isOscillatorPreset, presetDefaultTimeframe } from "./presets.js";
 import { validateTicker } from "./ticker-validation.js";
 import { els } from "./dom.js";
 import { appState } from "./app-state.js";
 
 function resolveTimeframe() {
-  if (appState.formMode === "preset") return "15min";
+  if (appState.formMode === "preset") {
+    return presetDefaultTimeframe(appState.selectedPreset);
+  }
   return normalizeTimeframe(els.timeframeSelect.value);
 }
 
@@ -42,6 +46,7 @@ export function validateFormPayload() {
       els.formError.classList.remove("hidden");
       return null;
     }
+    const timeframe = presetDefaultTimeframe(appState.selectedPreset);
     if (isOscillatorPreset(appState.selectedPreset)) {
       const error = validateRsiPresetParams(els.presetRsiPeriod.value, els.presetRsiThreshold.value);
       if (error) {
@@ -52,13 +57,13 @@ export function validateFormPayload() {
       return {
         presetOrCustom: appState.selectedPreset,
         params: buildRsiPresetParams(els.presetRsiPeriod.value, els.presetRsiThreshold.value),
-        timeframe: "15min",
+        timeframe,
       };
     }
     return {
       presetOrCustom: appState.selectedPreset,
       params: {},
-      timeframe: "15min",
+      timeframe,
     };
   }
 
@@ -108,6 +113,20 @@ export function validateFormPayload() {
     return {
       presetOrCustom: "custom",
       params: buildPriceLevelParams(els.priceLevelValue.value, els.priceLevelOperator.value),
+      timeframe: resolveTimeframe(),
+    };
+  }
+
+  if (appState.customType === "price_range") {
+    const error = validatePriceRangeParams(els.priceRangeLow.value, els.priceRangeHigh.value);
+    if (error) {
+      els.formError.textContent = error;
+      els.formError.classList.remove("hidden");
+      return null;
+    }
+    return {
+      presetOrCustom: "custom",
+      params: buildPriceRangeParams(els.priceRangeLow.value, els.priceRangeHigh.value),
       timeframe: resolveTimeframe(),
     };
   }

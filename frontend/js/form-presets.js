@@ -27,6 +27,20 @@ export function renderPresetGrid() {
   }
 }
 
+function syncPresetFieldLabels(id) {
+  if (!els.presetRsiPeriodLabel || !els.presetRsiThresholdLabel) return;
+  if (isStochPreset(id)) {
+    const isOversold = id === "stoch_oversold";
+    els.presetRsiPeriodLabel.textContent = "Período (días)";
+    els.presetRsiThresholdLabel.textContent = isOversold
+      ? "Umbral de sobreventa"
+      : "Umbral de sobrecompra";
+    return;
+  }
+  els.presetRsiPeriodLabel.textContent = "Período";
+  els.presetRsiThresholdLabel.textContent = "Umbral";
+}
+
 export function selectPreset(id) {
   appState.selectedPreset = id;
   els.formError.classList.add("hidden");
@@ -40,9 +54,22 @@ export function selectPreset(id) {
     els.presetRsiPeriod.value = String(defaults.period);
     els.presetRsiThreshold.value = String(defaults.threshold);
     els.presetRsiFields.classList.remove("hidden");
+    syncPresetFieldLabels(id);
     updatePresetRsiHint();
   } else {
     els.presetRsiFields.classList.add("hidden");
+  }
+  // Sync timeframe hint without importing alert-form (avoid cycle).
+  if (appState.formMode === "preset") {
+    els.timeframeSelect.disabled = true;
+    if (isStochPreset(id)) {
+      els.timeframeSelect.value = "1day";
+      els.timeframeHint.textContent =
+        "Preset Stoch diario: período 7 = últimos 7 días (como gráfico 1Y).";
+    } else {
+      els.timeframeSelect.value = "15min";
+      els.timeframeHint.textContent = "Los presets se evalúan en velas de 15 minutos.";
+    }
   }
 }
 
@@ -53,8 +80,17 @@ export function updatePresetRsiHint() {
   const threshold = Number(els.presetRsiThreshold.value);
   const thresholdText = Number.isFinite(threshold) ? threshold : defaults.threshold;
   const opLabel = defaults.operator === ">" ? "mayor que" : "menor que";
-  const indicator = isStochPreset(appState.selectedPreset) ? "Stoch" : "RSI";
-  els.presetRsiHint.textContent = `${indicator}(${period}) ${opLabel} ${thresholdText}`;
+
+  if (isStochPreset(appState.selectedPreset)) {
+    const zone =
+      defaults.operator === ">"
+        ? "zona de sobrecompra (posible recorte)"
+        : "zona de sobreventa (posible rebote)";
+    els.presetRsiHint.textContent = `Stoch de ${period} días ${opLabel} ${thresholdText} → ${zone}`;
+    return;
+  }
+
+  els.presetRsiHint.textContent = `RSI(${period}) ${opLabel} ${thresholdText}`;
 }
 
 export function fillPresetRsiFields(presetId, params) {
@@ -62,6 +98,7 @@ export function fillPresetRsiFields(presetId, params) {
   if (!defaults) return;
   els.presetRsiPeriod.value = String(params?.period ?? defaults.period);
   els.presetRsiThreshold.value = String(params?.threshold ?? defaults.threshold);
+  syncPresetFieldLabels(presetId);
   updatePresetRsiHint();
 }
 
@@ -69,5 +106,7 @@ export function resetPresetRsiFields() {
   els.presetRsiPeriod.value = "14";
   els.presetRsiThreshold.value = "30";
   els.presetRsiFields.classList.add("hidden");
+  if (els.presetRsiPeriodLabel) els.presetRsiPeriodLabel.textContent = "Período";
+  if (els.presetRsiThresholdLabel) els.presetRsiThresholdLabel.textContent = "Umbral";
   els.presetRsiHint.textContent = "RSI(14) menor que 30";
 }

@@ -9,6 +9,7 @@ export const appState = {
   alerts: [],
   firings: [],
   firedAlertIds: new Set(),
+  tickerOrder: [],
   currentView: "alerts",
   busyId: null,
   selectedPreset: null,

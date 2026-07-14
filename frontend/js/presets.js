@@ -52,24 +52,26 @@ export const PRESETS = [
   {
     id: "stoch_oversold",
     name: "Sobreventa Stoch",
-    description: "El cierre está cerca del mínimo del rango reciente",
+    description: "Stoch(7) diario: cierre cerca del mínimo de la última semana (vista 1Y)",
     kind: "rsi",
     badge: "Momentum",
     defaultPeriod: 7,
     defaultThreshold: 20,
     operator: "<",
     indicator: "stoch",
+    defaultTimeframe: "1day",
   },
   {
     id: "stoch_overbought",
     name: "Sobrecompra Stoch",
-    description: "El cierre está cerca del máximo del rango reciente",
+    description: "Stoch(7) diario: cierre cerca del máximo de la última semana (vista 1Y)",
     kind: "rsi",
     badge: "Momentum",
     defaultPeriod: 7,
     defaultThreshold: 80,
     operator: ">",
     indicator: "stoch",
+    defaultTimeframe: "1day",
   },
 ];
 
@@ -83,6 +85,11 @@ export function isStochPreset(id) {
 
 export function isOscillatorPreset(id) {
   return isRsiPreset(id) || isStochPreset(id);
+}
+
+/** Timeframe fijo del preset: Stoch = diario; resto = 15min. */
+export function presetDefaultTimeframe(id) {
+  return isStochPreset(id) ? "1day" : "15min";
 }
 
 export function rsiPresetDefaults(id) {
