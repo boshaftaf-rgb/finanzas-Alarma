@@ -13,22 +13,6 @@ export async function loadQuotes(tickers = null) {
     return;
   }
 
-  // #region agent log
-  fetch("http://127.0.0.1:7270/ingest/32cd8b27-58a1-4715-bdf4-65491b0657ce", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "4efbc2" },
-    body: JSON.stringify({
-      sessionId: "4efbc2",
-      runId: "pre-fix",
-      location: "quotes-controller.js:loadQuotes",
-      message: "loadQuotes start",
-      hypothesisId: "A,C",
-      data: { tickerCount: list.length, tickers: list },
-      timestamp: Date.now(),
-    }),
-  }).catch(() => {});
-  // #endregion
-
   appState.quotesLoading = true;
   if (appState.currentView === "alerts") renderAlerts();
 
@@ -53,21 +37,6 @@ export async function previewTickerQuote(rawTicker) {
   }
 
   const ticker = normalizeTicker(rawTicker);
-  // #region agent log
-  fetch("http://127.0.0.1:7270/ingest/32cd8b27-58a1-4715-bdf4-65491b0657ce", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "4efbc2" },
-    body: JSON.stringify({
-      sessionId: "4efbc2",
-      runId: "pre-fix",
-      location: "quotes-controller.js:previewTickerQuote",
-      message: "previewTickerQuote start",
-      hypothesisId: "A,D",
-      data: { ticker },
-      timestamp: Date.now(),
-    }),
-  }).catch(() => {});
-  // #endregion
   els.tickerPreview.classList.remove("hidden");
   els.tickerPreview.innerHTML = `
     <div class="ticker-preview__skeleton" aria-busy="true" aria-label="Cargando cotización">

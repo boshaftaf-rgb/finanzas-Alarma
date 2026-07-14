@@ -10,8 +10,6 @@ import {
 const TWELVE_DATA_BASE = "https://api.twelvedata.com/time_series";
 
 export type TwelveDataInterval = "15min" | "1day";
-const DEBUG_LOG =
-  "http://127.0.0.1:7270/ingest/32cd8b27-58a1-4715-bdf4-65491b0657ce";
 const DEFAULT_OUTPUT_SIZE = 300;
 
 interface TwelveDataCandle {
@@ -82,26 +80,6 @@ function parseBatchResponse(
   return result;
 }
 
-function logTwelveDataOhlcv(
-  hypothesisId: string,
-  data: Record<string, unknown>,
-): void {
-  // #region agent log
-  fetch(DEBUG_LOG, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "73a3d6" },
-    body: JSON.stringify({
-      sessionId: "73a3d6",
-      location: "twelve-data-fetcher.ts",
-      message: "Twelve Data OHLCV",
-      hypothesisId,
-      data,
-      timestamp: Date.now(),
-    }),
-  }).catch(() => {});
-  // #endregion
-}
-
 async function fetchOhlcvChunk(
   chunk: string[],
   apiKey: string,
@@ -116,27 +94,11 @@ async function fetchOhlcvChunk(
   url.searchParams.set("outputsize", String(outputsize));
   url.searchParams.set("apikey", apiKey);
 
-  logTwelveDataOhlcv("A", { phase: "request", symbolCount: chunk.length, symbols: chunk });
-
   let response = await fetchImpl(url.toString());
   if (response.status === 429) {
-    logTwelveDataOhlcv("B", {
-      phase: "429-retry",
-      symbolCount: chunk.length,
-      creditsUsed: response.headers.get("api-credits-used"),
-      creditsLeft: response.headers.get("api-credits-left"),
-    });
     await sleepMs(msUntilNextCreditMinute());
     response = await fetchImpl(url.toString());
   }
-
-  logTwelveDataOhlcv("A", {
-    phase: "response",
-    status: response.status,
-    symbolCount: chunk.length,
-    creditsUsed: response.headers?.get?.("api-credits-used") ?? null,
-    creditsLeft: response.headers?.get?.("api-credits-left") ?? null,
-  });
 
   if (!response.ok) {
     throw new Error(`Twelve Data HTTP ${response.status}`);
@@ -172,8 +134,6 @@ export async function fetchBatchOhlcv(
     sleepMs,
     maxSymbolsPerBatch: options?.maxSymbolsPerBatch,
   };
-
-  logTwelveDataOhlcv("A", { phase: "batch-start", totalSymbols: unique.length, interval });
 
   return runSymbolBatches(
     unique,
