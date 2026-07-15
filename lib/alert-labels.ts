@@ -163,6 +163,9 @@ export function formatAlertLabel(
   if (timeframe === "1day") {
     return `${label} · Diario`;
   }
+  if (timeframe === "15min") {
+    return `${label} · 15 min`;
+  }
   return label;
 }
 

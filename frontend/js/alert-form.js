@@ -1,7 +1,4 @@
-import {
-  normalizeTimeframe,
-} from "./custom-params.js";
-import { isOscillatorPreset, isStochPreset, presetDefaultTimeframe } from "./presets.js";
+import { isLongEmaCrossPreset, isOscillatorPreset, isStochPreset, presetDefaultTimeframe } from "./presets.js";
 import { normalizeTicker } from "./ticker-validation.js";
 import { els } from "./dom.js";
 import { appState } from "./app-state.js";
@@ -10,6 +7,7 @@ import {
   resetPresetRsiFields,
   selectPreset,
 } from "./form-presets.js";
+import { updateSignalSummary } from "./signal-summary.js";
 
 export function setFormMode(mode) {
   appState.formMode = mode;
@@ -22,6 +20,7 @@ export function setFormMode(mode) {
   els.customSection.classList.toggle("hidden", isPreset);
   updateTimeframeHint();
   els.formError.classList.add("hidden");
+  updateSignalSummary();
 }
 
 export function setCustomType(type) {
@@ -49,16 +48,11 @@ export function setCustomType(type) {
     btn.classList.toggle("is-active", active);
     btn.setAttribute("aria-pressed", String(active));
   }
-  if (type === "price_ma" && els.timeframeSelect.value === "15min") {
-    els.timeframeSelect.value = "1day";
-    updateTimeframeHint();
-  }
-  if (type === "stochastic" && els.timeframeSelect.value === "15min") {
-    els.timeframeSelect.value = "1day";
-    updateTimeframeHint();
-  }
+  els.timeframeSelect.value = "1day";
   if (type === "stochastic") updateStochHint();
   els.formError.classList.add("hidden");
+  updateTimeframeHint();
+  updateSignalSummary();
 }
 
 export function syncPriceLevelOperator(operator) {
@@ -69,6 +63,7 @@ export function syncPriceLevelOperator(operator) {
     btn.classList.toggle("is-active", active);
     btn.setAttribute("aria-pressed", String(active));
   }
+  updateSignalSummary();
 }
 
 export function updatePriceRangeBand() {
@@ -76,6 +71,7 @@ export function updatePriceRangeBand() {
   const high = els.priceRangeHigh.value.trim() || "—";
   if (els.rangeBandLow) els.rangeBandLow.textContent = low;
   if (els.rangeBandHigh) els.rangeBandHigh.textContent = high;
+  updateSignalSummary();
 }
 
 export function updateStochHint() {
@@ -89,39 +85,40 @@ export function updateStochHint() {
     ? "zona de sobreventa (posible rebote)"
     : "zona de sobrecompra (posible recorte)";
   els.stochHint.textContent = `Stoch de ${period} días ${opLabel} ${thresholdText} → ${zone}`;
+  updateSignalSummary();
 }
 
 export function updateTimeframeHint() {
-  const tf = els.timeframeSelect.value;
+  els.timeframeSelect.value = "1day";
+  els.timeframeSelect.disabled = true;
   if (appState.formMode === "preset") {
-    const presetTf = presetDefaultTimeframe(appState.selectedPreset);
-    els.timeframeSelect.value = presetTf;
-    els.timeframeSelect.disabled = true;
     if (isStochPreset(appState.selectedPreset)) {
       els.timeframeHint.textContent =
-        "Preset Stoch diario: período 7 = últimos 7 días (como gráfico 1Y).";
+        "Todas las alertas usan velas diarias. Stoch: período 7 = últimos 7 días (gráfico 1Y).";
+    } else if (isOscillatorPreset(appState.selectedPreset)) {
+      els.timeframeHint.textContent =
+        "Todas las alertas usan velas diarias. RSI: período 14 = últimos 14 días (gráfico 1Y).";
+    } else if (isLongEmaCrossPreset(appState.selectedPreset)) {
+      els.timeframeHint.textContent =
+        "Todas las alertas usan velas diarias. Golden/Death: EMA(50)/EMA(200) como en gráfico 1Y.";
+    } else if (appState.selectedPreset) {
+      els.timeframeHint.textContent =
+        "Todas las alertas usan velas diarias. Impulso EMA(9)/EMA(21) en diario (vista 1Y).";
     } else {
-      els.timeframeHint.textContent = "Los presets se evalúan en velas de 15 minutos.";
+      els.timeframeHint.textContent =
+        "Todas las alertas se evalúan con velas diarias (como gráfico 1Y / intervalo 1 día).";
     }
-    return;
-  }
-  els.timeframeSelect.disabled = false;
-  if (appState.customType === "price_ma") {
+  } else if (appState.customType === "price_ma") {
     els.timeframeHint.textContent =
-      tf === "1day"
-        ? "Diario: período 12 = media de 12 días (como gráfico 1Y en TradingView)."
-        : "En 15m, el período cuenta velas de 15 min, no días calendario.";
+      "Diario: período 12 = media de 12 días (como gráfico 1Y en TradingView).";
   } else if (appState.customType === "stochastic") {
     els.timeframeHint.textContent =
-      tf === "1day"
-        ? "Diario: Stoch(7) usa el rango high–low de los últimos 7 días."
-        : "En 15m, el período cuenta velas de 15 min, no días calendario.";
+      "Diario: Stoch(7) usa el rango high–low de los últimos 7 días.";
   } else {
     els.timeframeHint.textContent =
-      tf === "1day"
-        ? "Alerta evaluada con velas diarias."
-        : "Alerta evaluada con velas de 15 minutos.";
+      "Todas las alertas se evalúan con velas diarias (como gráfico 1Y / intervalo 1 día).";
   }
+  updateSignalSummary();
 }
 
 export function resetCustomFields() {
@@ -142,8 +139,8 @@ export function resetCustomFields() {
   els.stochPeriod.value = "7";
   els.stochThreshold.value = "20";
   els.stochOperator.value = "<";
-  els.timeframeSelect.value = "15min";
-  els.timeframeSelect.disabled = false;
+  els.timeframeSelect.value = "1day";
+  els.timeframeSelect.disabled = true;
   setCustomType("ema");
 }
 
@@ -219,6 +216,7 @@ export function resetForm() {
   resetCustomFields();
   setFormMode("preset");
   setSubmitLoading(false);
+  updateSignalSummary();
 }
 
 export function openCreateModal() {
@@ -237,7 +235,7 @@ export function openEditModal(alert) {
 
   if (alert.preset_or_custom === "custom") {
     setFormMode("custom");
-    els.timeframeSelect.value = normalizeTimeframe(alert.timeframe);
+    els.timeframeSelect.value = "1day";
     fillCustomFields(alert.params);
   } else {
     setFormMode("preset");
@@ -249,6 +247,7 @@ export function openEditModal(alert) {
   }
 
   updateTimeframeHint();
+  updateSignalSummary();
   els.modalBackdrop.classList.remove("hidden");
   if (appState.formMode === "preset") {
     els.presetGrid.querySelector(".is-selected")?.focus();

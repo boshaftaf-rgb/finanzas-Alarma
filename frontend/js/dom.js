@@ -21,6 +21,7 @@ export const els = {
   tickerInput: document.getElementById("ticker-input"),
   tickerError: document.getElementById("ticker-error"),
   formError: document.getElementById("form-error"),
+  signalSummary: document.getElementById("signal-summary"),
   presetGrid: document.getElementById("preset-grid"),
   presetSection: document.getElementById("preset-section"),
   presetRsiFields: document.getElementById("preset-rsi-fields"),

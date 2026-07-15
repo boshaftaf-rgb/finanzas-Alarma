@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import configHandler from "../api/config.ts";
 import quotesHandler from "../api/quotes.ts";
+import verifyAlertHandler from "../api/verify-alert.ts";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const rootDir = join(__dirname, "..");
@@ -26,6 +27,7 @@ const MIME: Record<string, string> = {
 const apiRoutes: Record<string, (req: VercelRequest, res: VercelResponse) => unknown> = {
   "/api/config": configHandler,
   "/api/quotes": quotesHandler,
+  "/api/verify-alert": verifyAlertHandler,
 };
 
 function loadDotEnv(path: string): void {
@@ -42,7 +44,7 @@ function loadDotEnv(path: string): void {
   }
 }
 
-function wrapRequest(req: IncomingMessage, url: URL): VercelRequest {
+function wrapRequest(req: IncomingMessage, url: URL, body?: unknown): VercelRequest {
   const query: Record<string, string | string[]> = {};
   for (const [key, value] of url.searchParams) {
     const current = query[key];
@@ -52,6 +54,7 @@ function wrapRequest(req: IncomingMessage, url: URL): VercelRequest {
   }
   return Object.assign(req, {
     query,
+    body,
     method: req.method ?? "GET",
     headers: req.headers,
   }) as VercelRequest;
@@ -93,13 +96,32 @@ async function serveStatic(pathname: string, res: ServerResponse): Promise<boole
   return true;
 }
 
+async function readJsonBody(req: IncomingMessage): Promise<unknown> {
+  const chunks: Buffer[] = [];
+  for await (const chunk of req) {
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  }
+  if (chunks.length === 0) return undefined;
+  const raw = Buffer.concat(chunks).toString("utf8").trim();
+  if (!raw) return undefined;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return undefined;
+  }
+}
+
 const server = createServer(async (req, res) => {
   const url = new URL(req.url ?? "/", `http://${req.headers.host ?? "localhost"}`);
   const handler = apiRoutes[url.pathname];
 
   if (handler) {
     try {
-      await handler(wrapRequest(req, url), wrapResponse(res));
+      const body =
+        req.method === "POST" || req.method === "PUT" || req.method === "PATCH"
+          ? await readJsonBody(req)
+          : undefined;
+      await handler(wrapRequest(req, url, body), wrapResponse(res));
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       res.statusCode = 500;
@@ -117,5 +139,5 @@ const server = createServer(async (req, res) => {
 });
 
 server.listen(port, () => {
-  console.log(`Dev server: http://localhost:${port} (frontend + /api/config, /api/quotes)`);
+  console.log(`Dev server: http://localhost:${port} (frontend + /api/config, /api/quotes, /api/verify-alert)`);
 });

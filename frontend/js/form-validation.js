@@ -6,7 +6,6 @@ import {
   buildRsiParams,
   buildRsiPresetParams,
   buildStochasticParams,
-  normalizeTimeframe,
   validateEmaParams,
   validatePriceLevelParams,
   validatePriceMaParams,
@@ -15,16 +14,13 @@ import {
   validateRsiPresetParams,
   validateStochasticParams,
 } from "./custom-params.js";
-import { isOscillatorPreset, presetDefaultTimeframe } from "./presets.js";
+import { isOscillatorPreset } from "./presets.js";
 import { validateTicker } from "./ticker-validation.js";
 import { els } from "./dom.js";
 import { appState } from "./app-state.js";
 
 function resolveTimeframe() {
-  if (appState.formMode === "preset") {
-    return presetDefaultTimeframe(appState.selectedPreset);
-  }
-  return normalizeTimeframe(els.timeframeSelect.value);
+  return "1day";
 }
 
 export function validateFormPayload() {
@@ -46,7 +42,7 @@ export function validateFormPayload() {
       els.formError.classList.remove("hidden");
       return null;
     }
-    const timeframe = presetDefaultTimeframe(appState.selectedPreset);
+    const timeframe = resolveTimeframe();
     if (isOscillatorPreset(appState.selectedPreset)) {
       const error = validateRsiPresetParams(els.presetRsiPeriod.value, els.presetRsiThreshold.value);
       if (error) {

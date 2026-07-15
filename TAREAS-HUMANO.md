@@ -71,7 +71,23 @@ Las políticas RLS son la barrera de aislamiento entre usuarios. Un agente puede
 ### Migración actual (orden de tickers en el panel)
 
 - [ ] Aplicar en el proyecto Supabase la migración `supabase/migrations/20260714120000_create_user_ticker_order.sql` (SQL editor o CLI)
+- [ ] Si al reordenar tickers falla el guardado (RLS / “violates row-level security”): aplicar también `supabase/migrations/20260715180000_repair_user_ticker_order_anon_access.sql`
 - [ ] Verificar grants: anon SELECT/INSERT/UPDATE/DELETE en `user_ticker_order`; RLS **desactivado** en v1 (igual que `alerts`)
+
+### Migración actual (RSI presets → diario)
+
+- [ ] Aplicar en el proyecto Supabase la migración `supabase/migrations/20260715190000_rsi_presets_daily_timeframe.sql` (SQL editor o CLI)
+- [ ] Verificar que alertas `rsi_oversold` / `rsi_overbought` existentes tienen `timeframe = '1day'`
+
+### Migración actual (Golden / Death Cross → diario)
+
+- [ ] Aplicar en el proyecto Supabase la migración `supabase/migrations/20260715191000_long_ema_presets_daily_timeframe.sql` (SQL editor o CLI)
+- [ ] Verificar que alertas `golden_cross` / `death_cross` existentes tienen `timeframe = '1day'`
+
+### Migración actual (todas las alertas → diario)
+
+- [ ] Aplicar en el proyecto Supabase la migración `supabase/migrations/20260715200000_all_alerts_daily_timeframe.sql` (SQL editor o CLI)
+- [ ] Verificar: `SELECT DISTINCT timeframe FROM public.alerts;` → solo `1day`
 
 ### Entregables
 

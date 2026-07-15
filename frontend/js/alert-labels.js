@@ -6,7 +6,7 @@ import {
 } from "./presets.js";
 
 function timeframeSuffix(timeframe) {
-  return timeframe === "1day" ? " · Diario" : "";
+  return timeframe === "1day" ? " · Diario" : " · 15 min";
 }
 
 export function formatCustomLabel(params) {

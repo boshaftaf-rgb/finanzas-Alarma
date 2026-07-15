@@ -8,11 +8,13 @@ import { setStackLayer } from "./loading.js";
 import { alertRowSkeletonHtml } from "./skeletons.js";
 import { badgeHtml, escapeAttr, groupByTicker } from "./html-utils.js";
 import { quoteBlockHtml } from "./quotes-ui.js";
+import { alertListLabel, timeframeChipHtml } from "./signal-summary.js";
 
 let rowActions = {
   onEdit: () => {},
   onToggle: () => {},
   onDelete: () => {},
+  onVerify: () => {},
 };
 
 let orderActions = {
@@ -53,11 +55,13 @@ function createAlertRow(alert) {
     return row;
   }
 
-  const label = alertDisplayLabel(alert);
+  const label = alertListLabel(alert);
+  const fullLabel = alertDisplayLabel(alert);
   const kind = alertKind(alert);
   const badgeText = alertBadge(alert);
   const kindBadge =
     kind === "ema" ? badgeHtml("ema", badgeText) : kind === "rsi" ? badgeHtml("rsi", badgeText) : "";
+  const tf = alert.timeframe === "1day" ? "1day" : "15min";
 
   const row = document.createElement("article");
   row.className = `alert-row alert-row--nested ${alert.active ? "" : "alert-row--inactive"}`.trim();
@@ -65,13 +69,15 @@ function createAlertRow(alert) {
   row.innerHTML = `
     <div>
       <div class="alert-row__preset">
-        <span class="alert-row__preset-label alert-row__preset-label--truncate" title="${escapeAttr(label)}">${label}</span>
+        <span class="alert-row__preset-label alert-row__preset-label--truncate" title="${escapeAttr(fullLabel)}">${label}</span>
+        ${timeframeChipHtml(tf)}
         ${kindBadge}
       </div>
       <div class="alert-row__meta">Última evaluación: ${formatEvaluatedAt(alert.last_evaluated_at)}</div>
     </div>
     ${statusBadgeHtml(alert)}
     <div class="alert-row__actions">
+      <button type="button" class="btn-ghost btn-ghost--accent btn-verify" aria-label="Verificar ahora alerta ${alert.ticker}" title="Envía un correo con los valores actuales (no consume cupo diario)">Verificar</button>
       <button type="button" class="btn-ghost btn-ghost--accent btn-edit" aria-label="Editar alerta ${alert.ticker}">Editar</button>
       <button type="button" class="toggle" role="switch" aria-checked="${alert.active}" aria-label="${alert.active ? "Desactivar" : "Activar"} alerta ${alert.ticker}">
         <span class="toggle__thumb"></span>
@@ -80,6 +86,7 @@ function createAlertRow(alert) {
     </div>
   `;
 
+  row.querySelector(".btn-verify").addEventListener("click", () => rowActions.onVerify(alert));
   row.querySelector(".btn-edit").addEventListener("click", () => rowActions.onEdit(alert));
   row.querySelector(".toggle").addEventListener("click", () => rowActions.onToggle(alert, !alert.active));
   row.querySelector(".btn-delete").addEventListener("click", () => rowActions.onDelete(alert));

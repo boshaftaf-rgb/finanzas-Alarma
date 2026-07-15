@@ -20,7 +20,7 @@ export async function fetchAlerts() {
   return data ?? [];
 }
 
-export async function createAlert({ ticker, presetOrCustom, params = {}, timeframe = "15min" }) {
+export async function createAlert({ ticker, presetOrCustom, params = {}, timeframe = "1day" }) {
   const { data, error } = await client
     .from("alerts")
     .insert({

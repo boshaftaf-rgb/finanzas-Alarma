@@ -70,31 +70,31 @@ finanzas-Alarma/
 
 ### Presets
 
-EMA/RSI: velas de **15 min**. Stoch: velas **diarias** (`1day`).
+EMA/RSI/Stoch: velas **diarias** (`1day`, modo vista 1Y). El selector de timeframe del panel queda fijado a Diario.
 
 | ID | Nombre en UI | Lógica |
 |----|--------------|--------|
-| `ema_cross_bull` | Cruce alcista rápido | EMA(9) cruza **arriba** EMA(21) |
-| `ema_cross_bear` | Cruce bajista rápido | EMA(9) cruza **abajo** EMA(21) |
-| `golden_cross` | Golden Cross | EMA(50) cruza **arriba** EMA(200) |
-| `death_cross` | Death Cross | EMA(50) cruza **abajo** EMA(200) |
-| `rsi_oversold` | RSI sobreventa | RSI(period) **< threshold** (defaults: 14 / 30; editables en panel) |
-| `rsi_overbought` | RSI sobrecompra | RSI(period) **> threshold** (defaults: 14 / 70; editables en panel) |
+| `ema_cross_bull` | Cruce alcista rápido | EMA(9) cruza **arriba** EMA(21) en **`1day`** |
+| `ema_cross_bear` | Cruce bajista rápido | EMA(9) cruza **abajo** EMA(21) en **`1day`** |
+| `golden_cross` | Golden Cross | EMA(50) cruza **arriba** EMA(200) en **`1day`** |
+| `death_cross` | Death Cross | EMA(50) cruza **abajo** EMA(200) en **`1day`** |
+| `rsi_oversold` | RSI sobreventa | RSI(period) **< threshold** en **`1day`** (defaults: 14 / 30; editables en panel) |
+| `rsi_overbought` | RSI sobrecompra | RSI(period) **> threshold** en **`1day`** (defaults: 14 / 70; editables en panel) |
 | `stoch_oversold` | Sobreventa Stoch | Stoch(period) **< threshold** en **`1day`** (defaults: 7 / 20; editables) |
 | `stoch_overbought` | Sobrecompra Stoch | Stoch(period) **> threshold** en **`1day`** (defaults: 7 / 80; editables) |
-| `custom` | Personalizado | Regla EMA, **precio vs media**, **precio objetivo**, **rango**, RSI o Stochastic (no combinadas) |
+| `custom` | Personalizado | Regla EMA, **precio vs media**, **precio objetivo**, **rango**, RSI o Stochastic (no combinadas); timeframe **`1day`** |
 
-En modo **custom**, el usuario elige timeframe **`15min`** o **`1day`**. Configura: períodos EMA + dirección de cruce; **precio vs SMA/EMA** + período + dirección; **precio objetivo** + nivel + operador (`>=` / `<=`); **rango de precios** + piso + techo (salida al alza o a la baja); período RSI o Stochastic + umbral + operador (`<` / `>`).
+En modo **custom**, el timeframe queda fijo en **`1day`**. Configura: períodos EMA + dirección de cruce; **precio vs SMA/EMA** + período + dirección; **precio objetivo** + nivel + operador (`>=` / `<=`); **rango de precios** + piso + techo (salida al alza o a la baja); período RSI o Stochastic + umbral + operador (`<` / `>`).
 
 Ejemplo alerta temprana (gráfico diario 1Y): `timeframe=1day`, `params={ "type": "price_ma", "ma_type": "sma", "period": 12, "direction": "up" }`.
 
-Ejemplo precio objetivo: `timeframe=15min`, `params={ "type": "price_level", "level": 185.5, "operator": ">=" }` (cierre cruza el nivel desde abajo).
+Ejemplo precio objetivo: `timeframe=1day`, `params={ "type": "price_level", "level": 185.5, "operator": ">=" }` (cierre cruza el nivel desde abajo).
 
-Ejemplo rango: `timeframe=15min`, `params={ "type": "price_range", "low": 100, "high": 120, "sides": "both" }` (salida del canal).
+Ejemplo rango: `timeframe=1day`, `params={ "type": "price_range", "low": 100, "high": 120, "sides": "both" }` (salida del canal).
 
 Ejemplo Stoch diario: `timeframe=1day`, `params={ "type": "stochastic", "period": 7, "threshold": 20, "operator": "<" }`.
 
-Los presets EMA/RSI usan timeframe **`15min`**. Los presets Stoch usan **`1day`** (período 7 = 7 días).
+Todos los presets y custom usan timeframe **`1day`** (período N = N días bursátiles).
 
 Los presets RSI/Stoch guardan `params` como `{ "period": N, "threshold": N }` (sin `operator`; lo define el preset). Alertas RSI existentes con `params: {}` usan defaults 14 / 30 / 70; Stoch usa 7 / 20 / 80.
 
@@ -110,7 +110,7 @@ Los presets RSI/Stoch guardan `params` como `{ "period": N, "threshold": N }` (s
 | `user_id` | `UUID` FK | Propietario |
 | `ticker` | `TEXT` | Símbolo (ej. `AAPL`) |
 | `preset_or_custom` | `TEXT` | Preset o `custom` |
-| `timeframe` | `TEXT` | `15min` (default) o `1day` |
+| `timeframe` | `TEXT` | `1day` (producto); el CHECK aún admite `15min` por historial |
 | `params` | `JSONB` | Parámetros (EMA, price_ma, price_level, price_range, RSI, stochastic, etc.) |
 | `active` | `BOOLEAN` | Alerta habilitada |
 | `emails_sent_today` | `INTEGER` | Contador diario (default 0) |

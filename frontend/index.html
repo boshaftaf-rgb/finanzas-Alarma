@@ -162,7 +162,7 @@
         aria-describedby="alert-form-subtitle"
       >
         <h2 id="alert-form-title" class="modal__title">Nueva alerta</h2>
-        <p id="alert-form-subtitle" class="modal__subtitle">Máx. 5 alertas activas por ticker. Elige timeframe según tu estrategia.</p>
+        <p id="alert-form-subtitle" class="modal__subtitle">Máx. 5 alertas activas por ticker. Todas se evalúan en velas diarias (vista 1Y).</p>
 
         <div class="modal__body">
         <div class="form-field">
@@ -184,12 +184,11 @@
         <div class="form-field">
           <label class="form-field" for="timeframe-select">
             <span class="form-field__label">Timeframe</span>
-            <select id="timeframe-select" class="input-text input-select">
-              <option value="15min">15 minutos</option>
-              <option value="1day">Diario (1D)</option>
+            <select id="timeframe-select" class="input-text input-select" disabled>
+              <option value="1day" selected>Diario (1D)</option>
             </select>
           </label>
-          <p id="timeframe-hint" class="form-field__hint">Presets usan 15 minutos. Para MA de N días (ej. 12), elige Diario.</p>
+          <p id="timeframe-hint" class="form-field__hint">Todas las alertas usan velas diarias (como gráfico 1Y / intervalo 1 día).</p>
         </div>
 
         <div class="form-field">
@@ -418,6 +417,10 @@
             </div>
           </div>
         </div>
+
+        <aside id="signal-summary" class="signal-summary signal-summary--empty" aria-live="polite">
+          <p class="signal-summary__placeholder">Selecciona un tipo de alerta para ver cómo se calculará.</p>
+        </aside>
 
         <p id="form-error" class="form-field__error hidden" role="alert"></p>
         </div>

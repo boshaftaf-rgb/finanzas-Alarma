@@ -1,6 +1,7 @@
 import nodemailer from "nodemailer";
 import type { Transporter } from "nodemailer";
-import { buildAlertEmail } from "./alert-email-template.js";
+import { buildAlertEmail, buildVerifyAlertEmail } from "./alert-email-template.js";
+import type { AlertSnapshot } from "./alert-snapshot.js";
 
 export interface SmtpConfig {
   host: string;
@@ -53,6 +54,31 @@ export async function sendAlertEmail(
     candleTimestamp: params.candleTimestamp,
     alertParams: params.alertParams,
     timeframe: params.timeframe,
+  });
+
+  const transport = params.transport ?? createTransport(params.config);
+  await transport.sendMail({
+    from: params.config.user,
+    to: params.config.recipient,
+    subject,
+    text,
+  });
+}
+
+export async function sendVerifyAlertEmail(params: {
+  config: SmtpConfig;
+  snapshot: AlertSnapshot;
+  transport?: Transporter;
+}): Promise<void> {
+  const { subject, text } = buildVerifyAlertEmail({
+    ticker: params.snapshot.ticker,
+    presetOrCustom: params.snapshot.presetOrCustom,
+    candleTimestamp: params.snapshot.candleTimestamp,
+    alertParams: params.snapshot.alertParams,
+    timeframe: params.snapshot.timeframe,
+    close: params.snapshot.close,
+    valueLines: params.snapshot.valueLines,
+    conditionMet: params.snapshot.conditionMet,
   });
 
   const transport = params.transport ?? createTransport(params.config);

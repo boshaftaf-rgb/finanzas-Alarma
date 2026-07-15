@@ -4,50 +4,56 @@ export const PRESETS = [
   {
     id: "ema_cross_bull",
     name: "Impulso alcista corto",
-    description: "La tendencia rápida supera a la intermedia",
+    description: "EMA(9) cruza arriba EMA(21) en diario (vista 1Y)",
     kind: "ema",
     badge: "Tendencia",
+    defaultTimeframe: "1day",
   },
   {
     id: "ema_cross_bear",
     name: "Impulso bajista corto",
-    description: "La tendencia rápida cae por debajo de la intermedia",
+    description: "EMA(9) cruza abajo EMA(21) en diario (vista 1Y)",
     kind: "ema",
     badge: "Tendencia",
+    defaultTimeframe: "1day",
   },
   {
     id: "golden_cross",
     name: "Cruce alcista de largo plazo",
-    description: "La tendencia media supera a la de largo plazo",
+    description: "Golden Cross diario: EMA(50) cruza arriba EMA(200) (vista 1Y)",
     kind: "ema",
     badge: "Tendencia",
+    defaultTimeframe: "1day",
   },
   {
     id: "death_cross",
     name: "Cruce bajista de largo plazo",
-    description: "La tendencia media cae por debajo de la de largo plazo",
+    description: "Death Cross diario: EMA(50) cruza abajo EMA(200) (vista 1Y)",
     kind: "ema",
     badge: "Tendencia",
+    defaultTimeframe: "1day",
   },
   {
     id: "rsi_oversold",
     name: "Sobreventa",
-    description: "El precio cayó con fuerza en velas recientes",
+    description: "RSI(14) diario < 30: sobreventa como en gráfico 1Y",
     kind: "rsi",
     badge: "Momentum",
     defaultPeriod: 14,
     defaultThreshold: 30,
     operator: "<",
+    defaultTimeframe: "1day",
   },
   {
     id: "rsi_overbought",
     name: "Sobrecompra",
-    description: "El precio subió con fuerza en velas recientes",
+    description: "RSI(14) diario > 70: sobrecompra como en gráfico 1Y",
     kind: "rsi",
     badge: "Momentum",
     defaultPeriod: 14,
     defaultThreshold: 70,
     operator: ">",
+    defaultTimeframe: "1day",
   },
   {
     id: "stoch_oversold",
@@ -87,9 +93,14 @@ export function isOscillatorPreset(id) {
   return isRsiPreset(id) || isStochPreset(id);
 }
 
-/** Timeframe fijo del preset: Stoch = diario; resto = 15min. */
-export function presetDefaultTimeframe(id) {
-  return isStochPreset(id) ? "1day" : "15min";
+/** Golden / Death Cross clásicos: EMA 50/200 en diario. */
+export function isLongEmaCrossPreset(id) {
+  return id === "golden_cross" || id === "death_cross";
+}
+
+/** Timeframe fijo de todos los presets: diario (vista 1Y). */
+export function presetDefaultTimeframe(_id) {
+  return "1day";
 }
 
 export function rsiPresetDefaults(id) {

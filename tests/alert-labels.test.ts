@@ -56,11 +56,17 @@ describe("alert-labels", () => {
 
   it("formatAlertLabel usa preset o custom", () => {
     expect(formatAlertLabel("ema_cross_bull")).toBe("Impulso alcista corto");
+    expect(formatAlertLabel("ema_cross_bull", {}, "15min")).toBe(
+      "Impulso alcista corto · 15 min",
+    );
     expect(
       formatAlertLabel("custom", { type: "rsi", period: 10, threshold: 25, operator: "<" }),
     ).toBe("RSI(10) < 25");
     expect(formatAlertLabel("rsi_oversold", { period: 10, threshold: 25 })).toBe(
       "Sobreventa — RSI(10) < 25",
+    );
+    expect(formatAlertLabel("rsi_oversold", { period: 10, threshold: 25 }, "1day")).toBe(
+      "Sobreventa — RSI(10) < 25 · Diario",
     );
     expect(formatAlertLabel("rsi_overbought")).toBe("Sobrecompra — RSI(14) > 70");
     expect(formatAlertLabel("stoch_oversold")).toBe("Sobreventa Stoch — Stoch(7) < 20");

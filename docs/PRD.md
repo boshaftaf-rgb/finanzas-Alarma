@@ -49,7 +49,7 @@ El usuario quiere una plataforma donde pueda registrarse de forma controlada, el
 27. As a **usuario registrado**, I want to **que las alertas de cruce EMA se disparen cuando ocurre un cruce en la vela de 15 min más reciente**, so that **reciba señales de momentum o reversión oportunas**.
 28. As a **usuario registrado**, I want to **que las alertas RSI se disparen cuando el RSI cumple el umbral en la vela actual**, so that **detecte condiciones de sobreventa o sobrecompra**.
 28b. As a **usuario registrado**, I want to **que las alertas Stochastic se disparen cuando el %K cumple el umbral en la vela actual**, so that **detecte extremos del rango high–low reciente**.
-29. As a **usuario registrado**, I want to **que el correo incluya ticker, tipo de alerta, timeframe (15m) y timestamp de la vela**, so that **tenga contexto suficiente para actuar**.
+29. As a **usuario registrado**, I want to **que el correo incluya ticker, tipo de alerta, timeframe (diario) y timestamp de la vela**, so that **tenga contexto suficiente para actuar**.
 30. As a **usuario registrado**, I want to **acceder al panel desde cualquier navegador sin instalar software**, so that **gestione alertas desde cualquier dispositivo**.
 31. As a **operador del sistema**, I want to **ver logs del worker en español**, so that **depure problemas sin traducir mensajes**.
 32. As a **operador del sistema**, I want to **que el worker actualice last_evaluated_at en cada ciclo**, so that **sepa cuándo se evaluó por última vez cada alerta**.
@@ -81,7 +81,7 @@ El usuario quiere una plataforma donde pueda registrarse de forma controlada, el
 | **Frontend — Alertas CRUD** | Crear, listar, editar, activar/desactivar, eliminar alertas |
 | **Supabase — Migraciones** | Tablas, RLS, triggers de límites, tabla invite_codes |
 | **Worker — Scheduler** | Gate de horario (lun–vie 9:30–16:00 EST); sin feriados NYSE en v1 |
-| **Worker — DataFetcher** | Una petición batch a Twelve Data por ciclo; símbolos deduplicados separados por comas; intervalo 15min |
+| **Worker — DataFetcher** | Una petición batch a Twelve Data por ciclo; símbolos deduplicados; intervalo **1day** (modo producto) |
 | **Worker — IndicatorEngine** | Cálculo EMA, RSI y Stochastic %K sobre OHLCV recibido |
 | **Worker — AlertEvaluator** | Evalúa condiciones, aplica candle-lock y tope diario, produce decisiones de disparo |
 | **Worker — EmailSender** | Envío vía Gmail SMTP con plantilla en español |
@@ -134,19 +134,19 @@ Orden de grupos de ticker en el panel; no lo usa el worker.
 
 ### Presets de alerta
 
-| ID | Lógica (velas 15m) |
-|----|---------------------|
-| ema_cross_bull | EMA(9) cruza arriba EMA(21) |
-| ema_cross_bear | EMA(9) cruza abajo EMA(21) |
-| golden_cross | EMA(50) cruza arriba EMA(200) |
-| death_cross | EMA(50) cruza abajo EMA(200) |
-| rsi_oversold | RSI(period) < threshold (defaults 14 / 30; editables) |
-| rsi_overbought | RSI(period) > threshold (defaults 14 / 70; editables) |
+| ID | Lógica |
+|----|--------|
+| ema_cross_bull | EMA(9) cruza arriba EMA(21) (timeframe **1day**) |
+| ema_cross_bear | EMA(9) cruza abajo EMA(21) (timeframe **1day**) |
+| golden_cross | EMA(50) cruza arriba EMA(200) (timeframe **1day**) |
+| death_cross | EMA(50) cruza abajo EMA(200) (timeframe **1day**) |
+| rsi_oversold | RSI(period) < threshold (defaults 14 / 30; editables; timeframe **1day**) |
+| rsi_overbought | RSI(period) > threshold (defaults 14 / 70; editables; timeframe **1day**) |
 | stoch_oversold | Stoch(period) < threshold (defaults 7 / 20; editables; timeframe **1day**) |
 | stoch_overbought | Stoch(period) > threshold (defaults 7 / 80; editables; timeframe **1day**) |
-| custom | Sub-form EMA, precio vs media (SMA/EMA), precio objetivo, RSI o Stochastic; timeframe 15m o 1D |
+| custom | Sub-form EMA, precio vs media (SMA/EMA), precio objetivo, RSI o Stochastic; timeframe **1day** |
 
-Presets RSI/Stoch persisten `params`: `{ period, threshold }`. Operador fijo: `<` (sobreventa) o `>` (sobrecompra). Presets Stoch se guardan con `timeframe=1day` (7 = 7 días).
+Presets RSI/Stoch persisten `params`: `{ period, threshold }`. Operador fijo: `<` (sobreventa) o `>` (sobrecompra). **Todas** las alertas (presets y custom) usan `timeframe=1day` (modo gráfico 1Y / intervalo 1 día).
 
 ### Regla de disparo (AlertEvaluator)
 
@@ -161,7 +161,7 @@ Tras disparo: actualizar `last_triggered_candle`, incrementar `emails_sent_today
 
 ### Batching Twelve Data
 
-- Por ciclo: leer alertas activas → agrupar por `timeframe` → **1 request por intervalo** (`15min`, `1day`) con símbolos deduplicados.
+- Por ciclo: leer alertas activas → agrupar por `timeframe` → **1 request por intervalo** activo (`1day` en producto actual; el worker aún admite `15min` por compatibilidad).
 - Consumo: ~78–156 req/día (dentro de 800 free).
 - Sin caché de velas en v1.
 
@@ -236,6 +236,6 @@ No hay tests previos en el repositorio (greenfield). Los patrones anteriores se 
 
 - El worker corre en **Vercel Cron**; si el deploy falla o el cron se deshabilita, no hay evaluación ni correos hasta restaurar el proyecto.
 - Feriados NYSE no se consideran en v1; el worker podría ejecutar ciclos vacíos en días feriados que caen en día laborable.
-- Golden Cross y Death Cross en velas de 15m son ruidosos; se incluyen como presets por decisión de producto, no por robustez estadística.
+- Todas las alertas (presets y custom) usan velas **diarias** (modo gráfico 1Y / intervalo 1 día).
 - Gmail SMTP (~500 emails/día en cuentas personales) es el límite global práctico; con candle-lock + 10/alerta/día + máx. 5 alertas × 15 tickers el peor caso teórico debe mantenerse bajo control.
 - Documento de arquitectura de referencia: `docs/ARCHITECTURE.md`.

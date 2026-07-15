@@ -41,7 +41,7 @@ Canal con piso y techo definidos por el usuario; se dispara cuando el cierre sal
 _Avoid_: banda, channel breakout (en UI español)
 
 **Timeframe**:
-Intervalo de velas de la alerta: `15min` (mayoría de presets y custom) o `1day` (presets Stoch y custom). Determina qué significa el «período» (ej. Stoch 7 en diario = 7 días).
+Intervalo de velas de la alerta: en v1 de producto, **`1day`** para todas las alertas (presets y custom; alineado a gráfico 1Y / intervalo 1 día). El esquema aún admite `15min` por compatibilidad histórica del worker.
 _Avoid_: interval, granularity (en UI español)
 
 **Cruce EMA**:
@@ -49,11 +49,11 @@ Evento en el que una media móvil exponencial cruza por encima o por debajo de o
 _Avoid_: crossover genérico, señal
 
 **Golden Cross / Death Cross**:
-Cruce de EMA(50) sobre/bajo EMA(200); presets con nombres estándar del mercado.
+Cruce de EMA(50) sobre/bajo EMA(200) en **velas diarias** (definición clásica de mercado / vista 1Y); presets con nombres estándar.
 _Avoid_: cruce largo, cruce mortal (traducción literal)
 
 **RSI**:
-Relative Strength Index; indicador de momentum en escala 0–100. Presets: sobreventa (<30), sobrecompra (>70).
+Relative Strength Index; indicador de momentum en escala 0–100. Presets diarios (vista 1Y): sobreventa (<30), sobrecompra (>70); default período 14 (= 14 días).
 _Avoid_: índice de fuerza relativa (en UI; ok en docs técnicos)
 
 **Stochastic (Stoch)**:

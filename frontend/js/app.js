@@ -45,7 +45,9 @@ import {
   updateTimeframeHint,
 } from "./alert-form.js";
 import { renderPresetGrid, updatePresetRsiHint } from "./form-presets.js";
+import { updateSignalSummary } from "./signal-summary.js";
 import { validateFormPayload } from "./form-validation.js";
+import { verifyAlert } from "./verify-alert-api.js";
 
 function syncFiringsState(list) {
   appState.firings = list;
@@ -106,9 +108,12 @@ async function handleTickerReorder(tickers) {
   try {
     await saveTickerOrder(tickers);
   } catch (error) {
+    const raw =
+      (error && typeof error === "object" && typeof error.message === "string" && error.message) ||
+      (error instanceof Error ? error.message : "") ||
+      "";
     appState.tickerOrder = previous;
     renderAlerts();
-    const raw = error instanceof Error ? error.message : "";
     showBanner("error", mapDbError(raw) || "No se pudo guardar el orden de tickers.");
   }
 }
@@ -128,6 +133,26 @@ async function handleDeleteFiring(firing) {
   } catch (error) {
     const raw = error instanceof Error ? error.message : "";
     showBanner("error", mapDbError(raw));
+  }
+}
+
+async function handleVerify(alert) {
+  appState.busyId = alert.id;
+  renderAlerts();
+  hideBanner();
+  try {
+    const result = await verifyAlert(alert.id);
+    const meets = result.conditionMet ? "sí cumple" : "no cumple";
+    showBanner(
+      "success",
+      `Verificación de ${alert.ticker} enviada por correo (cierre ${Number(result.close).toFixed(2)}, ${meets}). No consume cupo diario.`,
+    );
+  } catch (error) {
+    const raw = error instanceof Error ? error.message : "";
+    showBanner("error", raw || "No se pudo verificar la alerta.");
+  } finally {
+    appState.busyId = null;
+    renderAlerts();
   }
 }
 
@@ -254,6 +279,21 @@ function bindEvents() {
   els.stochThreshold.addEventListener("input", updateStochHint);
   els.stochOperator.addEventListener("change", updateStochHint);
   els.timeframeSelect.addEventListener("change", updateTimeframeHint);
+  for (const input of [
+    els.emaFast,
+    els.emaSlow,
+    els.emaDirection,
+    els.priceMaType,
+    els.priceMaPeriod,
+    els.priceMaDirection,
+    els.priceLevelValue,
+    els.rsiPeriod,
+    els.rsiThreshold,
+    els.rsiOperator,
+  ]) {
+    input.addEventListener("input", updateSignalSummary);
+    input.addEventListener("change", updateSignalSummary);
+  }
   els.modalBackdrop.addEventListener("click", (e) => {
     if (e.target === els.modalBackdrop) closeModal();
   });
@@ -276,6 +316,7 @@ async function main() {
     onEdit: openEditModal,
     onToggle: (alert, active) => void handleToggle(alert, active),
     onDelete: (alert) => void handleDelete(alert),
+    onVerify: (alert) => void handleVerify(alert),
   });
   bindTickerOrderActions({
     onReorder: (tickers) => void handleTickerReorder(tickers),

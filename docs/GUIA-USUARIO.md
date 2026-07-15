@@ -1,6 +1,6 @@
 Stock Alerts — Guía para perfil financiero
 
-Monitor técnico automatizado: acciones EE. UU., velas 15m o diarias, señales EMA (cruces), RSI/Stochastic (umbrales) o precio, aviso por correo. No ejecuta órdenes ni es asesoría. Datos: Twelve Data (posible ligero retraso en plan gratuito).
+Monitor técnico automatizado: acciones EE. UU., velas **diarias**, señales EMA (cruces), RSI/Stochastic (umbrales) o precio, aviso por correo. No ejecuta órdenes ni es asesoría. Datos: Twelve Data (posible ligero retraso en plan gratuito).
 
 ---
 
@@ -9,7 +9,7 @@ Ficha operativa
 | Parámetro | Valor |
 |-----------|-------|
 | Universo | Acciones EE. UU. (ej. AAPL, BRK.B) |
-| Timeframe | 15 min (presets EMA/RSI) o **diario** (presets Stoch y personalizadas) |
+| Timeframe | **Diario (1D)** para todas las alertas (como gráfico 1Y / intervalo 1 día) |
 | Precio usado | Close de cada vela |
 | Evaluación | Cada 5 min, lun–vie 9:30–16:00 ET (America/New_York) |
 | Pre/post market | No |
@@ -23,7 +23,7 @@ Definición de señales
 
 Cómo evalúa el worker
 
-1. Descarga velas de 15m con su precio de cierre.
+1. Descarga velas diarias con su precio de cierre.
 2. Calcula EMA, RSI y/o Stochastic sobre ese histórico.
 3. Mira la vela más reciente (vela actual) y, en alertas de cruce, también la anterior.
 4. Si la regla se cumple → conditionMet. Si además pasa candle-lock y el límite diario → correo.
@@ -34,7 +34,7 @@ EMA — media móvil exponencial
 
 Qué es: una media del precio de cierre que da más peso a las velas recientes.
 
-Período: número de velas de 15m que usa el cálculo. EMA(9) = 9 velas (~2h 15m). EMA(21) = 21 velas (~5h 15m).
+Período: número de velas **diarias** que usa el cálculo. EMA(9) = 9 días. EMA(21) = 21 días.
 
 En el panel aparece como «rápida» y «lenta», pero en la práctica es:
 - EMA corta = período menor (sigue más de cerca el precio).
@@ -57,9 +57,9 @@ Cruce bajista (bear / a la baja):
   Vela actual:   EMA corta quedó debajo de la larga.
 
 Ejemplo con preset 9/21 en AAPL:
-  Si en la vela de las 10:00 EMA(9) ≤ EMA(21) y en la de las 10:15 EMA(9) > EMA(21) → cruce alcista confirmado en la vela 10:15.
+  Si en la vela de ayer EMA(9) ≤ EMA(21) y en la de hoy EMA(9) > EMA(21) → cruce alcista confirmado en la vela diaria de hoy.
 
-No es señal tick a tick dentro de la vela: se confirma al cerrar y evaluar la vela de 15m.
+No es señal tick a tick intradía: se confirma al cerrar y evaluar la vela diaria.
 
 ---
 
@@ -71,15 +71,15 @@ Cómo dispara (distinto a EMA):
 - No busca un «cruce» entre dos velas.
 - Mira solo la vela actual: si el RSI ya cumple el umbral, la condición es verdadera.
 
-Preset sobreventa:  RSI de la vela actual < umbral (por defecto 30)
-Preset sobrecompra: RSI de la vela actual > umbral (por defecto 70)
+Preset sobreventa:  RSI de la vela **diaria** actual < umbral (por defecto 30)
+Preset sobrecompra: RSI de la vela **diaria** actual > umbral (por defecto 70)
 
-Al crear o editar Sobreventa/Sobrecompra puedes ajustar período (2–50) y umbral (0–100). El operador queda fijo por preset (< o >).
+Período por defecto: **14** (= **14 días**, alineado a un gráfico diario/1Y). Al crear o editar Sobreventa/Sobrecompra puedes ajustar período (2–50) y umbral (0–100). El operador queda fijo por preset (< o >).
 
-Ejemplo: si el RSI cierra en 28 en la vela de las 10:15 → dispara sobreventa.
-Si en la siguiente vela el RSI sigue en 27, la condición sigue cumplida pero no recibes otro correo por la misma vela (candle-lock).
+Ejemplo: si el RSI cierra en 28 en la vela diaria de hoy → dispara sobreventa.
+Si al día siguiente el RSI sigue en 27, la condición sigue cumplida pero no recibes otro correo por la misma vela (candle-lock).
 
-Custom RSI: eliges período (2–50), umbral (0–100) y si la condición es «menor que» o «mayor que».
+Custom RSI: eliges período (2–50), umbral (0–100) y operador «menor que» o «mayor que» (siempre en velas diarias).
 
 ---
 
@@ -95,7 +95,7 @@ Preset sobrecompra Stoch: Stoch de la vela **diaria** actual > umbral (por defec
 
 Período por defecto: **7** (= **7 días**, útil junto a un gráfico diario/1Y). Al crear o editar puedes ajustar período (2–50) y umbral (0–100).
 
-Custom Stoch: period (2–50), threshold (0–100), operator < o >; timeframe 15m o 1D.
+Custom Stoch: period (2–50), threshold (0–100), operator < o > (velas diarias).
 
 ---
 
@@ -113,16 +113,16 @@ Presets
 
 | Panel | ID | Períodos | Cuándo dispara el correo |
 |-------|-----|----------|--------------------------|
-| Impulso alcista corto | ema_cross_bull | EMA 9 y 21 | EMA(9) cruza arriba de EMA(21) entre vela anterior y actual |
-| Impulso bajista corto | ema_cross_bear | EMA 9 y 21 | EMA(9) cruza abajo de EMA(21) entre vela anterior y actual |
-| Cruce alcista largo plazo | golden_cross | EMA 50 y 200 | EMA(50) cruza arriba de EMA(200) |
-| Cruce bajista largo plazo | death_cross | EMA 50 y 200 | EMA(50) cruza abajo de EMA(200) |
-| Sobreventa | rsi_oversold | RSI(14) por defecto | RSI < umbral (default 30) en la vela actual; período y umbral editables |
-| Sobrecompra | rsi_overbought | RSI(14) por defecto | RSI > umbral (default 70) en la vela actual; período y umbral editables |
+| Impulso alcista corto | ema_cross_bull | EMA 9 y 21 **diario** | EMA(9) cruza arriba de EMA(21) en vela diaria |
+| Impulso bajista corto | ema_cross_bear | EMA 9 y 21 **diario** | EMA(9) cruza abajo de EMA(21) en vela diaria |
+| Cruce alcista largo plazo | golden_cross | EMA 50 y 200 **diario** | EMA(50) cruza arriba de EMA(200) en vela diaria |
+| Cruce bajista largo plazo | death_cross | EMA 50 y 200 **diario** | EMA(50) cruza abajo de EMA(200) en vela diaria |
+| Sobreventa | rsi_oversold | RSI(14) **diario** | RSI < umbral (default 30) en la vela diaria; período y umbral editables |
+| Sobrecompra | rsi_overbought | RSI(14) **diario** | RSI > umbral (default 70) en la vela diaria; período y umbral editables |
 | Sobreventa Stoch | stoch_oversold | Stoch(7) **diario** | Stoch < umbral (default 20) en la vela diaria; período y umbral editables |
 | Sobrecompra Stoch | stoch_overbought | Stoch(7) **diario** | Stoch > umbral (default 80) en la vela diaria; período y umbral editables |
 
-Golden/Death Cross en 15m ≠ mismo evento en gráfico diario (más ruido en intradía).
+Todas las alertas EMA (9/21 y 50/200) usan **velas diarias** (vista 1Y).
 
 Custom EMA: ema_fast y ema_slow (2–200, rápida < lenta), direction up/down.
 Custom **Precio vs media**: el cierre cruza SMA o EMA de período N (2–200), direction up/down. Recomendado **SMA** si comparas con TradingView (`ma`).
@@ -148,9 +148,9 @@ Configuración equivalente en Stock Alerts:
 | Período | **12** |
 | Dirección | Precio cruza arriba (o abajo) de la media |
 
-Se dispara cuando el **cierre** de la vela diaria cruza la línea de la media (vela actual vs anterior). Es una señal **más temprana** que un cruce EMA 9/21 en 15m, que actúa como confirmación intradía.
+Se dispara cuando el **cierre** de la vela diaria cruza la línea de la media (vela actual vs anterior).
 
-**Importante:** en timeframe 15m, «período 12» son 12 velas de 15 min (~3 h), **no** 12 días. Para alinear con un gráfico diario, usa timeframe **Diario**.
+**Importante:** el período N son N **días** bursátiles (gráfico diario / 1Y).
 
 ---
 
@@ -161,7 +161,7 @@ Para avisar cuando la acción **llega** a un precio que eliges tú (no una media
 | Campo | Valor |
 |-------|-------|
 | Tipo | Personalizada → **Precio objetivo** |
-| Timeframe | 15 min o **Diario (1D)** |
+| Timeframe | **Diario (1D)** |
 | Precio objetivo | Nivel en USD (ej. 185.5) |
 | Condición | Cierre alcanza o supera (`>=`) o baja hasta o por debajo (`<=`) |
 
@@ -176,7 +176,7 @@ Para avisar cuando la acción **sale** de un canal que tú defines:
 | Campo | Valor |
 |-------|-------|
 | Tipo | Personalizada → **Rango de precios** |
-| Timeframe | 15 min o **Diario (1D)** |
+| Timeframe | **Diario (1D)** |
 | Piso (a la baja) | Precio inferior del canal (ej. 100) |
 | Techo (al alza) | Precio superior del canal (ej. 120) |
 
@@ -192,13 +192,17 @@ Un correo solo se envía si se cumplen las tres condiciones siguientes:
 2. Candle-lock: no se repite correo por la misma vela (máx. 1 por vela por alerta).
 3. Límite diario: menos de 10 correos esa alerta en el día (reset a medianoche).
 
-Correo incluye: ticker, tipo de alerta, timeframe (15m o diario), timestamp de la vela (ET).
+Correo incluye: ticker, tipo de alerta, timeframe (diario), timestamp de la vela (ET).
 
 ---
 
 Panel y límites
 
 Crear, editar, activar/desactivar y eliminar alertas. Etiquetas: Tendencia = cruce EMA; Precio = precio vs media, precio objetivo o rango; Momentum = RSI o Stochastic.
+
+Los presets aparecen bajo **Vista diaria / 1Y**. Cada card y cada fila del listado muestran el chip **Diario**.
+
+Al crear o editar, el bloque **Resumen de la señal** indica qué se vigila, que las velas son diarias, cuándo dispara y cómo verificarlo en Yahoo/TradingView (intervalo **1 día**; el rango 1Y solo es la vista del gráfico).
 
 El listado agrupa alertas por ticker. Puedes **arrastrar el asidero** (⋮⋮) de cada grupo para cambiar el orden; el orden se guarda y se mantiene al recargar. Un ticker nuevo aparece al final hasta que lo muevas.
 
@@ -208,7 +212,7 @@ El listado agrupa alertas por ticker. Puedes **arrastrar el asidero** (⋮⋮) d
 | Alertas por ticker | 5 |
 | Correos por alerta/día | 10 |
 | Correos por vela | 1 |
-| Timeframes | 15 min (presets EMA/RSI), diario (presets Stoch), y ambos en personalizadas |
+| Timeframes | Diario (1D) para todas las alertas |
 | SMS / push / webhook | No (v1) |
 | Histórico de disparos | Sí (campana → sección Disparos; borrar a mano) |
 | Auth en panel | Planificado |
@@ -218,10 +222,10 @@ El listado agrupa alertas por ticker. Puedes **arrastrar el asidero** (⋮⋮) d
 Preguntas frecuentes
 
 ¿Qué períodos EMA usa cada preset?
-9/21 (corto) o 50/200 (largo). En custom eliges ambos entre 2 y 200 velas de 15m.
+9/21 (impulso corto) o 50/200 (Golden/Death), ambos en **velas diarias**. En custom eliges períodos entre 2 y 200 (también diarios).
 
 ¿Cuándo se confirma un cruce?
-Al cerrar y evaluar la vela de 15m más reciente: compara la relación entre EMA corta y larga en esa vela y en la anterior. No es intravela.
+Al cerrar y evaluar la vela **diaria** más reciente: compara la relación entre EMA corta y larga en esa vela y en la anterior. No es intradía.
 
 ¿El RSI es Wilder estándar?
 Sí, según la implementación del worker (suavizado Wilder sobre gain/loss del close).
@@ -232,8 +236,8 @@ Causas habituales: alerta inactiva, fuera de horario 9:30–16:00 ET, candle-loc
 ¿Puedo vigilar cruce EMA y RSI <30 en el mismo ticker?
 Sí: crea dos alertas distintas (hasta 5 por ticker).
 
-¿Golden Cross en 15m es comparable al diario?
-No. Misma lógica matemática, distinto timeframe; en 15m genera más señales.
+¿Golden Cross es el de gráfico diario/1Y?
+Sí: todos los presets (incluido impulso 9/21 y Golden/Death) usan **Diario (1D)**.
 
 ¿Evalúa en días feriados?
 El worker ejecuta si es día laborable; sin velas nuevas si el NYSE está cerrado.
@@ -245,13 +249,16 @@ No. Notificación informativa.
 Símbolos US: letras, números, punto o guion (máx. 10 caracteres). Ej. AAPL, BRK.B.
 
 ¿Puedo usar gráfico diario o solo 15m?
-Los presets EMA/RSI usan 15m; los presets Stoch usan **Diario (1D)**. Las alertas personalizadas pueden elegir **15 minutos** o **Diario (1D)**. Para una MA de N días (ej. 12), elige Diario.
+En v1 **todas** las alertas usan **Diario (1D)**. Para verificar, en Yahoo/TradingView pon intervalo **1 día** (el rango 1Y solo es la vista).
+
+¿Cómo verifico la señal en Yahoo o TradingView?
+Usa intervalo **1 día**. El rango del gráfico (1Y, 1M…) solo cambia lo que ves en pantalla, no el cálculo del indicador.
 
 ¿Puedo combinar EMA y RSI/Stoch en una alerta?
 No en v1.
 
 ¿La cotización del panel es tiempo real?
-Referencia con posible retraso; la señal se calcula sobre velas 15m del worker, no sobre el precio mostrado en pantalla.
+Referencia con posible retraso; la señal se calcula sobre velas **diarias** del worker, no sobre el precio mostrado en pantalla.
 
 ---
 

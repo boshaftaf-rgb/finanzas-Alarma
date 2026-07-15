@@ -317,6 +317,25 @@ Sin sombras de color (esmeralda/rojo). Profundidad neutra sobre OLED.
 - EMA: borde `action-primary` al 30%; texto `accent-secondary`.
 - RSI: borde `warning` al 30%; texto `warning`.
 
+### `chip-timeframe`
+
+- Chip compacto (caption mono) para temporalidad: **Diario** o **15 min**.
+- `chip-timeframe--daily`: borde esmeralda suave; texto `accent-secondary`.
+- `chip-timeframe--intraday`: borde `warning` suave; texto `warning`.
+- Uso: cards de preset, filas del listado y cabecera del resumen de señal.
+
+### `signal-summary`
+
+- Bloque en el modal de crear/editar alerta (`aria-live="polite"`).
+- Fondo `canvas-subtle`, borde `border-default`, radius `md`.
+- Muestra: qué se vigila, velas (diario/15m), disparo y frase de verificación Yahoo/TradingView.
+- Estado vacío: placeholder «Selecciona un tipo de alerta…».
+
+### `preset-group`
+
+- Grid de presets bajo «Vista diaria / 1Y» (todas las alertas usan velas diarias).
+- Título de grupo: caption uppercase `ink-faint`.
+
 ### `toggle`
 
 - Track off: `border-strong`; thumb `ink-faint`.
@@ -353,8 +372,10 @@ Sin sombras de color (esmeralda/rojo). Profundidad neutra sobre OLED.
 ### `screen-alert-form`
 
 - Selector ticker (mono).
-- Grid de presets (cards seleccionables; estado activo exclusivo).
-- Sección custom colapsable (EMA **o** RSI).
+- Grid de presets (Vista diaria / 1Y); cards con chip Diario.
+- Sección custom colapsable (EMA **o** RSI u otros indicadores).
+- Timeframe fijado a Diario (1D).
+- Resumen de la señal en vivo (chip + verificación Yahoo) antes de Guardar.
 - Footer fijo en móvil: Guardar + Cancelar.
 
 ---

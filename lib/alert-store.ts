@@ -20,6 +20,17 @@ export class AlertStore {
     return (data ?? []) as AlertRow[];
   }
 
+  async fetchAlertById(alertId: string): Promise<AlertRow | null> {
+    const { data, error } = await this.client
+      .from("alerts")
+      .select("*")
+      .eq("id", alertId)
+      .maybeSingle();
+
+    if (error) throw new Error(`Error leyendo alerta ${alertId}: ${error.message}`);
+    return (data as AlertRow | null) ?? null;
+  }
+
   async updateLastEvaluated(alertId: string, evaluatedAt = new Date()): Promise<void> {
     const { error } = await this.client
       .from("alerts")

@@ -1,6 +1,6 @@
 # Stock Alerts (finanzas-Alarma)
 
-Plataforma de alertas técnicas sobre acciones de EE. UU.: el worker evalúa EMA/RSI en velas de 15 min y envía correos cuando se cumplen las condiciones.
+Plataforma de alertas técnicas sobre acciones de EE. UU.: el worker evalúa EMA, RSI y Stochastic en velas **diarias** (vista 1Y) y envía correos cuando se cumplen las condiciones.
 
 Documentación principal:
 
