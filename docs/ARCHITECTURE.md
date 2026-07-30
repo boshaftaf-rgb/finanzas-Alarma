@@ -66,7 +66,7 @@ finanzas-Alarma/
 - **Precio objetivo**: cierre cruza un nivel fijo (`>=` / `<=`).
 - **Rango de precios**: cierre sale del canal (piso/techo) al alza, a la baja o por ambos lados.
 - Umbrales de **RSI** (sobreventa / sobrecompra).
-- Umbrales de **Stochastic %K** (sobreventa / sobrecompra).
+- Umbrales de **Stochastic Slow %K** (sobreventa / sobrecompra; suavizado 3, alineado a Yahoo).
 
 ### Presets
 
@@ -80,8 +80,8 @@ EMA/RSI/Stoch: velas **diarias** (`1day`, modo vista 1Y). El selector de timefra
 | `death_cross` | Death Cross | EMA(50) cruza **abajo** EMA(200) en **`1day`** |
 | `rsi_oversold` | RSI sobreventa | RSI(period) **< threshold** en **`1day`** (defaults: 14 / 30; editables en panel) |
 | `rsi_overbought` | RSI sobrecompra | RSI(period) **> threshold** en **`1day`** (defaults: 14 / 70; editables en panel) |
-| `stoch_oversold` | Sobreventa Stoch | Stoch(period) **< threshold** en **`1day`** (defaults: 7 / 20; editables) |
-| `stoch_overbought` | Sobrecompra Stoch | Stoch(period) **> threshold** en **`1day`** (defaults: 7 / 80; editables) |
+| `stoch_oversold` | Sobreventa Stoch | Stoch lento (period,3) **< threshold** en **`1day`** (defaults: 7 / 20; editables) |
+| `stoch_overbought` | Sobrecompra Stoch | Stoch lento (period,3) **> threshold** en **`1day`** (defaults: 7 / 80; editables) |
 | `custom` | Personalizado | Regla EMA, **precio vs media**, **precio objetivo**, **rango**, RSI o Stochastic (no combinadas); timeframe **`1day`** |
 
 En modo **custom**, el timeframe queda fijo en **`1day`**. Configura: períodos EMA + dirección de cruce; **precio vs SMA/EMA** + período + dirección; **precio objetivo** + nivel + operador (`>=` / `<=`); **rango de precios** + piso + techo (salida al alza o a la baja); período RSI o Stochastic + umbral + operador (`<` / `>`).
@@ -92,7 +92,7 @@ Ejemplo precio objetivo: `timeframe=1day`, `params={ "type": "price_level", "lev
 
 Ejemplo rango: `timeframe=1day`, `params={ "type": "price_range", "low": 100, "high": 120, "sides": "both" }` (salida del canal).
 
-Ejemplo Stoch diario: `timeframe=1day`, `params={ "type": "stochastic", "period": 7, "threshold": 20, "operator": "<" }`.
+Ejemplo Stoch diario: `timeframe=1day`, `params={ "type": "stochastic", "period": 7, "threshold": 20, "operator": "<" }` (evaluación Slow %K con suavizado 3).
 
 Todos los presets y custom usan timeframe **`1day`** (período N = N días bursátiles).
 
@@ -134,6 +134,8 @@ Registro de cada email enviado para la bandeja de **disparos** del panel (persis
 | `candle_timestamp` | `TIMESTAMPTZ` | Vela que disparó |
 | `sent_at` | `TIMESTAMPTZ` | Hora del envío |
 | `label` | `TEXT` | Etiqueta legible (snapshot) |
+| `close_price` | `NUMERIC` nullable | Cierre de la vela al disparar |
+| `value_lines` | `TEXT[]` | Líneas de indicadores detectados (p. ej. `RSI(14): 28.7`) |
 
 - Panel (anon): **SELECT** + **DELETE**.
 - Worker (`service_role`): **INSERT** tras email exitoso.
@@ -289,7 +291,8 @@ flowchart TD
     A[Cada 5 min — horario mercado] --> B[Leer alertas activas — service_role]
     B --> C[Deduplicar tickers únicos]
     C --> D["1× Twelve Data batch (symbols=AAPL,MSFT,...)"]
-    D --> E[Calcular EMA / RSI / Stoch]
+    D --> D2[Descartar vela diaria de hoy si sesión no cerró]
+    D2 --> E[Calcular EMA / RSI / Stoch Slow]
     E --> F{¿Condición cumplida?}
     F -->|No| G[Actualizar last_evaluated_at]
     F -->|Sí| H{¿timestamp_vela > last_triggered_candle?}

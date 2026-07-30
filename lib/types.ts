@@ -40,6 +40,8 @@ export interface AlertFiringInsert {
   timeframe: AlertTimeframe;
   candle_timestamp: string;
   label: string;
+  close_price?: number | null;
+  value_lines?: string[];
   sent_at?: string;
 }
 

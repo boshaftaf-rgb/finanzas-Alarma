@@ -1,4 +1,11 @@
-import { computeEma, computeRsi, computeSma, computeStochastic, enrichBars } from "./indicator-engine.js";
+import {
+  computeEma,
+  computeRsi,
+  computeSma,
+  computeSlowStochastic,
+  enrichBars,
+} from "./indicator-engine.js";
+import { assertBarsForEvaluation } from "./completed-bars.js";
 import type { AlertRow, EnrichedBar, EvaluationResult, OhlcvBar } from "./types.js";
 
 function emaCross(
@@ -62,7 +69,7 @@ function resolveRsiValue(
 }
 
 function resolveStochasticValue(enriched: EnrichedBar[], period: number): number {
-  const stoch = computeStochastic(
+  const stoch = computeSlowStochastic(
     enriched.map((b) => b.high),
     enriched.map((b) => b.low),
     enriched.map((b) => b.close),
@@ -222,11 +229,13 @@ function evaluatePreset(
   }
 }
 
-export function evaluateAlert(alert: Pick<AlertRow, "ticker" | "preset_or_custom" | "params">, bars: OhlcvBar[]): EvaluationResult {
-  if (bars.length < 2) {
-    throw new Error("Se necesitan al menos 2 velas para evaluar una alerta.");
-  }
-  const enriched = enrichBars(bars);
+export function evaluateAlert(
+  alert: Pick<AlertRow, "ticker" | "preset_or_custom" | "params" | "timeframe">,
+  bars: OhlcvBar[],
+  now = new Date(),
+): EvaluationResult {
+  const usable = assertBarsForEvaluation(bars, alert.timeframe, now);
+  const enriched = enrichBars(usable);
   const current = enriched.at(-1)!;
   const previous = enriched.at(-2)!;
   const conditionMet = evaluatePreset(

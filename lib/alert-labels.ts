@@ -48,7 +48,7 @@ export function formatStochPresetLabel(
   const period = Number(params.period ?? defaults.period);
   const threshold = Number(params.threshold ?? defaults.threshold);
   const name = presetLabel(presetOrCustom);
-  return `${name} — Stoch(${period}) ${defaults.operator} ${threshold}`;
+  return `${name} — Stoch(${period},3) ${defaults.operator} ${threshold}`;
 }
 
 export function presetLabel(presetOrCustom: string): string {
@@ -139,7 +139,7 @@ export function formatCustomLabel(params: Record<string, unknown>): string {
     const period = Number(params.period ?? 7);
     const threshold = Number(params.threshold);
     const operator = params.operator === ">" ? ">" : "<";
-    return `Stoch(${period}) ${operator} ${threshold}`;
+    return `Stoch(${period},3) ${operator} ${threshold}`;
   }
   return "Alerta personalizada";
 }

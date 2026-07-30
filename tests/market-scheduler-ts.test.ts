@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isMarketOpen } from "../lib/market-scheduler.js";
+import { isDailySessionClosed, isMarketOpen } from "../lib/market-scheduler.js";
 
 describe("market-scheduler", () => {
   it("sábado está cerrado", () => {
@@ -8,6 +8,11 @@ describe("market-scheduler", () => {
 
   it("viernes 16:01 EST está cerrado", () => {
     expect(isMarketOpen(new Date("2026-03-06T21:01:00Z"))).toBe(false);
+  });
+
+  it("isDailySessionClosed es true a las 16:00 ET", () => {
+    expect(isDailySessionClosed(new Date("2026-03-06T21:00:00Z"))).toBe(true);
+    expect(isDailySessionClosed(new Date("2026-03-06T20:59:00Z"))).toBe(false);
   });
 
   it("lunes 9:29 EST está cerrado", () => {

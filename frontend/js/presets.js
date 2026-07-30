@@ -58,7 +58,7 @@ export const PRESETS = [
   {
     id: "stoch_oversold",
     name: "Sobreventa Stoch",
-    description: "Stoch(7) diario: cierre cerca del mínimo de la última semana (vista 1Y)",
+    description: "Stoch lento (7,3) diario: alineado a Yahoo Slow Stochastic (vista 1Y)",
     kind: "rsi",
     badge: "Momentum",
     defaultPeriod: 7,
@@ -70,7 +70,7 @@ export const PRESETS = [
   {
     id: "stoch_overbought",
     name: "Sobrecompra Stoch",
-    description: "Stoch(7) diario: cierre cerca del máximo de la última semana (vista 1Y)",
+    description: "Stoch lento (7,3) diario: alineado a Yahoo Slow Stochastic (vista 1Y)",
     kind: "rsi",
     badge: "Momentum",
     defaultPeriod: 7,

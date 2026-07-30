@@ -1,4 +1,8 @@
-function getNewYorkParts(date: Date): { weekday: number; hour: number; minute: number } {
+function getNewYorkParts(date: Date): {
+  weekday: number;
+  hour: number;
+  minute: number;
+} {
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: "America/New_York",
     weekday: "short",
@@ -32,4 +36,10 @@ export function isMarketOpen(moment = new Date()): boolean {
   const open = 9 * 60 + 30;
   const close = 16 * 60;
   return totalMinutes >= open && totalMinutes < close;
+}
+
+/** True cuando la sesión regular de EE. UU. ya cerró (≥ 16:00 ET). */
+export function isDailySessionClosed(moment = new Date()): boolean {
+  const { hour, minute } = getNewYorkParts(moment);
+  return hour * 60 + minute >= 16 * 60;
 }

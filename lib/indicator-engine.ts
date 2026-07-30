@@ -71,7 +71,10 @@ export function computeRsi(closes: number[], length = 14): number[] {
   return result;
 }
 
-/** Fast Stochastic %K over the last `length` bars. Range 0 = 50. */
+/** Suavizado Slow Stochastic (Yahoo/TradingView: período %K, slowing 3). */
+export const STOCH_SLOW_SMOOTH = 3;
+
+/** Fast Stochastic %K over the last `length` bars. Range 0 → 50. */
 export function computeStochastic(
   highs: number[],
   lows: number[],
@@ -95,6 +98,41 @@ export function computeStochastic(
     result[i] = range === 0 ? 50 : (100 * (closes[i] - lowest)) / range;
   }
   return result;
+}
+
+/** SMA sobre una serie que puede tener NaN al inicio (ignora ventanas incompletas). */
+export function smoothIndicatorSeries(values: number[], length: number): number[] {
+  const result: number[] = new Array(values.length).fill(NaN);
+  if (length < 1) return result;
+  for (let i = 0; i < values.length; i++) {
+    if (i + 1 < length) continue;
+    let sum = 0;
+    let ok = true;
+    for (let j = i - length + 1; j <= i; j++) {
+      if (!Number.isFinite(values[j])) {
+        ok = false;
+        break;
+      }
+      sum += values[j];
+    }
+    if (ok) result[i] = sum / length;
+  }
+  return result;
+}
+
+/**
+ * Slow Stochastic %K: SMA(`smooth`) del Fast %K.
+ * Alineado a Yahoo Finance / TradingView Slow Stochastic (no usa cruce K/D).
+ */
+export function computeSlowStochastic(
+  highs: number[],
+  lows: number[],
+  closes: number[],
+  length: number,
+  smooth: number = STOCH_SLOW_SMOOTH,
+): number[] {
+  const fastK = computeStochastic(highs, lows, closes, length);
+  return smoothIndicatorSeries(fastK, smooth);
 }
 
 export function enrichBars(bars: OhlcvBar[]): EnrichedBar[] {

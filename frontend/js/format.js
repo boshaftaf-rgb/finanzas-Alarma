@@ -22,16 +22,31 @@ export function formatEvaluatedAt(iso) {
   }).format(new Date(iso));
 }
 
-/** Fecha/hora del disparo en hora del mercado (ET). Velas diarias: fecha calendario UTC. */
-export function formatFiringAt(iso, timeframe) {
+/** Fecha de la vela. Diarias: calendario UTC (Twelve Data). Intradía: hora ET. */
+export function formatCandleAt(iso, timeframe) {
   if (!iso) return "—";
   const isDaily = timeframe === "1day";
-  // Same as email: daily bars are UTC-midnight calendar dates; ET would shift −1 day.
+  // Daily bars are UTC-midnight calendar dates; formatting in ET shifts −1 day.
   return new Intl.DateTimeFormat("es-MX", {
     timeZone: isDaily ? "UTC" : "America/New_York",
     dateStyle: "short",
     ...(isDaily ? {} : { timeStyle: "short" }),
   }).format(new Date(iso));
+}
+
+/** Momento real de envío del correo — siempre America/New_York. */
+export function formatSentAt(iso) {
+  if (!iso) return "—";
+  return new Intl.DateTimeFormat("es-MX", {
+    timeZone: "America/New_York",
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(new Date(iso));
+}
+
+/** @deprecated Prefer formatCandleAt / formatSentAt */
+export function formatFiringAt(iso, timeframe) {
+  return formatCandleAt(iso, timeframe);
 }
 
 export function formatPrice(value) {

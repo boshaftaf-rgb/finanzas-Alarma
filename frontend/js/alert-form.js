@@ -84,7 +84,7 @@ export function updateStochHint() {
   const zone = oversold
     ? "zona de sobreventa (posible rebote)"
     : "zona de sobrecompra (posible recorte)";
-  els.stochHint.textContent = `Stoch de ${period} días ${opLabel} ${thresholdText} → ${zone}`;
+  els.stochHint.textContent = `Stoch lento (${period},3) ${opLabel} ${thresholdText} → ${zone} (como Yahoo Slow)`;
   updateSignalSummary();
 }
 
@@ -94,7 +94,7 @@ export function updateTimeframeHint() {
   if (appState.formMode === "preset") {
     if (isStochPreset(appState.selectedPreset)) {
       els.timeframeHint.textContent =
-        "Todas las alertas usan velas diarias. Stoch: período 7 = últimos 7 días (gráfico 1Y).";
+        "Todas las alertas usan velas diarias. Stoch lento (7,3): como Yahoo Slow Stochastic.";
     } else if (isOscillatorPreset(appState.selectedPreset)) {
       els.timeframeHint.textContent =
         "Todas las alertas usan velas diarias. RSI: período 14 = últimos 14 días (gráfico 1Y).";
@@ -113,7 +113,7 @@ export function updateTimeframeHint() {
       "Diario: período 12 = media de 12 días (como gráfico 1Y en TradingView).";
   } else if (appState.customType === "stochastic") {
     els.timeframeHint.textContent =
-      "Diario: Stoch(7) usa el rango high–low de los últimos 7 días.";
+      "Diario: Stoch lento (período,3) — alineado a Yahoo Slow Stochastic.";
   } else {
     els.timeframeHint.textContent =
       "Todas las alertas se evalúan con velas diarias (como gráfico 1Y / intervalo 1 día).";

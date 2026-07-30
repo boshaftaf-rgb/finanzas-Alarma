@@ -78,7 +78,13 @@ describe("run-cycle integration", () => {
     expect(sendArgs.valueLines?.some((l) => l.startsWith("EMA(21):"))).toBe(true);
     const mockStore = store as unknown as MockAlertStore;
     expect(mockStore.updates.some((u) => u.type === "email")).toBe(true);
-    expect(mockStore.updates.some((u) => u.type === "firing" && u.alert_id === "a1")).toBe(true);
+    const firing = mockStore.updates.find((u) => u.type === "firing" && u.alert_id === "a1");
+    expect(firing).toBeTruthy();
+    expect(typeof firing?.close_price).toBe("number");
+    expect(
+      Array.isArray(firing?.value_lines) &&
+        (firing.value_lines as string[]).some((l) => l.startsWith("EMA(9):")),
+    ).toBe(true);
 
     sendSpy.mockRestore();
   });

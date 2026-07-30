@@ -24,9 +24,10 @@ Definición de señales
 Cómo evalúa el worker
 
 1. Descarga velas diarias con su precio de cierre.
-2. Calcula EMA, RSI y/o Stochastic sobre ese histórico.
-3. Mira la vela más reciente (vela actual) y, en alertas de cruce, también la anterior.
-4. Si la regla se cumple → conditionMet. Si además pasa candle-lock y el límite diario → correo.
+2. Si la última vela es la de **hoy** y el mercado aún no cerró (antes de 16:00 ET), la **descarta** y evalúa sobre la última sesión ya cerrada.
+3. Calcula EMA, RSI y/o Stochastic lento sobre ese histórico.
+4. Mira la vela cerrada más reciente (y, en alertas de cruce, también la anterior).
+5. Si la regla se cumple → conditionMet. Si además pasa candle-lock y el límite diario → correo.
 
 ---
 
@@ -83,19 +84,21 @@ Custom RSI: eliges período (2–50), umbral (0–100) y operador «menor que» 
 
 ---
 
-Stochastic — Fast %K
+Stochastic — Slow %K (alineado a Yahoo)
 
-El Stochastic %K mide dónde está el cierre respecto al rango high–low de las últimas N velas (0–100).
+El Stochastic lento suaviza el Fast %K con una media de 3 velas (notación Yahoo/TV: período,3 — p. ej. (7,3)).
 
-- Mira solo la vela actual: si el %K ya cumple el umbral, la condición es verdadera.
-- No usa línea %D ni cruces K/D en v1.
+- Mira solo la vela actual: si el Slow %K cumple el umbral, la condición es verdadera.
+- No usa cruce K/D en v1; el umbral se aplica al Slow %K (la línea principal del Slow Stochastic).
 
-Preset sobreventa Stoch:  Stoch de la vela **diaria** actual < umbral (por defecto 20)
-Preset sobrecompra Stoch: Stoch de la vela **diaria** actual > umbral (por defecto 80)
+Preset sobreventa Stoch:  Stoch lento de la vela **diaria** actual < umbral (por defecto 20)
+Preset sobrecompra Stoch: Stoch lento de la vela **diaria** actual > umbral (por defecto 80)
 
-Período por defecto: **7** (= **7 días**, útil junto a un gráfico diario/1Y). Al crear o editar puedes ajustar período (2–50) y umbral (0–100).
+Período por defecto: **7** (= **7 días**) + suavizado **3**. Al crear o editar puedes ajustar período (2–50) y umbral (0–100).
 
-Custom Stoch: period (2–50), threshold (0–100), operator < o > (velas diarias).
+Custom Stoch: period (2–50), threshold (0–100), operator < o > (velas diarias; siempre Slow).
+
+Para verificar en Yahoo/TradingView: intervalo **1 día** y **Estocástico lento (Slow)**, no Fast.
 
 ---
 
@@ -105,7 +108,7 @@ Resumen: EMA vs RSI / Stoch
 |---|-------------|----------------------|
 | Velas que compara | Actual + anterior | Solo actual |
 | Tipo de señal | Cambio de relación entre dos medias | Valor en zona extrema |
-| Ejemplo preset | EMA(9) cruza arriba de EMA(21) | RSI(14) < 30 · Stoch(7) < 20 |
+| Ejemplo preset | EMA(9) cruza arriba de EMA(21) | RSI(14) < 30 · Stoch(7,3) < 20 |
 
 ---
 
@@ -119,8 +122,8 @@ Presets
 | Cruce bajista largo plazo | death_cross | EMA 50 y 200 **diario** | EMA(50) cruza abajo de EMA(200) en vela diaria |
 | Sobreventa | rsi_oversold | RSI(14) **diario** | RSI < umbral (default 30) en la vela diaria; período y umbral editables |
 | Sobrecompra | rsi_overbought | RSI(14) **diario** | RSI > umbral (default 70) en la vela diaria; período y umbral editables |
-| Sobreventa Stoch | stoch_oversold | Stoch(7) **diario** | Stoch < umbral (default 20) en la vela diaria; período y umbral editables |
-| Sobrecompra Stoch | stoch_overbought | Stoch(7) **diario** | Stoch > umbral (default 80) en la vela diaria; período y umbral editables |
+| Sobreventa Stoch | stoch_oversold | Stoch lento (7,3) **diario** | Slow %K < umbral (default 20); período y umbral editables |
+| Sobrecompra Stoch | stoch_overbought | Stoch lento (7,3) **diario** | Slow %K > umbral (default 80); período y umbral editables |
 
 Todas las alertas EMA (9/21 y 50/200) usan **velas diarias** (vista 1Y).
 
@@ -129,7 +132,7 @@ Custom **Precio vs media**: el cierre cruza SMA o EMA de período N (2–200), d
 Custom **Precio objetivo**: el cierre cruza un nivel fijo (`level` > 0) con operador `>=` o `<=` (evento de cruce entre vela anterior y actual).
 Custom **Rango de precios**: piso (`low`) y techo (`high`); se dispara al salir del canal por arriba o por abajo.
 Custom RSI: period (2–50), threshold (0–100), operator < o >.
-Custom Stochastic: period (2–50), threshold (0–100), operator < o >. Recomendado timeframe **Diario** si el período representa días.
+Custom Stochastic: period (2–50), threshold (0–100), operator < o > — siempre **Slow** (suavizado 3). Recomendado timeframe **Diario**.
 No se combina EMA + RSI + Stochastic + precio en una sola alerta (v1).
 
 ---

@@ -89,7 +89,7 @@ export async function runEvaluationCycle(
         throw new Error(`Sin datos OHLCV para ${alert.ticker} (${timeframe})`);
       }
 
-      const evaluation = evaluateAlert(alert, bars);
+      const evaluation = evaluateAlert(alert, bars, now);
       const decision = decideFire(
         evaluation.conditionMet,
         alert,
@@ -102,7 +102,7 @@ export async function runEvaluationCycle(
         if (!smtpConfig) {
           smtpConfig = smtpConfigFromEnv();
         }
-        const snapshot = buildAlertSnapshot(alert, bars);
+        const snapshot = buildAlertSnapshot(alert, bars, now);
         await sendAlertEmail({
           config: smtpConfig,
           ticker: alert.ticker,
@@ -124,6 +124,8 @@ export async function runEvaluationCycle(
             timeframe,
             candle_timestamp: evaluation.candleTimestamp,
             label: formatAlertLabel(alert.preset_or_custom, alert.params ?? {}, timeframe),
+            close_price: snapshot.close,
+            value_lines: snapshot.valueLines,
             sent_at: now.toISOString(),
           });
         } catch (firingError) {

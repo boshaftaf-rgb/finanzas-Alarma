@@ -33,7 +33,7 @@ export function formatCustomLabel(params) {
   }
   if (params.type === "stochastic") {
     const op = params.operator === ">" ? ">" : "<";
-    return `Stoch(${params.period ?? 7}) ${op} ${params.threshold}`;
+    return `Stoch(${params.period ?? 7},3) ${op} ${params.threshold}`;
   }
   return "Alerta personalizada";
 }
@@ -46,7 +46,8 @@ export function formatOscillatorPresetLabel(presetId, params) {
   const threshold = params?.threshold ?? defaults.threshold;
   const op = defaults.operator;
   const indicator = isStochPreset(presetId) ? "Stoch" : "RSI";
-  return `${preset.name} — ${indicator}(${period}) ${op} ${threshold}`;
+  const periodLabel = isStochPreset(presetId) ? `${period},3` : String(period);
+  return `${preset.name} — ${indicator}(${periodLabel}) ${op} ${threshold}`;
 }
 
 export function formatRsiPresetLabel(presetId, params) {

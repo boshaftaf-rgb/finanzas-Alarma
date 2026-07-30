@@ -620,6 +620,14 @@
   line-height: 1.35;
 }
 
+.firing-row__values {
+  margin-top: 4px;
+  font-size: calc(13px * var(--text-scale));
+  color: var(--color-ink-secondary);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.35;
+}
+
 .firing-row__meta {
   margin-top: 4px;
   font-size: calc(12px * var(--text-scale));

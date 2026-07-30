@@ -27,7 +27,7 @@ El usuario quiere una plataforma donde pueda registrarse de forma controlada, el
 6. As a **usuario registrado**, I want to **elegir un preset de alerta** (cruce alcista 9/21, cruce bajista 9/21, Golden Cross, Death Cross, RSI sobreventa/sobrecompra, Stoch sobreventa/sobrecompra), so that **configure reglas comunes sin entender parámetros técnicos**.
 7. As a **usuario registrado**, I want to **crear una alerta personalizada de tipo EMA** con períodos rápido/lento y dirección de cruce configurables, so that **adapte cruces de medias a mi estrategia**.
 8. As a **usuario registrado**, I want to **crear una alerta personalizada de tipo RSI** con período, umbral y operador (< o >) configurables, so that **defina zonas de sobreventa/sobrecompra distintas a los presets**.
-8b. As a **usuario registrado**, I want to **crear una alerta personalizada de tipo Stochastic** con período, umbral y operador (< o >) configurables, so that **vigile %K en zonas de sobreventa/sobrecompra**.
+8b. As a **usuario registrado**, I want to **crear una alerta personalizada de tipo Stochastic** con período, umbral y operador (< o >) configurables, so that **vigile el Slow %K (como Yahoo) en zonas de sobreventa/sobrecompra**.
 9. As a **usuario registrado**, I want to **no poder combinar EMA, RSI y Stochastic en una sola alerta custom**, so that **el sistema permanezca simple y predecible en v1**.
 10. As a **usuario registrado**, I want to **activar y desactivar una alerta sin borrarla**, so that **pause temporalmente el monitoreo de un ticker**.
 11. As a **usuario registrado**, I want to **eliminar una alerta**, so that **deje de recibir notificaciones y libere cupo**.
@@ -48,7 +48,7 @@ El usuario quiere una plataforma donde pueda registrarse de forma controlada, el
 26. As a **operador del sistema**, I want to **aplicar migraciones versionadas de esquema Supabase**, so that **RLS, triggers y tablas sean reproducibles**.
 27. As a **usuario registrado**, I want to **que las alertas de cruce EMA se disparen cuando ocurre un cruce en la vela de 15 min más reciente**, so that **reciba señales de momentum o reversión oportunas**.
 28. As a **usuario registrado**, I want to **que las alertas RSI se disparen cuando el RSI cumple el umbral en la vela actual**, so that **detecte condiciones de sobreventa o sobrecompra**.
-28b. As a **usuario registrado**, I want to **que las alertas Stochastic se disparen cuando el %K cumple el umbral en la vela actual**, so that **detecte extremos del rango high–low reciente**.
+28b. As a **usuario registrado**, I want to **que las alertas Stochastic se disparen cuando el Slow %K cumple el umbral en la vela actual**, so that **coincida con el Estocástico lento de Yahoo/TradingView**.
 29. As a **usuario registrado**, I want to **que el correo incluya ticker, tipo de alerta, timeframe (diario) y timestamp de la vela**, so that **tenga contexto suficiente para actuar**.
 30. As a **usuario registrado**, I want to **acceder al panel desde cualquier navegador sin instalar software**, so that **gestione alertas desde cualquier dispositivo**.
 31. As a **operador del sistema**, I want to **ver logs del worker en español**, so that **depure problemas sin traducir mensajes**.
@@ -82,7 +82,7 @@ El usuario quiere una plataforma donde pueda registrarse de forma controlada, el
 | **Supabase — Migraciones** | Tablas, RLS, triggers de límites, tabla invite_codes |
 | **Worker — Scheduler** | Gate de horario (lun–vie 9:30–16:00 EST); sin feriados NYSE en v1 |
 | **Worker — DataFetcher** | Una petición batch a Twelve Data por ciclo; símbolos deduplicados; intervalo **1day** (modo producto) |
-| **Worker — IndicatorEngine** | Cálculo EMA, RSI y Stochastic %K sobre OHLCV recibido |
+| **Worker — IndicatorEngine** | Cálculo EMA, RSI y Stochastic Slow %K sobre OHLCV recibido |
 | **Worker — AlertEvaluator** | Evalúa condiciones, aplica candle-lock y tope diario, produce decisiones de disparo |
 | **Worker — EmailSender** | Envío vía Gmail SMTP con plantilla en español |
 | **Worker — AlertStore** | Lectura/escritura de alertas vía Supabase service_role |
@@ -142,8 +142,8 @@ Orden de grupos de ticker en el panel; no lo usa el worker.
 | death_cross | EMA(50) cruza abajo EMA(200) (timeframe **1day**) |
 | rsi_oversold | RSI(period) < threshold (defaults 14 / 30; editables; timeframe **1day**) |
 | rsi_overbought | RSI(period) > threshold (defaults 14 / 70; editables; timeframe **1day**) |
-| stoch_oversold | Stoch(period) < threshold (defaults 7 / 20; editables; timeframe **1day**) |
-| stoch_overbought | Stoch(period) > threshold (defaults 7 / 80; editables; timeframe **1day**) |
+| stoch_oversold | Stoch lento (period,3) < threshold (defaults 7 / 20; editables; timeframe **1day**) |
+| stoch_overbought | Stoch lento (period,3) > threshold (defaults 7 / 80; editables; timeframe **1day**) |
 | custom | Sub-form EMA, precio vs media (SMA/EMA), precio objetivo, RSI o Stochastic; timeframe **1day** |
 
 Presets RSI/Stoch persisten `params`: `{ period, threshold }`. Operador fijo: `<` (sobreventa) o `>` (sobrecompra). **Todas** las alertas (presets y custom) usan `timeframe=1day` (modo gráfico 1Y / intervalo 1 día).

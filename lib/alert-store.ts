@@ -70,6 +70,10 @@ export class AlertStore {
       timeframe: firing.timeframe,
       candle_timestamp: firing.candle_timestamp,
       label: firing.label,
+      ...(firing.close_price != null && Number.isFinite(firing.close_price)
+        ? { close_price: firing.close_price }
+        : {}),
+      ...(firing.value_lines ? { value_lines: firing.value_lines } : {}),
       ...(firing.sent_at ? { sent_at: firing.sent_at } : {}),
     });
 

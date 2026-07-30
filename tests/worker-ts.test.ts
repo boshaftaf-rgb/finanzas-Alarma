@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { evaluateAlert } from "../lib/alert-evaluator.js";
-import { computeEma, computeSma, computeStochastic, enrichBars } from "../lib/indicator-engine.js";
+import { computeEma, computeSma, computeSlowStochastic, computeStochastic, enrichBars } from "../lib/indicator-engine.js";
 import type { OhlcvBar } from "../lib/types.js";
 
 function barsFromCloses(closes: number[]): OhlcvBar[] {
@@ -45,6 +45,16 @@ describe("indicator-engine", () => {
 
     const flat = computeStochastic([5, 5, 5], [5, 5, 5], [5, 5, 5], 3);
     expect(flat[2]).toBe(50);
+  });
+
+  it("Slow Stochastic es SMA(3) del Fast %K", () => {
+    const highs = [10, 12, 14, 13, 15, 16, 17];
+    const lows = [8, 9, 10, 11, 12, 12, 13];
+    const closes = [9, 11, 13, 12, 14, 15, 16];
+    const fast = computeStochastic(highs, lows, closes, 3);
+    const slow = computeSlowStochastic(highs, lows, closes, 3, 3);
+    // First slow value once three finite fast values exist (indices 2,3,4)
+    expect(slow[4]).toBeCloseTo((fast[2] + fast[3] + fast[4]) / 3);
   });
 });
 
@@ -116,7 +126,7 @@ describe("alert-evaluator", () => {
   it("detecta Stochastic custom con umbral", () => {
     let price = 100;
     const closes = [price];
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 30; i++) {
       price *= 1.05;
       closes.push(price);
     }
@@ -129,5 +139,50 @@ describe("alert-evaluator", () => {
       barsFromCloses(closes),
     );
     expect(result.conditionMet).toBe(true);
+  });
+
+  it("Stoch lento no dispara si solo Fast %K está bajo el umbral (caso CIEN 29/07)", () => {
+    // OHLC reales Twelve Data CIEN hasta 29/07: Fast %K≈7.4, Slow %K≈21.5
+    const rows: Array<[string, number, number, number, number]> = [
+      ["2026-07-13", 448.67, 461.45, 440.51, 445.44],
+      ["2026-07-14", 460.88, 466.66, 446.25, 446.93],
+      ["2026-07-15", 451.01, 451.01, 404.4, 418.46],
+      ["2026-07-16", 404.79, 410.31, 386.65, 388.81],
+      ["2026-07-17", 370.99, 388.61, 359.01, 374.41],
+      ["2026-07-20", 375.01, 394.56, 375, 378.77],
+      ["2026-07-21", 397.7, 412.04, 396.55, 408.73],
+      ["2026-07-22", 396.95, 411.01, 396.87, 397.16],
+      ["2026-07-23", 394.1, 415.8, 394.1, 407.53],
+      ["2026-07-24", 401.85, 408.74, 386.25, 390.96],
+      ["2026-07-27", 388.19, 388.19, 360, 377.27],
+      ["2026-07-28", 354.9, 357.47, 328.8, 350.51],
+      ["2026-07-29", 349.64, 350.8, 323.55, 330.37],
+    ];
+    const bars: OhlcvBar[] = rows.map(([d, o, h, l, c]) => ({
+      datetime: `${d}T00:00:00.000Z`,
+      open: o,
+      high: h,
+      low: l,
+      close: c,
+      volume: 1_000_000,
+    }));
+
+    const highs = bars.map((b) => b.high);
+    const lows = bars.map((b) => b.low);
+    const closes = bars.map((b) => b.close);
+    const fast = computeStochastic(highs, lows, closes, 7).at(-1)!;
+    const slow = computeSlowStochastic(highs, lows, closes, 7).at(-1)!;
+    expect(fast).toBeLessThan(20);
+    expect(slow).toBeGreaterThanOrEqual(20);
+
+    const result = evaluateAlert(
+      {
+        ticker: "CIEN",
+        preset_or_custom: "stoch_oversold",
+        params: { period: 7, threshold: 20 },
+      },
+      bars,
+    );
+    expect(result.conditionMet).toBe(false);
   });
 });

@@ -1,12 +1,15 @@
 import { evaluateAlert } from "./alert-evaluator.js";
+import { assertBarsForEvaluation } from "./completed-bars.js";
 import {
   computeEma,
   computeRsi,
   computeSma,
-  computeStochastic,
+  computeSlowStochastic,
   enrichBars,
+  STOCH_SLOW_SMOOTH,
 } from "./indicator-engine.js";
 import type { AlertRow, EnrichedBar, OhlcvBar } from "./types.js";
+import { normalizeTimeframe } from "./types.js";
 
 export interface AlertSnapshot {
   ticker: string;
@@ -39,7 +42,7 @@ function resolveRsi(
 }
 
 function resolveStoch(enriched: EnrichedBar[], period: number): number {
-  return computeStochastic(
+  return computeSlowStochastic(
     enriched.map((b) => b.high),
     enriched.map((b) => b.low),
     enriched.map((b) => b.close),
@@ -91,7 +94,9 @@ function indicatorLines(
 
   if (preset === "stoch_oversold" || preset === "stoch_overbought") {
     const period = Number(params.period ?? 7);
-    return [`Stoch %K(${period}): ${fmt(resolveStoch(enriched, period), 1)}`];
+    return [
+      `Stoch Slow %K(${period},${STOCH_SLOW_SMOOTH}): ${fmt(resolveStoch(enriched, period), 1)}`,
+    ];
   }
 
   if (preset === "custom") {
@@ -124,7 +129,9 @@ function indicatorLines(
 
     if (type === "stochastic") {
       const period = Number(params.period ?? 7);
-      return [`Stoch %K(${period}): ${fmt(resolveStoch(enriched, period), 1)}`];
+      return [
+        `Stoch Slow %K(${period},${STOCH_SLOW_SMOOTH}): ${fmt(resolveStoch(enriched, period), 1)}`,
+      ];
     }
 
     if (type === "price_level") {
@@ -146,16 +153,18 @@ function indicatorLines(
 export function buildAlertSnapshot(
   alert: Pick<AlertRow, "ticker" | "preset_or_custom" | "params" | "timeframe">,
   bars: OhlcvBar[],
+  now = new Date(),
 ): AlertSnapshot {
-  const evaluation = evaluateAlert(alert, bars);
-  const enriched = enrichBars(bars);
+  const usable = assertBarsForEvaluation(bars, alert.timeframe, now);
+  const evaluation = evaluateAlert(alert, usable, now);
+  const enriched = enrichBars(usable);
   const current = enriched.at(-1)!;
   const params = alert.params ?? {};
 
   return {
     ticker: alert.ticker,
     presetOrCustom: alert.preset_or_custom,
-    timeframe: alert.timeframe,
+    timeframe: normalizeTimeframe(alert.timeframe),
     alertParams: params,
     conditionMet: evaluation.conditionMet,
     candleTimestamp: evaluation.candleTimestamp,

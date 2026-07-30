@@ -5,6 +5,7 @@ import { appState } from "./app-state.js";
 import {
   PRESETS,
   isOscillatorPreset,
+  isStochPreset,
   oscillatorPresetDefaults,
   presetDefaultTimeframe,
 } from "./presets.js";
@@ -29,7 +30,12 @@ export function presetScaleGroup(presetId) {
   return presetDefaultTimeframe(presetId) === "1day" ? "daily" : "intraday";
 }
 
-export function verifyLine(timeframe) {
+export function verifyLine(timeframe, kind) {
+  if (kind === "stoch") {
+    return timeframe === "1day"
+      ? "Yahoo/TradingView: intervalo 1 día y Estocástico lento (Slow), p. ej. (7,3). No uses Fast."
+      : "Intervalo 15 minutos; Estocástico lento (Slow), no Fast.";
+  }
   return timeframe === "1day"
     ? "Intervalo 1 día en Yahoo/TradingView (el rango 1Y solo es la vista)."
     : "Intervalo 15 minutos, no el gráfico diario.";
@@ -57,14 +63,14 @@ function fireLineFor(presetOrCustom, params) {
   if (presetOrCustom === "custom") {
     const type = params?.type;
     if (type === "ema" || type === "price_ma" || type === "price_level" || type === "price_range") {
-      return "Cuando el cierre confirma el cruce o la salida entre vela anterior y actual.";
+      return "Cuando el cierre de la última sesión cerrada confirma el cruce o la salida.";
     }
-    return "Cuando el indicador en la vela actual cumple el umbral.";
+    return "Cuando el indicador en la última sesión cerrada cumple el umbral.";
   }
   if (isOscillatorPreset(presetOrCustom)) {
-    return "Cuando el indicador en la vela actual cumple el umbral.";
+    return "Cuando el indicador en la última sesión cerrada cumple el umbral.";
   }
-  return "Cuando la EMA corta cruza la lenta entre vela anterior y actual.";
+  return "Cuando la EMA corta cruza la lenta en la última sesión cerrada.";
 }
 
 function watchLinePreset(presetId, params) {
@@ -143,12 +149,17 @@ export function buildSignalSummaryFromForm() {
     if (!appState.selectedPreset) return null;
     const timeframe = presetDefaultTimeframe(appState.selectedPreset);
     const params = softPresetParams();
+    const kind = isStochPreset(appState.selectedPreset)
+      ? "stoch"
+      : isOscillatorPreset(appState.selectedPreset)
+        ? "rsi"
+        : "ema";
     return {
       timeframe,
       watchLine: watchLinePreset(appState.selectedPreset, params),
       candleLine: candleLine(timeframe),
       fireLine: fireLineFor(appState.selectedPreset, params),
-      verifyLine: verifyLine(timeframe),
+      verifyLine: verifyLine(timeframe, kind === "stoch" ? "stoch" : undefined),
     };
   }
 
@@ -159,7 +170,7 @@ export function buildSignalSummaryFromForm() {
     watchLine: formatCustomLabel(params),
     candleLine: candleLine(timeframe),
     fireLine: fireLineFor("custom", params),
-    verifyLine: verifyLine(timeframe),
+    verifyLine: verifyLine(timeframe, params.type === "stochastic" ? "stoch" : undefined),
   };
 }
 

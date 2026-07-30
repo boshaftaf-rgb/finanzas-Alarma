@@ -21,7 +21,7 @@ Símbolo bursátil de EE. UU. (ej. AAPL, MSFT). Máximo 15 únicos por usuario.
 _Avoid_: símbolo, stock, acción (en contexto técnico)
 
 **Vela (candle)**:
-Barra OHLCV (15 min o diaria según `timeframe` de la alerta) usada para calcular indicadores y evaluar condiciones.
+Barra OHLCV (15 min o diaria según `timeframe` de la alerta) usada para calcular indicadores y evaluar condiciones. En alertas diarias, solo se usa la última **sesión ya cerrada** (≥16:00 ET); la vela de hoy intradía se ignora.
 _Avoid_: barra, candlestick (en UI español)
 
 **Candle-lock**:
@@ -57,8 +57,8 @@ Relative Strength Index; indicador de momentum en escala 0–100. Presets diario
 _Avoid_: índice de fuerza relativa (en UI; ok en docs técnicos)
 
 **Stochastic (Stoch)**:
-Fast Stochastic %K; posición del cierre en el rango high–low de las últimas N velas (0–100). Presets diarios: sobreventa Stoch (<20), sobrecompra Stoch (>80); default período 7 (= 7 días, como vista 1Y). Custom: período, umbral y operador.
-_Avoid_: estocástico lento, %D, cruce K/D (fuera de v1)
+Slow Stochastic %K (SMA de 3 del Fast %K); alineado a Yahoo/TradingView Slow. Presets diarios: sobreventa Stoch (<20), sobrecompra Stoch (>80); default período 7 + suavizado 3 (= notación (7,3)). Custom: período, umbral y operador. No usa cruce K/D.
+_Avoid_: Fast Stochastic solo, estocástico sin suavizar
 
 **Worker**:
 Proceso Python en Docker que hace polling, descarga velas, evalúa alertas y envía correos.

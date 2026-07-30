@@ -1,19 +1,26 @@
 import { formatAlertLabel, presetLabel } from "./alert-labels.js";
-import { timeframeLabel } from "./types.js";
+import { normalizeTimeframe, timeframeLabel } from "./types.js";
 
 export { presetLabel };
 
 export function formatCandleForEmail(candleTimestamp: string, timeframe?: string | null): string {
   const date = new Date(candleTimestamp);
-  const isDaily = timeframe === "1day";
+  const isDaily = normalizeTimeframe(timeframe) === "1day";
   // Daily bars from Twelve Data are calendar trading dates stored as UTC midnight
   // (e.g. 2026-07-29T00:00:00.000Z). Formatting that instant in America/New_York
   // falls on the previous calendar day during EDT/EST — use UTC for daily labels.
+  // Applies to every alert type (EMA, RSI, Stoch, precio, custom): shared formatter.
   return new Intl.DateTimeFormat("es-MX", {
     timeZone: isDaily ? "UTC" : "America/New_York",
     dateStyle: "medium",
     ...(isDaily ? {} : { timeStyle: "short" }),
   }).format(date);
+}
+
+function candleDateCaption(timeframe?: string | null): string {
+  return normalizeTimeframe(timeframe) === "1day"
+    ? "fecha de sesión"
+    : "hora del mercado EE. UU.";
 }
 
 export interface AlertEmailContent {
@@ -46,7 +53,7 @@ export function buildAlertEmail(params: {
     `Ticker: ${params.ticker}`,
     `Tipo de alerta: ${label}`,
     `Timeframe: ${tfLabel}`,
-    `Vela: ${vela} (hora del mercado EE. UU.)`,
+    `Vela: ${vela} (${candleDateCaption(params.timeframe)})`,
     ...(closeStr !== null ? [`Cierre: ${closeStr}`] : []),
     ...valueLines,
     "",
@@ -81,7 +88,7 @@ export function buildVerifyAlertEmail(params: {
     `Ticker: ${params.ticker}`,
     `Tipo de alerta: ${label}`,
     `Timeframe: ${tfLabel}`,
-    `Vela: ${vela} (hora del mercado EE. UU.)`,
+    `Vela: ${vela} (${candleDateCaption(params.timeframe)})`,
     `Cierre: ${closeStr}`,
     ...params.valueLines,
     `Cumple condición: ${params.conditionMet ? "sí" : "no"}`,
