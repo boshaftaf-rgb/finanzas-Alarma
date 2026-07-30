@@ -69,6 +69,13 @@ describe("run-cycle integration", () => {
 
     expect(sendSpy).toHaveBeenCalledTimes(1);
     expect(results[0]?.outcome).toBe("EMAIL ENVIADO");
+    const sendArgs = sendSpy.mock.calls[0]?.[0] as {
+      close?: number;
+      valueLines?: string[];
+    };
+    expect(typeof sendArgs.close).toBe("number");
+    expect(sendArgs.valueLines?.some((l) => l.startsWith("EMA(9):"))).toBe(true);
+    expect(sendArgs.valueLines?.some((l) => l.startsWith("EMA(21):"))).toBe(true);
     const mockStore = store as unknown as MockAlertStore;
     expect(mockStore.updates.some((u) => u.type === "email")).toBe(true);
     expect(mockStore.updates.some((u) => u.type === "firing" && u.alert_id === "a1")).toBe(true);

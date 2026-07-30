@@ -22,12 +22,13 @@ export function formatEvaluatedAt(iso) {
   }).format(new Date(iso));
 }
 
-/** Fecha/hora del disparo en hora del mercado (ET). */
+/** Fecha/hora del disparo en hora del mercado (ET). Velas diarias: fecha calendario UTC. */
 export function formatFiringAt(iso, timeframe) {
   if (!iso) return "—";
   const isDaily = timeframe === "1day";
+  // Same as email: daily bars are UTC-midnight calendar dates; ET would shift −1 day.
   return new Intl.DateTimeFormat("es-MX", {
-    timeZone: "America/New_York",
+    timeZone: isDaily ? "UTC" : "America/New_York",
     dateStyle: "short",
     ...(isDaily ? {} : { timeStyle: "short" }),
   }).format(new Date(iso));

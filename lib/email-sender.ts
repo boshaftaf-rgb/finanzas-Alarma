@@ -45,6 +45,8 @@ export async function sendAlertEmail(
     candleTimestamp: string;
     alertParams?: Record<string, unknown>;
     timeframe?: string | null;
+    close?: number;
+    valueLines?: string[];
     transport?: Transporter;
   },
 ): Promise<void> {
@@ -54,6 +56,8 @@ export async function sendAlertEmail(
     candleTimestamp: params.candleTimestamp,
     alertParams: params.alertParams,
     timeframe: params.timeframe,
+    close: params.close,
+    valueLines: params.valueLines,
   });
 
   const transport = params.transport ?? createTransport(params.config);

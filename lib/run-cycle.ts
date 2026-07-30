@@ -2,6 +2,7 @@ import type { AlertRow } from "./types.js";
 import { decideFire, formatOutcome, todayMarketDate } from "./alert-fire-policy.js";
 import { evaluateAlert } from "./alert-evaluator.js";
 import { formatAlertLabel } from "./alert-labels.js";
+import { buildAlertSnapshot } from "./alert-snapshot.js";
 import { AlertStore } from "./alert-store.js";
 import { sendAlertEmail, smtpConfigFromEnv, type SmtpConfig } from "./email-sender.js";
 import { loadFixture } from "./fixture-loader.js";
@@ -101,6 +102,7 @@ export async function runEvaluationCycle(
         if (!smtpConfig) {
           smtpConfig = smtpConfigFromEnv();
         }
+        const snapshot = buildAlertSnapshot(alert, bars);
         await sendAlertEmail({
           config: smtpConfig,
           ticker: alert.ticker,
@@ -108,6 +110,8 @@ export async function runEvaluationCycle(
           candleTimestamp: evaluation.candleTimestamp,
           alertParams: alert.params,
           timeframe,
+          close: snapshot.close,
+          valueLines: snapshot.valueLines,
         });
         await store.recordEmailSent(alert, evaluation.candleTimestamp, today, now);
         try {

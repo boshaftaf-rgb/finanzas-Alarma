@@ -111,4 +111,19 @@ describe("alert-email-template", () => {
     expect(email.text).toContain("Diario");
     expect(email.text).toContain("Precio cruza SMA(12) al alza · Diario");
   });
+
+  it("incluye cierre y valores detectados en el cuerpo", () => {
+    const email = buildAlertEmail({
+      ticker: "AAPL",
+      presetOrCustom: "rsi_oversold",
+      candleTimestamp: "2026-07-29T00:00:00.000Z",
+      alertParams: { period: 14, threshold: 30 },
+      timeframe: "1day",
+      close: 198.5,
+      valueLines: ["RSI(14): 28.7"],
+    });
+    expect(email.subject).toContain("AAPL");
+    expect(email.text).toContain("Cierre: 198.50");
+    expect(email.text).toContain("RSI(14): 28.7");
+  });
 });

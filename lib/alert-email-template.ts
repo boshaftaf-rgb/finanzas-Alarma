@@ -6,8 +6,11 @@ export { presetLabel };
 export function formatCandleForEmail(candleTimestamp: string, timeframe?: string | null): string {
   const date = new Date(candleTimestamp);
   const isDaily = timeframe === "1day";
+  // Daily bars from Twelve Data are calendar trading dates stored as UTC midnight
+  // (e.g. 2026-07-29T00:00:00.000Z). Formatting that instant in America/New_York
+  // falls on the previous calendar day during EDT/EST — use UTC for daily labels.
   return new Intl.DateTimeFormat("es-MX", {
-    timeZone: "America/New_York",
+    timeZone: isDaily ? "UTC" : "America/New_York",
     dateStyle: "medium",
     ...(isDaily ? {} : { timeStyle: "short" }),
   }).format(date);
@@ -24,10 +27,17 @@ export function buildAlertEmail(params: {
   candleTimestamp: string;
   alertParams?: Record<string, unknown>;
   timeframe?: string | null;
+  close?: number;
+  valueLines?: string[];
 }): AlertEmailContent {
   const label = formatAlertLabel(params.presetOrCustom, params.alertParams ?? {}, params.timeframe);
   const vela = formatCandleForEmail(params.candleTimestamp, params.timeframe);
   const tfLabel = timeframeLabel(params.timeframe);
+  const closeStr =
+    params.close !== undefined && Number.isFinite(params.close)
+      ? params.close.toFixed(2)
+      : null;
+  const valueLines = params.valueLines ?? [];
 
   const subject = `Alerta ${params.ticker}: ${label}`;
   const text = [
@@ -37,6 +47,8 @@ export function buildAlertEmail(params: {
     `Tipo de alerta: ${label}`,
     `Timeframe: ${tfLabel}`,
     `Vela: ${vela} (hora del mercado EE. UU.)`,
+    ...(closeStr !== null ? [`Cierre: ${closeStr}`] : []),
+    ...valueLines,
     "",
     "La condición configurada se cumplió en la vela más reciente.",
     "",
