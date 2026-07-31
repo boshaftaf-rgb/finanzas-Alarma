@@ -40,7 +40,7 @@ export async function saveTickerOrder(tickers) {
   if (error) throw error;
 }
 
-/** Remove order row when the user no longer has alerts for that ticker. */
+/** Remove ticker from the saved list when the user removes it from the panel. */
 export async function deleteTickerOrder(ticker) {
   const { error } = await client
     .from("user_ticker_order")

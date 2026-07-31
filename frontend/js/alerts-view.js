@@ -6,7 +6,7 @@ import { els } from "./dom.js";
 import { appState } from "./app-state.js";
 import { setStackLayer } from "./loading.js";
 import { alertRowSkeletonHtml } from "./skeletons.js";
-import { badgeHtml, escapeAttr, groupByTicker } from "./html-utils.js";
+import { badgeHtml, escapeAttr, listTickerGroups } from "./html-utils.js";
 import { quoteBlockHtml } from "./quotes-ui.js";
 import { alertListLabel, timeframeChipHtml } from "./signal-summary.js";
 
@@ -21,6 +21,11 @@ let orderActions = {
   onReorder: () => {},
 };
 
+let emptyGroupActions = {
+  onCreate: () => {},
+  onRemoveTicker: () => {},
+};
+
 let dragTicker = null;
 
 export function bindAlertRowActions(actions) {
@@ -29,6 +34,10 @@ export function bindAlertRowActions(actions) {
 
 export function bindTickerOrderActions(actions) {
   orderActions = { ...orderActions, ...actions };
+}
+
+export function bindEmptyGroupActions(actions) {
+  emptyGroupActions = { ...emptyGroupActions, ...actions };
 }
 
 export function updateTickerCounter() {
@@ -93,6 +102,25 @@ function createAlertRow(alert) {
   return row;
 }
 
+function createEmptyGroupBody(ticker) {
+  const body = document.createElement("div");
+  body.className = "ticker-group__empty";
+  body.innerHTML = `
+    <p class="ticker-group__empty-text">Sin alertas</p>
+    <div class="ticker-group__empty-actions">
+      <button type="button" class="btn-ghost btn-ghost--accent btn-empty-create" aria-label="Nueva alerta para ${escapeAttr(ticker)}">
+        Nueva alerta
+      </button>
+      <button type="button" class="btn-ghost btn-remove-ticker" aria-label="Quitar ticker ${escapeAttr(ticker)}">
+        Quitar ticker
+      </button>
+    </div>
+  `;
+  body.querySelector(".btn-empty-create").addEventListener("click", () => emptyGroupActions.onCreate(ticker));
+  body.querySelector(".btn-remove-ticker").addEventListener("click", () => emptyGroupActions.onRemoveTicker(ticker));
+  return body;
+}
+
 function clearDropIndicators() {
   for (const el of els.alertList.querySelectorAll(".ticker-group--drop-before, .ticker-group--drop-after")) {
     el.classList.remove("ticker-group--drop-before", "ticker-group--drop-after");
@@ -100,7 +128,7 @@ function clearDropIndicators() {
 }
 
 function displayedTickerOrder() {
-  return groupByTicker(appState.alerts, appState.tickerOrder).map(([ticker]) => ticker);
+  return listTickerGroups(appState.alerts, appState.tickerOrder).map(([ticker]) => ticker);
 }
 
 function bindGroupDrag(group, ticker) {
@@ -179,7 +207,9 @@ export function renderAlerts() {
   updateTickerCounter();
   els.alertList.innerHTML = "";
 
-  if (appState.alerts.length === 0) {
+  const groups = listTickerGroups(appState.alerts, appState.tickerOrder);
+
+  if (groups.length === 0) {
     setStackLayer(els.skeleton, false);
     setStackLayer(els.alertList, false);
     els.alertsStack.classList.add("hidden");
@@ -192,11 +222,14 @@ export function renderAlerts() {
   setStackLayer(els.skeleton, false);
   setStackLayer(els.alertList, true);
 
-  for (const [ticker, groupAlerts] of groupByTicker(appState.alerts, appState.tickerOrder)) {
+  for (const [ticker, groupAlerts] of groups) {
     const group = document.createElement("section");
-    group.className = "ticker-group";
+    group.className = `ticker-group${groupAlerts.length === 0 ? " ticker-group--empty" : ""}`;
     group.dataset.ticker = ticker;
-    group.setAttribute("aria-label", `Alertas de ${ticker}`);
+    group.setAttribute(
+      "aria-label",
+      groupAlerts.length === 0 ? `${ticker} sin alertas` : `Alertas de ${ticker}`,
+    );
 
     const header = document.createElement("div");
     header.className = "ticker-group__header";
@@ -214,8 +247,12 @@ export function renderAlerts() {
     `;
     group.appendChild(header);
 
-    for (const alert of groupAlerts) {
-      group.appendChild(createAlertRow(alert));
+    if (groupAlerts.length === 0) {
+      group.appendChild(createEmptyGroupBody(ticker));
+    } else {
+      for (const alert of groupAlerts) {
+        group.appendChild(createAlertRow(alert));
+      }
     }
 
     bindGroupDrag(group, ticker);

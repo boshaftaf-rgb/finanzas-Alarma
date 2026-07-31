@@ -207,7 +207,7 @@ Los presets aparecen bajo **Vista diaria / 1Y**. Cada card y cada fila del lista
 
 Al crear o editar, el bloque **Resumen de la señal** indica qué se vigila, que las velas son diarias, cuándo dispara y cómo verificarlo en Yahoo/TradingView (intervalo **1 día**; el rango 1Y solo es la vista del gráfico).
 
-El listado agrupa alertas por ticker. Puedes **arrastrar el asidero** (⋮⋮) de cada grupo para cambiar el orden; el orden se guarda y se mantiene al recargar. Un ticker nuevo aparece al final hasta que lo muevas.
+El listado agrupa alertas por ticker. Puedes **arrastrar el asidero** (⋮⋮) de cada grupo para cambiar el orden; el orden se guarda y se mantiene al recargar. Un ticker nuevo aparece al final hasta que lo muevas. Si eliminas todas las alertas de un ticker, el grupo permanece vacío para que crees otras; usa **Quitar ticker** para sacarlo de la lista.
 
 | Límite | Valor |
 |--------|-------|

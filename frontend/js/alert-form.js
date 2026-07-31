@@ -219,9 +219,18 @@ export function resetForm() {
   updateSignalSummary();
 }
 
-export function openCreateModal() {
+export function openCreateModal({ ticker } = {}) {
   resetForm();
+  if (ticker) {
+    els.tickerInput.value = normalizeTicker(ticker);
+  }
   els.modalBackdrop.classList.remove("hidden");
+  if (ticker) {
+    const firstPreset = els.presetGrid.querySelector(".preset-card");
+    if (firstPreset) firstPreset.focus();
+    else els.tickerInput.focus();
+    return;
+  }
   els.tickerInput.focus();
 }
 

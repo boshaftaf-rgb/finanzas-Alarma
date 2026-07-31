@@ -17,7 +17,7 @@ Alerta donde el usuario define parámetros de cruce EMA, **precio vs media (SMA/
 _Avoid_: alerta avanzada, regla custom
 
 **Ticker**:
-Símbolo bursátil de EE. UU. (ej. AAPL, MSFT). Máximo 15 únicos por usuario.
+Símbolo bursátil de EE. UU. (ej. AAPL, MSFT). Máximo 15 únicos **con alerta activa** por usuario. Puede permanecer en la lista del panel sin alertas hasta que el usuario lo quite.
 _Avoid_: símbolo, stock, acción (en contexto técnico)
 
 **Vela (candle)**:

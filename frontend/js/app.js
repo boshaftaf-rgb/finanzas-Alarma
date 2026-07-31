@@ -27,7 +27,12 @@ import { setLoading, setFiringsLoading } from "./loading.js";
 import { renderSkeleton, renderFiringsSkeleton } from "./skeletons.js";
 import { appState } from "./app-state.js";
 import { els } from "./dom.js";
-import { renderAlerts, bindAlertRowActions, bindTickerOrderActions } from "./alerts-view.js";
+import {
+  renderAlerts,
+  bindAlertRowActions,
+  bindEmptyGroupActions,
+  bindTickerOrderActions,
+} from "./alerts-view.js";
 import { renderFirings, bindFiringRowActions, updateFiringsBadge } from "./firings-view.js";
 import { showAlertsView, showFiringsView } from "./navigation.js";
 import { loadQuotes, previewTickerQuote } from "./quotes-controller.js";
@@ -55,9 +60,36 @@ function syncFiringsState(list) {
   updateFiringsBadge();
 }
 
-function tickerHasRemainingAlerts(ticker) {
-  const key = String(ticker).toUpperCase();
-  return appState.alerts.some((a) => String(a.ticker).toUpperCase() === key);
+function tickerKey(ticker) {
+  return String(ticker).toUpperCase();
+}
+
+function orderHasTicker(order, ticker) {
+  const key = tickerKey(ticker);
+  return order.some((t) => tickerKey(t) === key);
+}
+
+/** Append alert tickers missing from saved order; returns true if order changed. */
+function mergeAlertTickersIntoOrder(alerts, order) {
+  const next = [...order];
+  let changed = false;
+  const seen = new Set(next.map(tickerKey));
+  for (const alert of alerts) {
+    const key = tickerKey(alert.ticker);
+    if (!key || seen.has(key)) continue;
+    next.push(key);
+    seen.add(key);
+    changed = true;
+  }
+  return { order: next, changed };
+}
+
+async function ensureTickerInOrder(ticker) {
+  const key = tickerKey(ticker);
+  if (!key || orderHasTicker(appState.tickerOrder, key)) return;
+  const next = [...appState.tickerOrder, key];
+  appState.tickerOrder = next;
+  await saveTickerOrder(next);
 }
 
 async function loadFirings() {
@@ -86,12 +118,20 @@ async function loadAlerts() {
       fetchTickerOrder(),
     ]);
     appState.alerts = alertRows;
-    appState.tickerOrder = tickerOrder;
+    const { order: mergedOrder, changed } = mergeAlertTickersIntoOrder(alertRows, tickerOrder);
+    appState.tickerOrder = mergedOrder;
     syncFiringsState(firingRows);
     setLoading(false);
     if (appState.currentView === "firings") renderFirings();
     else renderAlerts();
     void loadQuotes();
+    if (changed) {
+      try {
+        await saveTickerOrder(mergedOrder);
+      } catch {
+        /* backfill best-effort: el listado ya muestra los tickers */
+      }
+    }
   } catch (error) {
     setLoading(false);
     renderAlerts();
@@ -184,14 +224,12 @@ async function handleDelete(alert) {
   try {
     await deleteAlert(alert.id);
     appState.alerts = appState.alerts.filter((a) => a.id !== alert.id);
-    if (!tickerHasRemainingAlerts(alert.ticker)) {
-      appState.tickerOrder = appState.tickerOrder.filter(
-        (t) => String(t).toUpperCase() !== String(alert.ticker).toUpperCase(),
-      );
-      try {
-        await deleteTickerOrder(alert.ticker);
-      } catch {
-        /* orden huérfano: no bloquea el borrado de la alerta */
+    try {
+      await ensureTickerInOrder(alert.ticker);
+    } catch {
+      /* conservar ticker en lista local aunque falle el upsert */
+      if (!orderHasTicker(appState.tickerOrder, alert.ticker)) {
+        appState.tickerOrder = [...appState.tickerOrder, tickerKey(alert.ticker)];
       }
     }
     showBanner("success", `Alerta de ${alert.ticker} eliminada.`);
@@ -201,6 +239,34 @@ async function handleDelete(alert) {
   } finally {
     appState.busyId = null;
     renderAlerts();
+  }
+}
+
+async function handleRemoveTicker(ticker) {
+  const key = tickerKey(ticker);
+  const hasAlerts = appState.alerts.some((a) => tickerKey(a.ticker) === key);
+  if (hasAlerts) {
+    showBanner("error", `Elimina primero las alertas de ${key} antes de quitar el ticker.`);
+    return;
+  }
+
+  const confirmed = window.confirm(
+    `¿Quitar ${key} de tu lista? Podrás volver a añadirlo al crear una alerta.`,
+  );
+  if (!confirmed) return;
+
+  hideBanner();
+  const previous = [...appState.tickerOrder];
+  appState.tickerOrder = appState.tickerOrder.filter((t) => tickerKey(t) !== key);
+  renderAlerts();
+  try {
+    await deleteTickerOrder(key);
+    showBanner("success", `${key} quitado de la lista.`);
+  } catch (error) {
+    appState.tickerOrder = previous;
+    renderAlerts();
+    const raw = error instanceof Error ? error.message : "";
+    showBanner("error", mapDbError(raw) || `No se pudo quitar ${key}.`);
   }
 }
 
@@ -223,6 +289,13 @@ async function handleSubmit() {
       const ticker = readCreateTicker();
       const created = await createAlert({ ticker, ...payload });
       appState.alerts = [created, ...appState.alerts].sort((a, b) => a.ticker.localeCompare(b.ticker));
+      try {
+        await ensureTickerInOrder(ticker);
+      } catch {
+        if (!orderHasTicker(appState.tickerOrder, ticker)) {
+          appState.tickerOrder = [...appState.tickerOrder, tickerKey(ticker)];
+        }
+      }
       showBanner("success", `Alerta creada para ${ticker}.`);
       void loadQuotes();
     }
@@ -320,6 +393,10 @@ async function main() {
   });
   bindTickerOrderActions({
     onReorder: (tickers) => void handleTickerReorder(tickers),
+  });
+  bindEmptyGroupActions({
+    onCreate: (ticker) => openCreateModal({ ticker }),
+    onRemoveTicker: (ticker) => void handleRemoveTicker(ticker),
   });
   bindFiringRowActions({
     onDelete: (firing) => void handleDeleteFiring(firing),

@@ -33,3 +33,39 @@ export function groupByTicker(items, tickerOrder) {
     return a.localeCompare(b);
   });
 }
+
+/**
+ * Lista guardada de tickers (orden) unida a alertas.
+ * Incluye tickers de tickerOrder aunque no tengan alertas.
+ * @returns {Array<[string, object[]]>}
+ */
+export function listTickerGroups(alerts, tickerOrder) {
+  const groups = new Map();
+
+  for (const ticker of tickerOrder ?? []) {
+    const key = String(ticker || "").toUpperCase();
+    if (!key) continue;
+    if (!groups.has(key)) groups.set(key, []);
+  }
+
+  for (const alert of alerts ?? []) {
+    const key = String(alert.ticker || "").toUpperCase();
+    if (!key) continue;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(alert);
+  }
+
+  const orderedKeys = [];
+  const seenOrder = new Set();
+  for (const t of tickerOrder ?? []) {
+    const key = String(t || "").toUpperCase();
+    if (!key || seenOrder.has(key)) continue;
+    seenOrder.add(key);
+    orderedKeys.push(key);
+  }
+  const extras = [...groups.keys()]
+    .filter((key) => !seenOrder.has(key))
+    .sort((a, b) => a.localeCompare(b));
+
+  return [...orderedKeys, ...extras].map((key) => [key, groups.get(key)]);
+}

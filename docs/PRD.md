@@ -30,7 +30,7 @@ El usuario quiere una plataforma donde pueda registrarse de forma controlada, el
 8b. As a **usuario registrado**, I want to **crear una alerta personalizada de tipo Stochastic** con período, umbral y operador (< o >) configurables, so that **vigile el Slow %K (como Yahoo) en zonas de sobreventa/sobrecompra**.
 9. As a **usuario registrado**, I want to **no poder combinar EMA, RSI y Stochastic en una sola alerta custom**, so that **el sistema permanezca simple y predecible en v1**.
 10. As a **usuario registrado**, I want to **activar y desactivar una alerta sin borrarla**, so that **pause temporalmente el monitoreo de un ticker**.
-11. As a **usuario registrado**, I want to **eliminar una alerta**, so that **deje de recibir notificaciones y libere cupo**.
+11. As a **usuario registrado**, I want to **eliminar una alerta**, so that **deje de recibir notificaciones y libere cupo** (el ticker permanece en la lista; «Quitar ticker» lo elimina del panel).
 12. As a **usuario registrado**, I want to **recibir un mensaje claro si intento añadir un ticker número 16**, so that **entienda el límite de 15 símbolos únicos**.
 13. As a **usuario registrado**, I want to **recibir un mensaje claro si intento crear más de 5 alertas en el mismo ticker**, so that **no abuse del sistema ni de mi cuota de correos**.
 14. As a **usuario registrado**, I want to **poder tener varias alertas en el mismo ticker con reglas distintas** (hasta 5), so that **monitoree por ejemplo cruce EMA y RSI sobreventa en AAPL simultáneamente**.
@@ -112,7 +112,7 @@ El usuario quiere una plataforma donde pueda registrarse de forma controlada, el
 | ticker | TEXT (PK compuesta) |
 | sort_order | INTEGER |
 
-Orden de grupos de ticker en el panel; no lo usa el worker.
+Lista guardada de tickers + orden de grupos en el panel; no lo usa el worker. Borrar todas las alertas de un ticker no quita la fila; «Quitar ticker» sí.
 
 **Tabla `invite_codes`:**
 

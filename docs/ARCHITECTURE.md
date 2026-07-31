@@ -142,7 +142,7 @@ Registro de cada email enviado para la bandeja de **disparos** del panel (persis
 
 ### Tabla `user_ticker_order`
 
-Orden personalizado de **grupos de ticker** en el listado de alertas del panel (drag-and-drop). No afecta al worker ni a la vista de disparos.
+Lista guardada de tickers del panel + orden de grupos (drag-and-drop). Conserva el ticker aunque no tenga alertas; «Quitar ticker» elimina la fila. No afecta al worker ni a la vista de disparos.
 
 | Campo | Tipo | Descripción |
 |-------|------|-------------|
@@ -151,7 +151,7 @@ Orden personalizado de **grupos de ticker** en el listado de alertas del panel (
 | `sort_order` | `INTEGER` | Posición 0-based (menor = más arriba) |
 
 - Panel (anon): **SELECT** + **INSERT** + **UPDATE** + **DELETE**.
-- Tickers sin fila aparecen al final del listado (A–Z entre ellos).
+- Tickers con alertas pero sin fila aparecen al final del listado (A–Z entre ellos) hasta el backfill del panel.
 
 ### Tabla `invite_codes`
 

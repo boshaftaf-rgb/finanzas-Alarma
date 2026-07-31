@@ -7,7 +7,14 @@ import { renderTickerPreview } from "./quotes-ui.js";
 import { renderAlerts } from "./alerts-view.js";
 
 export async function loadQuotes(tickers = null) {
-  const list = tickers ?? [...new Set(appState.alerts.map((a) => a.ticker))];
+  const list =
+    tickers ??
+    [
+      ...new Set([
+        ...appState.tickerOrder.map((t) => String(t).toUpperCase()),
+        ...appState.alerts.map((a) => String(a.ticker).toUpperCase()),
+      ]),
+    ].filter(Boolean);
   if (list.length === 0) {
     appState.quotesByTicker = {};
     return;
