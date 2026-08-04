@@ -111,7 +111,7 @@ export function updateTimeframeHint() {
   } else if (appState.customType === "price_level") {
     els.timeframeSelect.value = "15min";
     els.timeframeHint.textContent =
-      "Precio objetivo: velas de 15 min — avisa si el cierre de la vela cumple ≥ o ≤ el nivel (no hace falta un cruce).";
+      "Precio objetivo: velas de 15 min — avisa solo cuando el cierre cruza ≥ o ≤ el nivel (un toque; no reenvía mientras siga ahí).";
   } else if (appState.customType === "price_ma") {
     els.timeframeSelect.value = "1day";
     els.timeframeHint.textContent =

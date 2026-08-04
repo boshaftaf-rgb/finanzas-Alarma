@@ -129,7 +129,7 @@ Todas las alertas EMA (9/21 y 50/200) usan **velas diarias** (vista 1Y).
 
 Custom EMA: ema_fast y ema_slow (2–200, rápida < lenta), direction up/down.
 Custom **Precio vs media**: el cierre cruza SMA o EMA de período N (2–200), direction up/down. Recomendado **SMA** si comparas con TradingView (`ma`).
-Custom **Precio objetivo**: el cierre de una vela de **15 min** cumple un nivel fijo (`level` > 0) con operador `>=` o `<=` (comparación directa con el cierre actual, no cruce).
+Custom **Precio objetivo**: el cierre de una vela de **15 min** cruza un nivel fijo (`level` > 0) con operador `>=` o `<=` (solo el evento de toque; no reenvía mientras siga del mismo lado).
 Custom **Rango de precios**: piso (`low`) y techo (`high`); se dispara al salir del canal por arriba o por abajo (**velas diarias**).
 Custom RSI: period (2–50), threshold (0–100), operator < o >.
 Custom Stochastic: period (2–50), threshold (0–100), operator < o > — siempre **Slow** (suavizado 3). Recomendado timeframe **Diario**.
@@ -166,9 +166,9 @@ Para avisar cuando la acción **llega** a un precio que eliges tú **durante la 
 | Tipo | Personalizada → **Precio objetivo** |
 | Timeframe | **15 minutos** (fijo) |
 | Precio objetivo | Nivel en USD (ej. 185.5) |
-| Condición | Cierre de vela 15 min alcanza o supera (`>=`) o baja hasta o por debajo (`<=`) |
+| Condición | Cierre de vela 15 min cruza al alza (`>=`) o a la baja (`<=`) el nivel |
 
-Se dispara si el **cierre** de la vela de 15 min cumple la condición (`>=` o `<=`). No exige cruce desde el otro lado. Mientras el precio siga cumpliendo, candle-lock limita a **1 correo por vela** (máx. 10/día). Retraso típico del plan free de Twelve Data: ~15 min.
+Se dispara solo al **tocar/cruzar** el nivel (vela anterior no cumplía → actual sí). Mientras el cierre siga del mismo lado, no reenvía. Candle-lock + tope 10/día siguen aplicando. Retraso típico del plan free de Twelve Data: ~15 min.
 
 ---
 
