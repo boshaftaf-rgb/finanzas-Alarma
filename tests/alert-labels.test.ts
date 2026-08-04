@@ -148,8 +148,8 @@ describe("alert-evaluator custom", () => {
     expect(result.conditionMet).toBe(true);
   });
 
-  it("no dispara price_level si ya estaba del lado correcto", () => {
-    const stillAbove = evaluateAlert(
+  it("evalúa custom precio >= nivel si el cierre actual ya está arriba", () => {
+    const result = evaluateAlert(
       {
         ticker: "TEST",
         preset_or_custom: "custom",
@@ -158,9 +158,11 @@ describe("alert-evaluator custom", () => {
       },
       barsFromCloses([105, 110]),
     );
-    expect(stillAbove.conditionMet).toBe(false);
+    expect(result.conditionMet).toBe(true);
+  });
 
-    const stillBelow = evaluateAlert(
+  it("evalúa custom precio <= nivel si el cierre actual ya está abajo", () => {
+    const result = evaluateAlert(
       {
         ticker: "TEST",
         preset_or_custom: "custom",
@@ -169,10 +171,10 @@ describe("alert-evaluator custom", () => {
       },
       barsFromCloses([95, 90]),
     );
-    expect(stillBelow.conditionMet).toBe(false);
+    expect(result.conditionMet).toBe(true);
   });
 
-  it("no dispara price_level sin cruce", () => {
+  it("no dispara price_level si el cierre no alcanza el nivel", () => {
     const result = evaluateAlert(
       {
         ticker: "TEST",

@@ -34,6 +34,16 @@ function rsiThreshold(value: number, threshold: number, operator: "<" | ">"): bo
   return operator === "<" ? value < threshold : value > threshold;
 }
 
+function priceLevelMet(
+  close: number,
+  level: number,
+  operator: ">=" | "<=",
+): boolean {
+  if (operator === ">=") return close >= level;
+  return close <= level;
+}
+
+/** Cruce de nivel (solo para salida de rango). */
 function priceLevelCross(
   prevClose: number,
   close: number,
@@ -181,7 +191,7 @@ function evaluateCustom(
     if (!Number.isFinite(level) || level <= 0) {
       return false;
     }
-    return priceLevelCross(previous.close, current.close, level, operator);
+    return priceLevelMet(current.close, level, operator);
   }
 
   if (type === "price_range") {

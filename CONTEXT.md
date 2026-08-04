@@ -33,7 +33,7 @@ Evento en el que el cierre cruza por encima o por debajo de una SMA o EMA de per
 _Avoid_: cruce de medias (cuando se habla solo de precio vs una línea)
 
 **Precio objetivo (price_level)**:
-Evento en el que el cierre de una vela de **15 min** cruza un nivel de precio fijo elegido por el usuario (`>=` o `<=`) entre vela anterior y actual; avisa durante la sesión.
+Comparación del cierre de la vela de **15 min** con un nivel fijo (`>=` o `<=`). Cumple si el cierre actual está en ese lado del nivel (no exige cruce entre velas).
 _Avoid_: stop loss, take profit, alert absolute (en UI español)
 
 **Rango de precios (price_range)**:

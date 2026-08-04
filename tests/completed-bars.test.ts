@@ -68,22 +68,22 @@ describe("completed-bars", () => {
     expect(result.candleTimestamp.startsWith("2026-07-29")).toBe(true);
   });
 
-  it("evaluateAlert price_level 15min detecta cruce intradía (no descarta vela reciente)", () => {
+  it("evaluateAlert price_level 15min cumple si el cierre está en o sobre el nivel", () => {
     const now = new Date("2026-07-30T16:00:00.000Z"); // sesión abierta ET
     const bars = [
       {
         datetime: "2026-07-30T14:30:00.000Z",
-        open: 98,
-        high: 99,
-        low: 97,
-        close: 98,
+        open: 148,
+        high: 149,
+        low: 147,
+        close: 148,
         volume: 1000,
       },
       {
         datetime: "2026-07-30T14:45:00.000Z",
-        open: 99,
+        open: 149,
         high: 152,
-        low: 99,
+        low: 149,
         close: 151,
         volume: 1000,
       },

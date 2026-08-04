@@ -88,7 +88,7 @@ En modo **custom**, el timeframe queda fijo según el tipo: **`15min`** para pre
 
 Ejemplo alerta temprana (gráfico diario 1Y): `timeframe=1day`, `params={ "type": "price_ma", "ma_type": "sma", "period": 12, "direction": "up" }`.
 
-Ejemplo precio objetivo: `timeframe=15min`, `params={ "type": "price_level", "level": 185.5, "operator": ">=" }` (cierre de vela 15 min cruza el nivel desde abajo).
+Ejemplo precio objetivo: `timeframe=15min`, `params={ "type": "price_level", "level": 185.5, "operator": ">=" }` (cierre de vela 15 min ≥ 185.5).
 
 Ejemplo rango: `timeframe=1day`, `params={ "type": "price_range", "low": 100, "high": 120, "sides": "both" }` (salida del canal).
 
