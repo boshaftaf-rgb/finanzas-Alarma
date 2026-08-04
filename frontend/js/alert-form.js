@@ -48,7 +48,7 @@ export function setCustomType(type) {
     btn.classList.toggle("is-active", active);
     btn.setAttribute("aria-pressed", String(active));
   }
-  els.timeframeSelect.value = "1day";
+  els.timeframeSelect.value = type === "price_level" ? "15min" : "1day";
   if (type === "stochastic") updateStochHint();
   els.formError.classList.add("hidden");
   updateTimeframeHint();
@@ -89,34 +89,41 @@ export function updateStochHint() {
 }
 
 export function updateTimeframeHint() {
-  els.timeframeSelect.value = "1day";
   els.timeframeSelect.disabled = true;
   if (appState.formMode === "preset") {
+    els.timeframeSelect.value = "1day";
     if (isStochPreset(appState.selectedPreset)) {
       els.timeframeHint.textContent =
-        "Todas las alertas usan velas diarias. Stoch lento (7,3): como Yahoo Slow Stochastic.";
+        "Velas diarias (vista 1Y). Stoch lento (7,3): como Yahoo Slow Stochastic.";
     } else if (isOscillatorPreset(appState.selectedPreset)) {
       els.timeframeHint.textContent =
-        "Todas las alertas usan velas diarias. RSI: período 14 = últimos 14 días (gráfico 1Y).";
+        "Velas diarias (vista 1Y). RSI: período 14 = últimos 14 días.";
     } else if (isLongEmaCrossPreset(appState.selectedPreset)) {
       els.timeframeHint.textContent =
-        "Todas las alertas usan velas diarias. Golden/Death: EMA(50)/EMA(200) como en gráfico 1Y.";
+        "Velas diarias (vista 1Y). Golden/Death: EMA(50)/EMA(200).";
     } else if (appState.selectedPreset) {
       els.timeframeHint.textContent =
-        "Todas las alertas usan velas diarias. Impulso EMA(9)/EMA(21) en diario (vista 1Y).";
+        "Velas diarias (vista 1Y). Impulso EMA(9)/EMA(21).";
     } else {
       els.timeframeHint.textContent =
-        "Todas las alertas se evalúan con velas diarias (como gráfico 1Y / intervalo 1 día).";
+        "Presets y la mayoría de custom usan velas diarias (vista 1Y). Precio objetivo usa 15 min.";
     }
+  } else if (appState.customType === "price_level") {
+    els.timeframeSelect.value = "15min";
+    els.timeframeHint.textContent =
+      "Precio objetivo: velas de 15 min — avisa cuando el cierre de una vela cruza el nivel durante la sesión.";
   } else if (appState.customType === "price_ma") {
+    els.timeframeSelect.value = "1day";
     els.timeframeHint.textContent =
       "Diario: período 12 = media de 12 días (como gráfico 1Y en TradingView).";
   } else if (appState.customType === "stochastic") {
+    els.timeframeSelect.value = "1day";
     els.timeframeHint.textContent =
       "Diario: Stoch lento (período,3) — alineado a Yahoo Slow Stochastic.";
   } else {
+    els.timeframeSelect.value = "1day";
     els.timeframeHint.textContent =
-      "Todas las alertas se evalúan con velas diarias (como gráfico 1Y / intervalo 1 día).";
+      "Velas diarias (como gráfico 1Y / intervalo 1 día).";
   }
   updateSignalSummary();
 }
@@ -244,7 +251,6 @@ export function openEditModal(alert) {
 
   if (alert.preset_or_custom === "custom") {
     setFormMode("custom");
-    els.timeframeSelect.value = "1day";
     fillCustomFields(alert.params);
   } else {
     setFormMode("preset");

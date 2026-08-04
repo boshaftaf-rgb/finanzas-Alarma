@@ -16,7 +16,7 @@ Documentación principal:
 | Pieza | Dónde |
 |-------|--------|
 | Panel | Vercel (`frontend/`) |
-| Worker | Vercel Cron (`api/cron/evaluate` + `lib/`) |
+| Worker | `api/cron/evaluate` + `lib/` (cron-job.org primario) |
 | Base de datos | Supabase |
 
 ## Estructura

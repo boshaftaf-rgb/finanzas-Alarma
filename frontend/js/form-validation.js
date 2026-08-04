@@ -6,6 +6,7 @@ import {
   buildRsiParams,
   buildRsiPresetParams,
   buildStochasticParams,
+  customTypeTimeframe,
   validateEmaParams,
   validatePriceLevelParams,
   validatePriceMaParams,
@@ -20,6 +21,9 @@ import { els } from "./dom.js";
 import { appState } from "./app-state.js";
 
 function resolveTimeframe() {
+  if (appState.formMode === "custom") {
+    return customTypeTimeframe(appState.customType);
+  }
   return "1day";
 }
 

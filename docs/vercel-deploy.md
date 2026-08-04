@@ -1,7 +1,9 @@
 # Deploy en Vercel (panel + worker) — $0
 
 Decisión: [ADR 001](adr/001-worker-en-vercel.md).  
-**Scheduler:** [GitHub Actions](https://github.com/features/actions) (gratis), no Vercel Cron (de pago).
+**Scheduler primario:** [cron-job.org](https://cron-job.org) cada **15 min** (gratis, puntual).  
+**Respaldo:** [GitHub Actions](https://github.com/features/actions) cada 15 min (no garantiza puntualidad).  
+No uses Vercel Cron (de pago).
 
 ## Qué se despliega
 
@@ -10,7 +12,7 @@ Decisión: [ADR 001](adr/001-worker-en-vercel.md).
 | `frontend/` | Panel estático (HTML + CSS + JS, sin gestor de paquetes en el panel) |
 | `api/cron/evaluate` | Worker — evalúa alertas (invocado por HTTP) |
 | `lib/` | Lógica compartida (EMA, RSI, evaluador) |
-| `.github/workflows/evaluate-alerts.yml` | Cron gratuito cada 5 min (lun–vie) |
+| `.github/workflows/evaluate-alerts.yml` | Respaldo cada 15 min (lun–vie) |
 
 ## Paso a paso (operador)
 
@@ -20,7 +22,7 @@ Decisión: [ADR 001](adr/001-worker-en-vercel.md).
 2. Añade las variables de entorno (ver tabla abajo).
 3. Deploy y copia la URL de producción (ej. `https://finanzas-alarma.vercel.app`).
 
-### 2. Secrets en GitHub
+### 2. Secrets en GitHub (respaldo)
 
 Repo → **Settings → Secrets and variables → Actions → New repository secret**
 
@@ -38,9 +40,20 @@ curl -H "Authorization: Bearer TU_CRON_SECRET" \
 
 O en GitHub → **Actions → Evaluar alertas → Run workflow**.
 
-### 4. Automático
+### 4. Automático — cron-job.org (primario)
 
-El workflow corre cada **5 minutos** de lunes a viernes. Fuera del horario NY (9:30–16:00) el worker responde `mercado_cerrado` y sale rápido.
+Actions solo no basta: el schedule de GitHub suele retrasarse horas. Configura [cron-job.org](https://cron-job.org) (plan gratuito):
+
+| Campo | Valor |
+|-------|--------|
+| URL | `https://TU-URL.vercel.app/api/cron/evaluate` |
+| Método | GET (o POST; el handler no exige body) |
+| Header | `Authorization: Bearer <mismo CRON_SECRET que Vercel>` |
+| Intervalo | Cada **15 minutos**, lun–vie |
+
+Fuera del horario NY (9:30–16:00) el worker responde `mercado_cerrado` y sale rápido. Checklist completo: [`TAREAS-HUMANO.md`](../TAREAS-HUMANO.md).
+
+El workflow de Actions queda como **respaldo** cada 15 min (lun–vie).
 
 ## Variables en Vercel
 
@@ -65,13 +78,10 @@ El workflow corre cada **5 minutos** de lunes a viernes. Fuera del horario NY (9
 | Supabase free | $0 |
 | Twelve Data free | $0 |
 | Gmail | $0 |
-| GitHub Actions | $0 en repo **público**; repo privado: ~500 min/mes suele bastar |
+| cron-job.org | $0 (plan gratuito) |
+| GitHub Actions | $0 en repo **público**; repo privado: minutos de Actions |
 
-**No uses** Vercel Cron (requiere plan de pago para cada 5 min).
-
-## Alternativa si GitHub Actions no alcanza (repo privado)
-
-- [cron-job.org](https://cron-job.org) (plan gratuito): una petición HTTP GET/POST a tu URL con header `Authorization: Bearer CRON_SECRET` cada 5 min.
+**No uses** Vercel Cron (requiere plan de pago).
 
 ## `worker/` Python
 

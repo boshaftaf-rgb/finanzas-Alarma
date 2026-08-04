@@ -38,7 +38,7 @@ export function assertBarsForEvaluation(
   const usable = selectBarsForEvaluation(bars, timeframe, now);
   if (usable.length < 2) {
     throw new Error(
-      "Se necesitan al menos 2 velas diarias cerradas para evaluar la alerta.",
+      "Se necesitan al menos 2 velas para evaluar la alerta.",
     );
   }
   return usable;

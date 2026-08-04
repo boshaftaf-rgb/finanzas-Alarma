@@ -1,5 +1,6 @@
-# Dispara el worker en Vercel sin Vercel Cron (plan de pago).
-# Gratis en repos públicos; en privados cuenta contra minutos de Actions.
+# Respaldo del worker en Vercel (sin Vercel Cron de pago).
+# Scheduler primario: cron-job.org cada 15 min — ver docs/vercel-deploy.md y TAREAS-HUMANO.md.
+# Actions no garantiza puntualidad; no uses esto como único disparador.
 #
 # Secrets en GitHub → Settings → Secrets and variables → Actions:
 #   VERCEL_APP_URL  → https://tu-proyecto.vercel.app
@@ -9,8 +10,8 @@ name: Evaluar alertas
 
 on:
   schedule:
-    # Cada 5 min, lun–vie (UTC). Fuera de horario NY el worker responde mercado_cerrado.
-    - cron: "*/5 * * * 1-5"
+    # Respaldo cada 15 min, lun–vie (UTC). Fuera de horario NY el worker responde mercado_cerrado.
+    - cron: "*/15 * * * 1-5"
   workflow_dispatch:
 
 jobs:

@@ -144,7 +144,7 @@ Lista guardada de tickers + orden de grupos en el panel; no lo usa el worker. Bo
 | rsi_overbought | RSI(period) > threshold (defaults 14 / 70; editables; timeframe **1day**) |
 | stoch_oversold | Stoch lento (period,3) < threshold (defaults 7 / 20; editables; timeframe **1day**) |
 | stoch_overbought | Stoch lento (period,3) > threshold (defaults 7 / 80; editables; timeframe **1day**) |
-| custom | Sub-form EMA, precio vs media (SMA/EMA), precio objetivo, RSI o Stochastic; timeframe **1day** |
+| custom | Sub-form EMA, precio vs media (SMA/EMA), precio objetivo, RSI o Stochastic; **1day** salvo precio objetivo (**15min**) |
 
 Presets RSI/Stoch persisten `params`: `{ period, threshold }`. Operador fijo: `<` (sobreventa) o `>` (sobrecompra). **Todas** las alertas (presets y custom) usan `timeframe=1day` (modo gráfico 1Y / intervalo 1 día).
 

@@ -1,6 +1,6 @@
 Stock Alerts — Guía para perfil financiero
 
-Monitor técnico automatizado: acciones EE. UU., velas **diarias**, señales EMA (cruces), RSI/Stochastic (umbrales) o precio, aviso por correo. No ejecuta órdenes ni es asesoría. Datos: Twelve Data (posible ligero retraso en plan gratuito).
+Monitor técnico automatizado: acciones EE. UU., velas **diarias** (vista 1Y) para EMA/RSI/Stoch y **15 min** para precio objetivo; aviso por correo. No ejecuta órdenes ni es asesoría. Datos: Twelve Data (posible ligero retraso en plan gratuito).
 
 ---
 
@@ -9,9 +9,9 @@ Ficha operativa
 | Parámetro | Valor |
 |-----------|-------|
 | Universo | Acciones EE. UU. (ej. AAPL, BRK.B) |
-| Timeframe | **Diario (1D)** para todas las alertas (como gráfico 1Y / intervalo 1 día) |
+| Timeframe | **Diario (1D)** para presets y custom (EMA, RSI, Stoch, precio vs media, rango); **15 min** solo para **precio objetivo** |
 | Precio usado | Close de cada vela |
-| Evaluación | Cada 5 min, lun–vie 9:30–16:00 ET (America/New_York) |
+| Evaluación | Cada 15 min, lun–vie 9:30–16:00 ET (America/New_York) |
 | Pre/post market | No |
 | Festivos NYSE | No excluidos (worker corre; sin datos si mercado cerrado) |
 | Indicadores | EMA (cruce), RSI Wilder (umbral), Stochastic %K (umbral) |
@@ -129,8 +129,8 @@ Todas las alertas EMA (9/21 y 50/200) usan **velas diarias** (vista 1Y).
 
 Custom EMA: ema_fast y ema_slow (2–200, rápida < lenta), direction up/down.
 Custom **Precio vs media**: el cierre cruza SMA o EMA de período N (2–200), direction up/down. Recomendado **SMA** si comparas con TradingView (`ma`).
-Custom **Precio objetivo**: el cierre cruza un nivel fijo (`level` > 0) con operador `>=` o `<=` (evento de cruce entre vela anterior y actual).
-Custom **Rango de precios**: piso (`low`) y techo (`high`); se dispara al salir del canal por arriba o por abajo.
+Custom **Precio objetivo**: el cierre de una vela de **15 min** cruza un nivel fijo (`level` > 0) con operador `>=` o `<=` (aviso durante la sesión, no solo al cierre diario).
+Custom **Rango de precios**: piso (`low`) y techo (`high`); se dispara al salir del canal por arriba o por abajo (**velas diarias**).
 Custom RSI: period (2–50), threshold (0–100), operator < o >.
 Custom Stochastic: period (2–50), threshold (0–100), operator < o > — siempre **Slow** (suavizado 3). Recomendado timeframe **Diario**.
 No se combina EMA + RSI + Stochastic + precio en una sola alerta (v1).
@@ -159,16 +159,16 @@ Se dispara cuando el **cierre** de la vela diaria cruza la línea de la media (v
 
 Precio objetivo (nivel fijo)
 
-Para avisar cuando la acción **llega** a un precio que eliges tú (no una media móvil):
+Para avisar cuando la acción **llega** a un precio que eliges tú **durante la sesión** (no solo al cierre diario):
 
 | Campo | Valor |
 |-------|-------|
 | Tipo | Personalizada → **Precio objetivo** |
-| Timeframe | **Diario (1D)** |
+| Timeframe | **15 minutos** (fijo) |
 | Precio objetivo | Nivel en USD (ej. 185.5) |
-| Condición | Cierre alcanza o supera (`>=`) o baja hasta o por debajo (`<=`) |
+| Condición | Cierre de vela 15 min alcanza o supera (`>=`) o baja hasta o por debajo (`<=`) |
 
-Se dispara solo en el **cruce del nivel** (vela anterior en un lado, actual en el otro o en el nivel). Si el precio ya estaba por encima/debajo, no vuelve a avisar en cada vela.
+Se dispara en el **cruce del nivel** entre la vela de 15 min anterior y la actual. Si el precio ya estaba por encima/debajo, no vuelve a avisar en cada vela (candle-lock). Retraso típico del plan free de Twelve Data: ~15 min.
 
 ---
 
@@ -203,7 +203,7 @@ Panel y límites
 
 Crear, editar, activar/desactivar y eliminar alertas. Etiquetas: Tendencia = cruce EMA; Precio = precio vs media, precio objetivo o rango; Momentum = RSI o Stochastic.
 
-Los presets aparecen bajo **Vista diaria / 1Y**. Cada card y cada fila del listado muestran el chip **Diario**.
+Los presets aparecen bajo **Vista diaria / 1Y** (chip **Diario**). Precio objetivo muestra chip **15 min**.
 
 Al crear o editar, el bloque **Resumen de la señal** indica qué se vigila, que las velas son diarias, cuándo dispara y cómo verificarlo en Yahoo/TradingView (intervalo **1 día**; el rango 1Y solo es la vista del gráfico).
 
@@ -215,7 +215,7 @@ El listado agrupa alertas por ticker. Puedes **arrastrar el asidero** (⋮⋮) d
 | Alertas por ticker | 5 |
 | Correos por alerta/día | 10 |
 | Correos por vela | 1 |
-| Timeframes | Diario (1D) para todas las alertas |
+| Timeframes | Diario (1D) salvo **precio objetivo** (15 min) |
 | SMS / push / webhook | No (v1) |
 | Histórico de disparos | Sí (campana → sección Disparos; borrar a mano) |
 | Auth en panel | Planificado |
@@ -252,10 +252,10 @@ No. Notificación informativa.
 Símbolos US: letras, números, punto o guion (máx. 10 caracteres). Ej. AAPL, BRK.B.
 
 ¿Puedo usar gráfico diario o solo 15m?
-En v1 **todas** las alertas usan **Diario (1D)**. Para verificar, en Yahoo/TradingView pon intervalo **1 día** (el rango 1Y solo es la vista).
+**Diario (1D)** para presets y custom (EMA, RSI, Stoch, precio vs media, rango). **15 min** solo para **precio objetivo**. En Yahoo/TradingView: intervalo 1 día para las diarias; intervalo 15 minutos para precio objetivo.
 
 ¿Cómo verifico la señal en Yahoo o TradingView?
-Usa intervalo **1 día**. El rango del gráfico (1Y, 1M…) solo cambia lo que ves en pantalla, no el cálculo del indicador.
+Alertas diarias: intervalo **1 día** (el rango 1Y solo es la vista). Precio objetivo: intervalo **15 minutos**.
 
 ¿Puedo combinar EMA y RSI/Stoch en una alerta?
 No en v1.

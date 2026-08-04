@@ -1,5 +1,5 @@
 import { formatCustomLabel, formatOscillatorPresetLabel } from "./alert-labels.js";
-import { normalizeTimeframe } from "./custom-params.js";
+import { customTypeTimeframe } from "./custom-params.js";
 import { els } from "./dom.js";
 import { appState } from "./app-state.js";
 import {
@@ -62,7 +62,10 @@ export function alertListLabel(alert) {
 function fireLineFor(presetOrCustom, params) {
   if (presetOrCustom === "custom") {
     const type = params?.type;
-    if (type === "ema" || type === "price_ma" || type === "price_level" || type === "price_range") {
+    if (type === "price_level") {
+      return "Cuando el cierre de una vela de 15 min cruza el nivel durante la sesión.";
+    }
+    if (type === "ema" || type === "price_ma" || type === "price_range") {
       return "Cuando el cierre de la última sesión cerrada confirma el cruce o la salida.";
     }
     return "Cuando el indicador en la última sesión cerrada cumple el umbral.";
@@ -163,8 +166,8 @@ export function buildSignalSummaryFromForm() {
     };
   }
 
-  const timeframe = normalizeTimeframe(els.timeframeSelect.value);
   const params = softCustomParams();
+  const timeframe = customTypeTimeframe(params.type);
   return {
     timeframe,
     watchLine: formatCustomLabel(params),

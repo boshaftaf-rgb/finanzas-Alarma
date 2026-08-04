@@ -161,3 +161,8 @@ export function buildPriceRangeParams(lowRaw, highRaw) {
 export function normalizeTimeframe(value) {
   return value === "1day" ? "1day" : "15min";
 }
+
+/** Precio objetivo = intradía; resto de custom = diario (vista 1Y). */
+export function customTypeTimeframe(customType) {
+  return customType === "price_level" ? "15min" : "1day";
+}

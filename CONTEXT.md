@@ -33,7 +33,7 @@ Evento en el que el cierre cruza por encima o por debajo de una SMA o EMA de per
 _Avoid_: cruce de medias (cuando se habla solo de precio vs una línea)
 
 **Precio objetivo (price_level)**:
-Evento en el que el cierre cruza un nivel de precio fijo elegido por el usuario (`>=` o `<=`) entre vela anterior y actual.
+Evento en el que el cierre de una vela de **15 min** cruza un nivel de precio fijo elegido por el usuario (`>=` o `<=`) entre vela anterior y actual; avisa durante la sesión.
 _Avoid_: stop loss, take profit, alert absolute (en UI español)
 
 **Rango de precios (price_range)**:
@@ -41,7 +41,7 @@ Canal con piso y techo definidos por el usuario; se dispara cuando el cierre sal
 _Avoid_: banda, channel breakout (en UI español)
 
 **Timeframe**:
-Intervalo de velas de la alerta: en v1 de producto, **`1day`** para todas las alertas (presets y custom; alineado a gráfico 1Y / intervalo 1 día). El esquema aún admite `15min` por compatibilidad histórica del worker.
+Intervalo de velas de la alerta: **`1day`** para presets y custom de tendencia/momentum (EMA, RSI, Stoch, precio vs media, rango — vista 1Y); **`15min`** para **precio objetivo** (aviso intradía). El esquema admite ambos.
 _Avoid_: interval, granularity (en UI español)
 
 **Cruce EMA**:
@@ -65,7 +65,7 @@ Proceso Python en Docker que hace polling, descarga velas, evalúa alertas y env
 _Avoid_: cron, job, servicio backend
 
 **Polling**:
-Ciclo de evaluación cada 5 minutos durante horario de mercado (lun–vie 9:30–16:00 EST).
+Ciclo de evaluación cada 15 minutos durante horario de mercado (lun–vie 9:30–16:00 EST). Scheduler primario: cron-job.org; GitHub Actions como respaldo.
 _Avoid_: scraping, fetch loop
 
 **Batch (Twelve Data)**:

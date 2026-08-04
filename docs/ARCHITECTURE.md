@@ -22,7 +22,7 @@ Plataforma web de análisis técnico automatizado que monitorea el mercado burs�
 |------|------------|-----|
 | Base de datos + Auth | **Supabase** (PostgreSQL + RLS) | Usuarios, alertas, códigos de invitación |
 | Frontend | **React + Vite** → **Vercel** | Panel de configuración; variables `VITE_*` |
-| Worker | **TypeScript** serverless → **Vercel Cron** (`api/cron/evaluate`) | Polling, indicadores, emails |
+| Worker | **TypeScript** serverless → HTTP `api/cron/evaluate` (cron-job.org + Actions) | Polling, indicadores, emails |
 | Datos de mercado | **Twelve Data** | Velas de **15 minutos** |
 | Email | **Gmail SMTP** | Máx. **10 correos por alerta por día** |
 
@@ -37,11 +37,11 @@ El frontend habla **directamente con Supabase** (`@supabase/supabase-js`, clave 
 ```
 finanzas-Alarma/
 ├── frontend/              # React + Vite → Vercel
-├── api/cron/              # Worker serverless (Vercel Cron)
+├── api/cron/              # Worker serverless (HTTP; cron-job.org + Actions)
 ├── lib/                   # EMA, RSI, Stochastic, evaluador, Supabase store
 ├── worker/                # Python — solo desarrollo local (legacy)
 ├── supabase/migrations/
-├── vercel.json            # Cron cada 5 min
+├── vercel.json            # Frontend + rewrites (sin Vercel Cron de pago)
 └── .env.example
 ```
 
@@ -82,19 +82,19 @@ EMA/RSI/Stoch: velas **diarias** (`1day`, modo vista 1Y). El selector de timefra
 | `rsi_overbought` | RSI sobrecompra | RSI(period) **> threshold** en **`1day`** (defaults: 14 / 70; editables en panel) |
 | `stoch_oversold` | Sobreventa Stoch | Stoch lento (period,3) **< threshold** en **`1day`** (defaults: 7 / 20; editables) |
 | `stoch_overbought` | Sobrecompra Stoch | Stoch lento (period,3) **> threshold** en **`1day`** (defaults: 7 / 80; editables) |
-| `custom` | Personalizado | Regla EMA, **precio vs media**, **precio objetivo**, **rango**, RSI o Stochastic (no combinadas); timeframe **`1day`** |
+| `custom` | Personalizado | Regla EMA, **precio vs media**, **precio objetivo**, **rango**, RSI o Stochastic (no combinadas); EMA/RSI/Stoch/precio vs media/rango en **`1day`**; **precio objetivo** en **`15min`** |
 
-En modo **custom**, el timeframe queda fijo en **`1day`**. Configura: períodos EMA + dirección de cruce; **precio vs SMA/EMA** + período + dirección; **precio objetivo** + nivel + operador (`>=` / `<=`); **rango de precios** + piso + techo (salida al alza o a la baja); período RSI o Stochastic + umbral + operador (`<` / `>`).
+En modo **custom**, el timeframe queda fijo según el tipo: **`15min`** para precio objetivo; **`1day`** para el resto. Configura: períodos EMA + dirección de cruce; **precio vs SMA/EMA** + período + dirección; **precio objetivo** + nivel + operador (`>=` / `<=`); **rango de precios** + piso + techo (salida al alza o a la baja); período RSI o Stochastic + umbral + operador (`<` / `>`).
 
 Ejemplo alerta temprana (gráfico diario 1Y): `timeframe=1day`, `params={ "type": "price_ma", "ma_type": "sma", "period": 12, "direction": "up" }`.
 
-Ejemplo precio objetivo: `timeframe=1day`, `params={ "type": "price_level", "level": 185.5, "operator": ">=" }` (cierre cruza el nivel desde abajo).
+Ejemplo precio objetivo: `timeframe=15min`, `params={ "type": "price_level", "level": 185.5, "operator": ">=" }` (cierre de vela 15 min cruza el nivel desde abajo).
 
 Ejemplo rango: `timeframe=1day`, `params={ "type": "price_range", "low": 100, "high": 120, "sides": "both" }` (salida del canal).
 
 Ejemplo Stoch diario: `timeframe=1day`, `params={ "type": "stochastic", "period": 7, "threshold": 20, "operator": "<" }` (evaluación Slow %K con suavizado 3).
 
-Todos los presets y custom usan timeframe **`1day`** (período N = N días bursátiles).
+Presets y custom (salvo precio objetivo) usan timeframe **`1day`** (período N = N días bursátiles). Precio objetivo usa **`15min`**.
 
 Los presets RSI/Stoch guardan `params` como `{ "period": N, "threshold": N }` (sin `operator`; lo define el preset). Alertas RSI existentes con `params: {}` usan defaults 14 / 30 / 70; Stoch usa 7 / 20 / 80.
 
@@ -110,7 +110,7 @@ Los presets RSI/Stoch guardan `params` como `{ "period": N, "threshold": N }` (s
 | `user_id` | `UUID` FK | Propietario |
 | `ticker` | `TEXT` | Símbolo (ej. `AAPL`) |
 | `preset_or_custom` | `TEXT` | Preset o `custom` |
-| `timeframe` | `TEXT` | `1day` (producto); el CHECK aún admite `15min` por historial |
+| `timeframe` | `TEXT` | `1day` (presets / la mayoría de custom) o `15min` (precio objetivo) |
 | `params` | `JSONB` | Parámetros (EMA, price_ma, price_level, price_range, RSI, stochastic, etc.) |
 | `active` | `BOOLEAN` | Alerta habilitada |
 | `emails_sent_today` | `INTEGER` | Contador diario (default 0) |
@@ -172,12 +172,14 @@ Lista guardada de tickers del panel + orden de grupos (drag-and-drop). Conserva 
 
 | Parámetro | Valor |
 |-----------|-------|
-| Intervalo de polling | Cada **5 minutos** |
+| Intervalo de polling | Cada **15 minutos** |
 | Horario de mercado | Lun–vie **9:30–16:00 EST** |
 | Feriados NYSE (v1) | **No considerados** — solo día de semana + franja horaria |
-| Timeframe de análisis | Presets: **15 min**. Custom: **15 min** o **diario** |
+| Timeframe de análisis | **`1day`** (presets y custom salvo precio objetivo); **`15min`** para precio objetivo |
+| Scheduler primario | **cron-job.org** → `GET/POST /api/cron/evaluate` con `CRON_SECRET` |
+| Scheduler respaldo | GitHub Actions (`.github/workflows/evaluate-alerts.yml`) |
 
-El worker se ejecuta en **Vercel Cron** cada 5 minutos (`vercel.json`). `MarketScheduler` omite el ciclo fuera de horario de mercado.
+El worker se invoca por HTTP cada 15 minutos. `MarketScheduler` omite el ciclo fuera de horario de mercado. No se usa Vercel Cron (de pago).
 
 ---
 
@@ -185,10 +187,10 @@ El worker se ejecuta en **Vercel Cron** cada 5 minutos (`vercel.json`). `MarketS
 
 ### Problema sin batching
 
-- Mercado abierto: 6,5 h = 390 min → **78 ciclos/día** (cada 5 min).
-- Con **15 tickers** consultados uno a uno: `78 × 15 = 1.170` peticiones/día.
+- Mercado abierto: 6,5 h = 390 min → **26 ciclos/día** (cada 15 min).
+- Con **15 tickers** consultados uno a uno: `26 × 15 = 390` peticiones/día.
 - Límite free de Twelve Data: **800 req/día** y **8 req/min**.
-- Sin batching se supera la cuota diaria y el worker falla por rate limiting en el primer minuto del ciclo.
+- Sin batching se gasta cuota innecesariamente y el worker falla por rate limiting en el primer minuto del ciclo.
 
 ### Solución: una petición por ciclo
 
@@ -210,7 +212,7 @@ El worker **no** itera ticker por ticker contra la API. En cada ciclo:
 | Métrica | Valor |
 |---------|-------|
 | Peticiones por ciclo | **1–2** (por intervalo activo) |
-| Peticiones por día | **~78–156** |
+| Peticiones por día | **~26–52** |
 | Cuota free Twelve Data | 800/día → **margen amplio** |
 | Rate limit 8 req/min | **1 req/ciclo** → sin riesgo |
 
@@ -222,7 +224,7 @@ El worker **no** itera ticker por ticker contra la API. En cada ciclo:
 
 ### Problema
 
-- Análisis en velas de **15 min**; polling cada **5 min**.
+- Análisis en velas de **15 min** o **diarias**; polling cada **15 min**.
 - Si una condición se cumple en el minuto 5 de la vela actual, el worker envía correo.
 - En los minutos 10 y 15 de la **misma vela**, la condición sigue siendo verdadera → **3 correos idénticos** por vela sin control.
 
@@ -274,7 +276,7 @@ Evita comparaciones con horas/minutos/segundos y hace el reset idempotente en un
 | Cliente | Clave | RLS |
 |---------|-------|-----|
 | Frontend (Vercel) | `anon` | **Activo** — cada usuario solo ve sus alertas |
-| Worker (Vercel Cron) | **`service_role`** | **Bypass** — lectura/escritura global para batch y actualización de contadores |
+| Worker (HTTP cron) | **`service_role`** | **Bypass** — lectura/escritura global para batch y actualización de contadores |
 
 ### Requisitos de seguridad
 
@@ -288,7 +290,7 @@ Evita comparaciones con horas/minutos/segundos y hace el reset idempotente en un
 
 ```mermaid
 flowchart TD
-    A[Cada 5 min — horario mercado] --> B[Leer alertas activas — service_role]
+    A[Cada 15 min — horario mercado] --> B[Leer alertas activas — service_role]
     B --> C[Deduplicar tickers únicos]
     C --> D["1× Twelve Data batch (symbols=AAPL,MSFT,...)"]
     D --> D2[Descartar vela diaria de hoy si sesión no cerró]
@@ -313,7 +315,7 @@ flowchart TD
 flowchart LR
     U[Usuario] --> V[Vercel — React]
     V -->|anon + RLS| S[Supabase]
-    W[Worker Vercel Cron] -->|service_role| S
+    W[Worker cron HTTP] -->|service_role| S
     W --> T[Twelve Data batch]
     W --> R[Gmail SMTP]
 ```
@@ -338,7 +340,7 @@ flowchart LR
 |------------|-------|
 | Frontend | **Vercel** (`frontend/` + `api/`, env `VITE_*` + secretos cron) |
 | Base de datos + Auth | **Supabase** (proyecto cloud) |
-| Worker | **Vercel Cron** → `api/cron/evaluate` |
+| Worker | **cron-job.org** (primario) + Actions (respaldo) → `api/cron/evaluate` |
 | Migraciones | `supabase/migrations/` aplicadas al proyecto Supabase |
 
 ---
@@ -360,4 +362,4 @@ flowchart LR
 - [x] **Batching** Twelve Data (1 req/ciclo) en lugar de caché
 - [x] **Candle-lock** con `last_triggered_candle`
 - [x] **`email_count_date` como `DATE`**
-- [x] **Worker con `service_role`** en Vercel Cron (ADR 001)
+- [x] **Worker con `service_role`** en Vercel vía cron HTTP (ADR 001)

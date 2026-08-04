@@ -84,8 +84,8 @@ describe("alert-labels", () => {
       formatAlertLabel("custom", { type: "price_ma", ma_type: "sma", period: 12, direction: "up" }, "1day"),
     ).toBe("Precio cruza SMA(12) al alza · Diario");
     expect(
-      formatAlertLabel("custom", { type: "price_level", level: 200, operator: ">=" }, "1day"),
-    ).toBe("Precio >= 200 · Diario");
+      formatAlertLabel("custom", { type: "price_level", level: 200, operator: ">=" }, "15min"),
+    ).toBe("Precio >= 200 · 15 min");
   });
 });
 
@@ -122,11 +122,12 @@ describe("alert-evaluator custom", () => {
     expect(result.conditionMet).toBe(true);
   });
 
-  it("evalúa custom precio cruza nivel al alza (>=)", () => {
+  it("evalúa custom precio cruza nivel al alza (>=) en 15min", () => {
     const result = evaluateAlert(
       {
         ticker: "TEST",
         preset_or_custom: "custom",
+        timeframe: "15min",
         params: { type: "price_level", level: 100, operator: ">=" },
       },
       barsFromCloses([98, 101]),
@@ -139,6 +140,7 @@ describe("alert-evaluator custom", () => {
       {
         ticker: "TEST",
         preset_or_custom: "custom",
+        timeframe: "15min",
         params: { type: "price_level", level: 100, operator: "<=" },
       },
       barsFromCloses([102, 99]),
@@ -151,6 +153,7 @@ describe("alert-evaluator custom", () => {
       {
         ticker: "TEST",
         preset_or_custom: "custom",
+        timeframe: "15min",
         params: { type: "price_level", level: 100, operator: ">=" },
       },
       barsFromCloses([105, 110]),
@@ -161,6 +164,7 @@ describe("alert-evaluator custom", () => {
       {
         ticker: "TEST",
         preset_or_custom: "custom",
+        timeframe: "15min",
         params: { type: "price_level", level: 100, operator: "<=" },
       },
       barsFromCloses([95, 90]),
@@ -173,6 +177,7 @@ describe("alert-evaluator custom", () => {
       {
         ticker: "TEST",
         preset_or_custom: "custom",
+        timeframe: "15min",
         params: { type: "price_level", level: 100, operator: ">=" },
       },
       barsFromCloses([90, 95]),

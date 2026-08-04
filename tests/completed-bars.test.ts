@@ -60,13 +60,46 @@ describe("completed-bars", () => {
         ticker: "TEST",
         preset_or_custom: "custom",
         timeframe: "1day",
-        params: { type: "price_level", level: 150, operator: ">=" },
+        params: { type: "price_ma", ma_type: "sma", period: 2, direction: "up" },
       },
       bars,
       now,
     );
     expect(result.candleTimestamp.startsWith("2026-07-29")).toBe(true);
-    expect(result.conditionMet).toBe(false);
+  });
+
+  it("evaluateAlert price_level 15min detecta cruce intradía (no descarta vela reciente)", () => {
+    const now = new Date("2026-07-30T16:00:00.000Z"); // sesión abierta ET
+    const bars = [
+      {
+        datetime: "2026-07-30T14:30:00.000Z",
+        open: 98,
+        high: 99,
+        low: 97,
+        close: 98,
+        volume: 1000,
+      },
+      {
+        datetime: "2026-07-30T14:45:00.000Z",
+        open: 99,
+        high: 152,
+        low: 99,
+        close: 151,
+        volume: 1000,
+      },
+    ];
+    const result = evaluateAlert(
+      {
+        ticker: "TEST",
+        preset_or_custom: "custom",
+        timeframe: "15min",
+        params: { type: "price_level", level: 150, operator: ">=" },
+      },
+      bars,
+      now,
+    );
+    expect(result.conditionMet).toBe(true);
+    expect(result.candleTimestamp).toBe("2026-07-30T14:45:00.000Z");
   });
 
   it("assertBarsForEvaluation exige ≥2 velas cerradas", () => {

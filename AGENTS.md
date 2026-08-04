@@ -47,7 +47,7 @@ Antes de nombrar variables, tablas o componentes UI, consulta **`CONTEXT.md`** p
 |------|------------|
 | Base de datos + Auth | Supabase (PostgreSQL + RLS) |
 | Frontend | React + Vite → Vercel |
-| Worker | TypeScript serverless → **Vercel Cron** |
+| Worker | TypeScript serverless → HTTP `api/cron/evaluate` (cron-job.org + Actions) |
 | Datos de mercado | Twelve Data (velas 15 min, batch) |
 | Email | Gmail SMTP |
 | Paquetes Node | **pnpm** (ver `SECURITY.md`; no usar npm/npx) |
@@ -63,7 +63,7 @@ Varios flujos **ya documentados o implementados** no deben refactorizarse por in
 | Ámbito | Piezas |
 | --- | --- |
 | Límites de producto | 15 tickers únicos, 5 alertas/ticker, 10 emails/alerta/día, candle-lock |
-| Horario worker | Lun–vie 9:30–16:00 EST; polling cada 5 min |
+| Horario worker | Lun–vie 9:30–16:00 EST; polling cada 15 min (cron-job.org primario; Actions respaldo) |
 | Twelve Data | Una petición batch por ciclo (free tier) |
 | Secretos | `service_role` solo server-side Vercel; nunca en `VITE_*` |
 | Esquema acordado | Tablas, RLS y triggers según `docs/ARCHITECTURE.md` |

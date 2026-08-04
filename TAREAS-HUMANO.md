@@ -9,10 +9,40 @@ Guía operativa para el **operador humano** del sistema. Los agentes y desarroll
 | Prioridad | Qué hacer | Issue / doc | Desbloquea |
 | --- | --- | --- | --- |
 | **Ahora** | Aprovisionar Supabase, Twelve Data y Gmail SMTP | [#2](https://github.com/boshaftaf-rgb/finanzas-Alarma/issues/2) · [`docs/provisioning.md`](docs/provisioning.md) | Migraciones, worker, emails |
+| **Ahora** | Configurar cron-job.org cada 15 min | [§ Scheduler](#scheduler--cron-joborg-obligatorio) · [`docs/vercel-deploy.md`](docs/vercel-deploy.md) | `last_evaluated_at` al día; worker puntual |
 | **Antes de prod** | Deploy frontend en Vercel | [#9](https://github.com/boshaftaf-rgb/finanzas-Alarma/issues/9) | Panel accesible 24/7 |
 | **Más adelante** | Auth + códigos de invitación + RLS por usuario | [#3](https://github.com/boshaftaf-rgb/finanzas-Alarma/issues/3) | Multi-usuario seguro |
 
 Orden de implementación completo: [`docs/issues/00-orden-implementacion.md`](docs/issues/00-orden-implementacion.md).
+
+---
+
+## Scheduler — cron-job.org (obligatorio)
+
+**Docs:** [`docs/vercel-deploy.md`](docs/vercel-deploy.md) · [ADR 001](docs/adr/001-worker-en-vercel.md)
+
+### Por qué lo haces tú
+
+GitHub Actions **no** garantiza el intervalo: en la práctica el schedule se atrasa 1–2 h. Sin un cron externo puntual, `Última evaluación` en el panel se queda congelada y los cruces de cierre se detectan tarde. Solo tú puedes crear la cuenta en cron-job.org y pegar el `CRON_SECRET`.
+
+### Checklist
+
+- [ ] Cuenta en [cron-job.org](https://cron-job.org) (plan gratuito)
+- [ ] Crear un cron job con:
+  - **URL:** `https://TU-APP.vercel.app/api/cron/evaluate` (sin barra final en el host)
+  - **Método:** GET (o POST; el handler no exige body)
+  - **Header:** `Authorization: Bearer <mismo CRON_SECRET que en Vercel>`
+  - **Intervalo:** cada **15 minutos**
+  - **Días:** lunes a viernes (opcional; fuera de 9:30–16:00 ET el worker responde `mercado_cerrado` y sale rápido)
+- [ ] Ejecutar el job una vez a mano (o `curl` con el Bearer) y comprobar respuesta `ok: true`
+- [ ] En horario de mercado: recargar el panel y verificar que **Última evaluación** avanza ~cada 15 min
+- [ ] Dejar GitHub Actions como respaldo (secrets `VERCEL_APP_URL` + `CRON_SECRET` ya configurados)
+
+### Lo que NO debes hacer
+
+- No poner `CRON_SECRET` en issues públicos ni en el repo
+- No activar Vercel Cron de pago (ADR 001: coste $0)
+- No confiar solo en Actions para el intervalo de 15 min
 
 ---
 
@@ -88,6 +118,11 @@ Las políticas RLS son la barrera de aislamiento entre usuarios. Un agente puede
 ### Migración actual (todas las alertas → diario)
 
 - [ ] Aplicar en el proyecto Supabase la migración `supabase/migrations/20260715200000_all_alerts_daily_timeframe.sql` (SQL editor o CLI)
+
+### Migración actual (precio objetivo → 15 min)
+
+- [ ] Aplicar en el proyecto Supabase la migración `supabase/migrations/20260804180000_price_level_15min_timeframe.sql` (SQL editor o CLI)
+- [ ] Verificar: alertas custom con `params.type = price_level` tienen `timeframe = '15min'`; el resto permanece en `1day`
 - [ ] Verificar: `SELECT DISTINCT timeframe FROM public.alerts;` → solo `1day`
 
 ### Entregables
@@ -176,7 +211,7 @@ Fase 1 — ahora
 ├── Twelve Data batch
 └── Gmail SMTP + candle-lock
 
-Hito: papá recibe alertas por email (cron Vercel)
+Hito: papá recibe alertas por email (cron-job.org → api/cron/evaluate)
 
 Fase 2 — después
 ├── Panel presets (sin login o con auth)
