@@ -122,8 +122,13 @@ Las políticas RLS son la barrera de aislamiento entre usuarios. Un agente puede
 ### Migración actual (precio objetivo → 15 min)
 
 - [ ] Aplicar en el proyecto Supabase la migración `supabase/migrations/20260804180000_price_level_15min_timeframe.sql` (SQL editor o CLI)
-- [ ] Verificar: alertas custom con `params.type = price_level` tienen `timeframe = '15min'`; el resto permanece en `1day`
-- [ ] Verificar: `SELECT DISTINCT timeframe FROM public.alerts;` → solo `1day`
+- [ ] Verificar: alertas custom con `params.type = price_level` tienen `timeframe = '15min'`
+
+### Migración actual (rango de precios → 15 min)
+
+- [ ] Aplicar en el proyecto Supabase la migración `supabase/migrations/20260805200000_price_range_15min_timeframe.sql` (SQL editor o CLI)
+- [ ] Verificar: alertas custom con `params.type = price_range` tienen `timeframe = '15min'`; precio objetivo también `15min`; el resto permanece en `1day`
+- [ ] Verificar: `SELECT DISTINCT timeframe FROM public.alerts;` → `1day` y/o `15min`
 
 ### Entregables
 

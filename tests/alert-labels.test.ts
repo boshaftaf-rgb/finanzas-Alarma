@@ -192,6 +192,7 @@ describe("alert-evaluator custom", () => {
       {
         ticker: "TEST",
         preset_or_custom: "custom",
+        timeframe: "15min",
         params: { type: "price_range", low: 100, high: 120, sides: "both" },
       },
       barsFromCloses([118, 121]),
@@ -204,6 +205,7 @@ describe("alert-evaluator custom", () => {
       {
         ticker: "TEST",
         preset_or_custom: "custom",
+        timeframe: "15min",
         params: { type: "price_range", low: 100, high: 120, sides: "both" },
       },
       barsFromCloses([102, 99]),
@@ -216,6 +218,7 @@ describe("alert-evaluator custom", () => {
       {
         ticker: "TEST",
         preset_or_custom: "custom",
+        timeframe: "15min",
         params: { type: "price_range", low: 100, high: 120, sides: "both" },
       },
       barsFromCloses([105, 110]),

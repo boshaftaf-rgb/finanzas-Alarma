@@ -82,7 +82,7 @@ function createAlertRow(alert) {
         ${timeframeChipHtml(tf)}
         ${kindBadge}
       </div>
-      <div class="alert-row__meta">Última evaluación: ${formatEvaluatedAt(alert.last_evaluated_at)}</div>
+      <div class="alert-row__meta">Última evaluación: ${formatEvaluatedAt(alert.last_evaluated_at)}${alert.last_evaluated_at ? " ET" : ""}</div>
     </div>
     ${statusBadgeHtml(alert)}
     <div class="alert-row__actions">

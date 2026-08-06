@@ -1,6 +1,6 @@
 function quotesApiError(status, bodyError) {
   if (status === 404) {
-    return "Cotizaciones no disponibles: falta el servidor API. En local ejecuta «npm run dev» en la raíz del repo (no uses «npm run dev:static»).";
+    return "Cotizaciones no disponibles: falta el servidor API. En local ejecuta «pnpm run dev» en la raíz del repo (no uses «pnpm serve» ni «pnpm run dev:static»).";
   }
   return bodyError || `Error ${status} al cargar cotizaciones`;
 }

@@ -37,11 +37,11 @@ Evento en el que el cierre de la vela de **15 min** cruza un nivel fijo (`>=` o 
 _Avoid_: stop loss, take profit, alert absolute (en UI español)
 
 **Rango de precios (price_range)**:
-Canal con piso y techo definidos por el usuario; se dispara cuando el cierre sale del rango al alza (techo) o a la baja (piso).
+Canal con piso y techo definidos por el usuario; se dispara cuando el cierre de la vela de **15 min** sale del rango al alza (techo) o a la baja (piso).
 _Avoid_: banda, channel breakout (en UI español)
 
 **Timeframe**:
-Intervalo de velas de la alerta: **`1day`** para presets y custom de tendencia/momentum (EMA, RSI, Stoch, precio vs media, rango — vista 1Y); **`15min`** para **precio objetivo** (aviso intradía). El esquema admite ambos.
+Intervalo de velas de la alerta: **`1day`** para presets y custom de tendencia/momentum (EMA, RSI, Stoch, precio vs media — vista 1Y); **`15min`** para **precio objetivo** y **rango de precios** (aviso intradía). El esquema admite ambos.
 _Avoid_: interval, granularity (en UI español)
 
 **Cruce EMA**:

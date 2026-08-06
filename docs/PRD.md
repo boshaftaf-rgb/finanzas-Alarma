@@ -144,9 +144,9 @@ Lista guardada de tickers + orden de grupos en el panel; no lo usa el worker. Bo
 | rsi_overbought | RSI(period) > threshold (defaults 14 / 70; editables; timeframe **1day**) |
 | stoch_oversold | Stoch lento (period,3) < threshold (defaults 7 / 20; editables; timeframe **1day**) |
 | stoch_overbought | Stoch lento (period,3) > threshold (defaults 7 / 80; editables; timeframe **1day**) |
-| custom | Sub-form EMA, precio vs media (SMA/EMA), precio objetivo, RSI o Stochastic; **1day** salvo precio objetivo (**15min**) |
+| custom | Sub-form EMA, precio vs media (SMA/EMA), precio objetivo, rango, RSI o Stochastic; **1day** salvo precio objetivo y rango (**15min**) |
 
-Presets RSI/Stoch persisten `params`: `{ period, threshold }`. Operador fijo: `<` (sobreventa) o `>` (sobrecompra). **Todas** las alertas (presets y custom) usan `timeframe=1day` (modo gráfico 1Y / intervalo 1 día).
+Presets RSI/Stoch persisten `params`: `{ period, threshold }`. Operador fijo: `<` (sobreventa) o `>` (sobrecompra). Presets y custom de tendencia/momentum usan `timeframe=1day` (vista 1Y); **precio objetivo** y **rango de precios** usan `timeframe=15min`.
 
 ### Regla de disparo (AlertEvaluator)
 
@@ -161,7 +161,7 @@ Tras disparo: actualizar `last_triggered_candle`, incrementar `emails_sent_today
 
 ### Batching Twelve Data
 
-- Por ciclo: leer alertas activas → agrupar por `timeframe` → **1 request por intervalo** activo (`1day` en producto actual; el worker aún admite `15min` por compatibilidad).
+- Por ciclo: leer alertas activas → agrupar por `timeframe` → **1 request por intervalo** activo (`1day` y/o `15min` según alertas).
 - Consumo: ~78–156 req/día (dentro de 800 free).
 - Sin caché de velas en v1.
 

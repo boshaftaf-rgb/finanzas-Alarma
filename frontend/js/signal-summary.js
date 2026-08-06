@@ -65,7 +65,10 @@ function fireLineFor(presetOrCustom, params) {
     if (type === "price_level") {
       return "Cuando el cierre de la vela de 15 min cruza el nivel (solo el toque; no reenvía mientras siga del mismo lado).";
     }
-    if (type === "ema" || type === "price_ma" || type === "price_range") {
+    if (type === "price_range") {
+      return "Cuando el cierre de la vela de 15 min sale del canal (piso o techo); no reenvía mientras siga fuera.";
+    }
+    if (type === "ema" || type === "price_ma") {
       return "Cuando el cierre de la última sesión cerrada confirma el cruce o la salida.";
     }
     return "Cuando el indicador en la última sesión cerrada cumple el umbral.";

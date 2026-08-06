@@ -48,7 +48,8 @@ export function setCustomType(type) {
     btn.classList.toggle("is-active", active);
     btn.setAttribute("aria-pressed", String(active));
   }
-  els.timeframeSelect.value = type === "price_level" ? "15min" : "1day";
+  els.timeframeSelect.value =
+    type === "price_level" || type === "price_range" ? "15min" : "1day";
   if (type === "stochastic") updateStochHint();
   els.formError.classList.add("hidden");
   updateTimeframeHint();
@@ -106,12 +107,16 @@ export function updateTimeframeHint() {
         "Velas diarias (vista 1Y). Impulso EMA(9)/EMA(21).";
     } else {
       els.timeframeHint.textContent =
-        "Presets y la mayoría de custom usan velas diarias (vista 1Y). Precio objetivo usa 15 min.";
+        "Presets y la mayoría de custom usan velas diarias (vista 1Y). Precio objetivo y rango usan 15 min.";
     }
   } else if (appState.customType === "price_level") {
     els.timeframeSelect.value = "15min";
     els.timeframeHint.textContent =
       "Precio objetivo: velas de 15 min — avisa solo cuando el cierre cruza ≥ o ≤ el nivel (un toque; no reenvía mientras siga ahí).";
+  } else if (appState.customType === "price_range") {
+    els.timeframeSelect.value = "15min";
+    els.timeframeHint.textContent =
+      "Rango de precios: velas de 15 min — avisa cuando el cierre sale del canal (piso o techo); no reenvía mientras siga fuera.";
   } else if (appState.customType === "price_ma") {
     els.timeframeSelect.value = "1day";
     els.timeframeHint.textContent =

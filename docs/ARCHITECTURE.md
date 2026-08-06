@@ -82,19 +82,19 @@ EMA/RSI/Stoch: velas **diarias** (`1day`, modo vista 1Y). El selector de timefra
 | `rsi_overbought` | RSI sobrecompra | RSI(period) **> threshold** en **`1day`** (defaults: 14 / 70; editables en panel) |
 | `stoch_oversold` | Sobreventa Stoch | Stoch lento (period,3) **< threshold** en **`1day`** (defaults: 7 / 20; editables) |
 | `stoch_overbought` | Sobrecompra Stoch | Stoch lento (period,3) **> threshold** en **`1day`** (defaults: 7 / 80; editables) |
-| `custom` | Personalizado | Regla EMA, **precio vs media**, **precio objetivo**, **rango**, RSI o Stochastic (no combinadas); EMA/RSI/Stoch/precio vs media/rango en **`1day`**; **precio objetivo** en **`15min`** |
+| `custom` | Personalizado | Regla EMA, **precio vs media**, **precio objetivo**, **rango**, RSI o Stochastic (no combinadas); EMA/RSI/Stoch/precio vs media en **`1day`**; **precio objetivo** y **rango** en **`15min`** |
 
-En modo **custom**, el timeframe queda fijo según el tipo: **`15min`** para precio objetivo; **`1day`** para el resto. Configura: períodos EMA + dirección de cruce; **precio vs SMA/EMA** + período + dirección; **precio objetivo** + nivel + operador (`>=` / `<=`); **rango de precios** + piso + techo (salida al alza o a la baja); período RSI o Stochastic + umbral + operador (`<` / `>`).
+En modo **custom**, el timeframe queda fijo según el tipo: **`15min`** para precio objetivo y rango de precios; **`1day`** para el resto. Configura: períodos EMA + dirección de cruce; **precio vs SMA/EMA** + período + dirección; **precio objetivo** + nivel + operador (`>=` / `<=`); **rango de precios** + piso + techo (salida al alza o a la baja); período RSI o Stochastic + umbral + operador (`<` / `>`).
 
 Ejemplo alerta temprana (gráfico diario 1Y): `timeframe=1day`, `params={ "type": "price_ma", "ma_type": "sma", "period": 12, "direction": "up" }`.
 
 Ejemplo precio objetivo: `timeframe=15min`, `params={ "type": "price_level", "level": 185.5, "operator": ">=" }` (cruce al alza: cierre previo bajo el nivel y cierre actual ≥ 185.5).
 
-Ejemplo rango: `timeframe=1day`, `params={ "type": "price_range", "low": 100, "high": 120, "sides": "both" }` (salida del canal).
+Ejemplo rango: `timeframe=15min`, `params={ "type": "price_range", "low": 100, "high": 120, "sides": "both" }` (salida del canal).
 
 Ejemplo Stoch diario: `timeframe=1day`, `params={ "type": "stochastic", "period": 7, "threshold": 20, "operator": "<" }` (evaluación Slow %K con suavizado 3).
 
-Presets y custom (salvo precio objetivo) usan timeframe **`1day`** (período N = N días bursátiles). Precio objetivo usa **`15min`**.
+Presets y custom de tendencia/momentum usan timeframe **`1day`** (período N = N días bursátiles). Precio objetivo y rango de precios usan **`15min`**.
 
 Los presets RSI/Stoch guardan `params` como `{ "period": N, "threshold": N }` (sin `operator`; lo define el preset). Alertas RSI existentes con `params: {}` usan defaults 14 / 30 / 70; Stoch usa 7 / 20 / 80.
 
@@ -110,7 +110,7 @@ Los presets RSI/Stoch guardan `params` como `{ "period": N, "threshold": N }` (s
 | `user_id` | `UUID` FK | Propietario |
 | `ticker` | `TEXT` | Símbolo (ej. `AAPL`) |
 | `preset_or_custom` | `TEXT` | Preset o `custom` |
-| `timeframe` | `TEXT` | `1day` (presets / la mayoría de custom) o `15min` (precio objetivo) |
+| `timeframe` | `TEXT` | `1day` (presets / custom de tendencia/momentum) o `15min` (precio objetivo y rango) |
 | `params` | `JSONB` | Parámetros (EMA, price_ma, price_level, price_range, RSI, stochastic, etc.) |
 | `active` | `BOOLEAN` | Alerta habilitada |
 | `emails_sent_today` | `INTEGER` | Contador diario (default 0) |
@@ -175,7 +175,7 @@ Lista guardada de tickers del panel + orden de grupos (drag-and-drop). Conserva 
 | Intervalo de polling | Cada **15 minutos** |
 | Horario de mercado | Lun–vie **9:30–16:00 EST** |
 | Feriados NYSE (v1) | **No considerados** — solo día de semana + franja horaria |
-| Timeframe de análisis | **`1day`** (presets y custom salvo precio objetivo); **`15min`** para precio objetivo |
+| Timeframe de análisis | **`1day`** (presets y custom de tendencia/momentum); **`15min`** para precio objetivo y rango |
 | Scheduler primario | **cron-job.org** → `GET/POST /api/cron/evaluate` con `CRON_SECRET` |
 | Scheduler respaldo | GitHub Actions (`.github/workflows/evaluate-alerts.yml`) |
 

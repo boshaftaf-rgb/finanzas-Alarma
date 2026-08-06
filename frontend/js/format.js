@@ -14,9 +14,11 @@ export function mapDbError(message) {
   return "No se pudo completar la operación. Inténtalo de nuevo.";
 }
 
+/** Momento de evaluación del worker — siempre America/New_York (como formatSentAt). */
 export function formatEvaluatedAt(iso) {
   if (!iso) return "Sin evaluar aún";
   return new Intl.DateTimeFormat("es-MX", {
+    timeZone: "America/New_York",
     dateStyle: "short",
     timeStyle: "short",
   }).format(new Date(iso));
