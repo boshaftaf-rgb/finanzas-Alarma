@@ -1,7 +1,6 @@
 import { dedupeTickers } from "./twelve-data-fetcher.js";
 import {
   defaultSleep,
-  msUntilNextCreditMinute,
   runSymbolBatches,
   type SleepFn,
   type SymbolBatchOptions,
@@ -70,16 +69,14 @@ async function fetchQuotesChunk(
   chunk: string[],
   apiKey: string,
   fetchImpl: typeof fetch,
-  sleepMs: SleepFn,
 ): Promise<Map<string, TickerQuote>> {
   const url = new URL(TWELVE_DATA_QUOTE);
   url.searchParams.set("symbol", chunk.join(","));
   url.searchParams.set("apikey", apiKey);
 
-  let response = await fetchImpl(url.toString());
+  const response = await fetchImpl(url.toString());
   if (response.status === 429) {
-    await sleepMs(msUntilNextCreditMinute());
-    response = await fetchImpl(url.toString());
+    throw new Error("Twelve Data HTTP 429");
   }
 
   if (!response.ok) {
@@ -111,7 +108,7 @@ export async function fetchBatchQuotes(
 
   return runSymbolBatches(
     unique,
-    (chunk) => fetchQuotesChunk(chunk, apiKey, fetchImpl, sleepMs),
+    (chunk) => fetchQuotesChunk(chunk, apiKey, fetchImpl),
     batchOptions,
   );
 }

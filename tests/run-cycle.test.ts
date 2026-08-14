@@ -78,6 +78,7 @@ describe("run-cycle integration", () => {
     expect(sendArgs.valueLines?.some((l) => l.startsWith("EMA(21):"))).toBe(true);
     const mockStore = store as unknown as MockAlertStore;
     expect(mockStore.updates.some((u) => u.type === "email")).toBe(true);
+    expect(mockStore.updates.find((u) => u.type === "email")?.alertId).toBe("a1");
     const firing = mockStore.updates.find((u) => u.type === "firing" && u.alert_id === "a1");
     expect(firing).toBeTruthy();
     expect(typeof firing?.close_price).toBe("number");

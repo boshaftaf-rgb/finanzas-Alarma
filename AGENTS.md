@@ -63,6 +63,7 @@ Varios flujos **ya documentados o implementados** no deben refactorizarse por in
 | Ámbito | Piezas |
 | --- | --- |
 | Límites de producto | 15 tickers únicos, 5 alertas/ticker, 10 emails/alerta/día, candle-lock |
+| Tras disparo | `active = false`; no reenvía hasta reactivar a mano |
 | Horario worker | Lun–vie 9:30–16:00 EST; polling cada 15 min (cron-job.org primario; Actions respaldo) |
 | Twelve Data | Una petición batch por ciclo (free tier) |
 | Secretos | `service_role` solo server-side Vercel; nunca en `VITE_*` |

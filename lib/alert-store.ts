@@ -2,6 +2,28 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { AlertFiringInsert, AlertRow } from "./types.js";
 import { effectiveDailyCount } from "./alert-fire-policy.js";
 
+/** Payload tras un correo de disparo: candle-lock, cupo diario y alerta inactiva. */
+export function buildEmailSentUpdate(
+  alert: Pick<AlertRow, "emails_sent_today" | "email_count_date">,
+  candleTimestamp: string,
+  today: string,
+  evaluatedAt: Date,
+): {
+  last_triggered_candle: string;
+  emails_sent_today: number;
+  email_count_date: string;
+  last_evaluated_at: string;
+  active: false;
+} {
+  return {
+    last_triggered_candle: candleTimestamp,
+    emails_sent_today: effectiveDailyCount(alert, today) + 1,
+    email_count_date: today,
+    last_evaluated_at: evaluatedAt.toISOString(),
+    active: false,
+  };
+}
+
 export class AlertStore {
   private readonly client: SupabaseClient;
 
@@ -46,15 +68,9 @@ export class AlertStore {
     today: string,
     evaluatedAt = new Date(),
   ): Promise<void> {
-    const emailsSentToday = effectiveDailyCount(alert, today) + 1;
     const { error } = await this.client
       .from("alerts")
-      .update({
-        last_triggered_candle: candleTimestamp,
-        emails_sent_today: emailsSentToday,
-        email_count_date: today,
-        last_evaluated_at: evaluatedAt.toISOString(),
-      })
+      .update(buildEmailSentUpdate(alert, candleTimestamp, today, evaluatedAt))
       .eq("id", alert.id);
 
     if (error) throw new Error(`Error registrando disparo ${alert.id}: ${error.message}`);

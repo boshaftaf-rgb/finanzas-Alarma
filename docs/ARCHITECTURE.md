@@ -112,7 +112,7 @@ Los presets RSI/Stoch guardan `params` como `{ "period": N, "threshold": N }` (s
 | `preset_or_custom` | `TEXT` | Preset o `custom` |
 | `timeframe` | `TEXT` | `1day` (presets / custom de tendencia/momentum) o `15min` (precio objetivo y rango) |
 | `params` | `JSONB` | Parámetros (EMA, price_ma, price_level, price_range, RSI, stochastic, etc.) |
-| `active` | `BOOLEAN` | Alerta habilitada |
+| `active` | `BOOLEAN` | Alerta habilitada; el worker la pone a `false` tras un correo de disparo |
 | `emails_sent_today` | `INTEGER` | Contador diario (default 0) |
 | `email_count_date` | **`DATE`** | Fecha del contador diario (ver sección de cuotas) |
 | `last_triggered_candle` | **`TIMESTAMPTZ`** | **Candle-lock:** timestamp de la vela que disparó la última notificación |
@@ -238,11 +238,13 @@ condición_cumplida
   AND emails_sent_today < 10
   → Disparar email
   → Actualizar last_triggered_candle = timestamp_vela_actual
+  → active = false (la alerta queda inactiva hasta reactivación manual)
   → INSERT alert_firings (disparo para la UI)
 ```
 
+- Tras el correo, la alerta **se apaga**: el worker deja de evaluarla y el interruptor del panel queda inactivo. «Verificar ahora» no apaga.
 - `last_triggered_candle` es **obligatorio** en el esquema (nullable hasta el primer disparo).
-- Garantiza **como máximo un email por vela de 15 min** por alerta, independientemente del intervalo de polling.
+- Garantiza **como máximo un email por vela de 15 min** por alerta, independientemente del intervalo de polling (red de seguridad si el usuario reactiva en la misma vela).
 - Complementa (no reemplaza) el tope de 10 emails/alerta/día.
 - Si el INSERT de `alert_firings` falla tras el email, el worker deja log de error y **no** reenvía el correo.
 
@@ -327,7 +329,7 @@ flowchart LR
 | Recurso | Límite | Mecanismo |
 |---------|--------|-----------|
 | Twelve Data | 800 req/día, 8 req/min | **1 batch/ciclo → 78 req/día** |
-| Gmail SMTP | ~500 emails/día (cuenta personal) | **10 emails/alerta/día** + candle-lock |
+| Gmail SMTP | ~500 emails/día (cuenta personal) | **auto-apagado tras disparo** + 10 emails/alerta/día + candle-lock |
 | Tickers por usuario | 15 únicos | Trigger PostgreSQL + UI |
 | Alertas por ticker | 5 activas | Trigger PostgreSQL + UI |
 | Emails por vela | 1 | **`last_triggered_candle`** |

@@ -13,7 +13,7 @@ El usuario quiere una plataforma donde pueda registrarse de forma controlada, el
 1. Permite a usuarios invitados registrarse con email y contraseña usando un código de un solo uso.
 2. Ofrece un panel web (español) para crear, editar, activar y desactivar alertas sobre tickers de EE. UU.
 3. Ejecuta un **worker serverless en Vercel** (Cron cada 5 min) que, durante el horario de mercado, descarga datos de mercado en **una sola petición batch** (Twelve Data), calcula indicadores (EMA, RSI, Stochastic) sobre velas de 15 minutos o diarias, y envía correos vía Gmail SMTP cuando las condiciones se cumplen.
-4. Protege contra spam de correos mediante **candle-lock** (máximo un email por vela de 15 min por alerta) y un tope de 10 emails por alerta por día.
+4. Protege contra spam de correos mediante **un disparo y apagado** (`active = false` tras el email), **candle-lock** (máximo un email por vela por alerta si se reactiva) y un tope de 10 emails por alerta por día.
 5. Almacena configuración y estado en Supabase (PostgreSQL + Auth + RLS), con el frontend hablando directamente con Supabase y el worker usando `service_role` de forma aislada.
 
 ## User Stories
@@ -37,6 +37,7 @@ El usuario quiere una plataforma donde pueda registrarse de forma controlada, el
 15. As a **usuario registrado**, I want to **ver toda la interfaz en español**, so that **use la plataforma en mi idioma sin fricción**.
 16. As a **usuario registrado**, I want to **recibir un correo en español cuando se dispare una alerta**, so that **entienda qué condición se cumplió sin abrir el panel**.
 17. As a **usuario registrado**, I want to **recibir como máximo un correo por vela de 15 minutos por alerta**, so that **no me bombardeen con avisos duplicados mientras la condición sigue vigente**.
+17b. As a **usuario registrado**, I want to **que la alerta se apague sola (interruptor inactivo) después de enviar el correo**, so that **no reciba el mismo aviso otra vez hasta que yo la vuelva a encender**.
 18. As a **usuario registrado**, I want to **recibir como máximo 10 correos por alerta por día**, so that **el sistema respete límites razonables de envío**.
 19. As a **usuario registrado**, I want to **que mis alertas solo sean visibles para mí**, so that **otros usuarios no accedan a mi configuración**.
 20. As a **operador del sistema**, I want to **generar códigos de invitación de un solo uso en la base de datos**, so that **invite conocidos de forma controlada**.
@@ -85,7 +86,7 @@ El usuario quiere una plataforma donde pueda registrarse de forma controlada, el
 | **Worker — IndicatorEngine** | Cálculo EMA, RSI y Stochastic Slow %K sobre OHLCV recibido |
 | **Worker — AlertEvaluator** | Evalúa condiciones, aplica candle-lock y tope diario, produce decisiones de disparo |
 | **Worker — EmailSender** | Envío vía Gmail SMTP con plantilla en español |
-| **Worker — AlertStore** | Lectura/escritura de alertas vía Supabase service_role |
+| **Worker — AlertStore** | Lectura/escritura de alertas vía Supabase service_role; tras disparo pone `active = false` |
 
 ### Esquema de datos
 
@@ -157,7 +158,7 @@ disparar SI:
   AND emails_sent_today < 10 (tras reset diario si email_count_date < CURRENT_DATE)
 ```
 
-Tras disparo: actualizar `last_triggered_candle`, incrementar `emails_sent_today`, setear `email_count_date = CURRENT_DATE`.
+Tras disparo: actualizar `last_triggered_candle`, incrementar `emails_sent_today`, setear `email_count_date = CURRENT_DATE`, y **`active = false`** (no se reevalúa ni reenvía hasta que el usuario la reactive a mano).
 
 ### Batching Twelve Data
 
@@ -237,5 +238,5 @@ No hay tests previos en el repositorio (greenfield). Los patrones anteriores se 
 - El worker corre en **Vercel Cron**; si el deploy falla o el cron se deshabilita, no hay evaluación ni correos hasta restaurar el proyecto.
 - Feriados NYSE no se consideran en v1; el worker podría ejecutar ciclos vacíos en días feriados que caen en día laborable.
 - Todas las alertas (presets y custom) usan velas **diarias** (modo gráfico 1Y / intervalo 1 día).
-- Gmail SMTP (~500 emails/día en cuentas personales) es el límite global práctico; con candle-lock + 10/alerta/día + máx. 5 alertas × 15 tickers el peor caso teórico debe mantenerse bajo control.
+- Gmail SMTP (~500 emails/día en cuentas personales) es el límite global práctico; con auto-apagado tras disparo + candle-lock + 10/alerta/día + máx. 5 alertas × 15 tickers el peor caso teórico debe mantenerse bajo control.
 - Documento de arquitectura de referencia: `docs/ARCHITECTURE.md`.

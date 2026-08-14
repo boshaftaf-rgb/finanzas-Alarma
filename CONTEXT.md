@@ -89,7 +89,7 @@ Frontend React donde el usuario gestiona alertas (crear, editar, activar/desacti
 _Avoid_: dashboard (preferir panel o listado)
 
 **Activa / Inactiva**:
-Estado de una alerta; inactiva no se evalúa ni envía correos, pero se conserva en BD.
+Estado de una alerta; inactiva no se evalúa ni envía correos, pero se conserva en BD. Tras un correo de disparo el worker la pasa a inactiva (interruptor apagado) hasta que el usuario la vuelva a encender. «Verificar ahora» no cambia este estado.
 _Avoid_: enabled/disabled (en UI español)
 
 **Disparo**:

@@ -54,6 +54,8 @@ import { updateSignalSummary } from "./signal-summary.js";
 import { validateFormPayload } from "./form-validation.js";
 import { verifyAlert } from "./verify-alert-api.js";
 
+let alertsLoadInFlight = false;
+
 function syncFiringsState(list) {
   appState.firings = list;
   appState.firedAlertIds = alertIdsWithFirings(appState.firings);
@@ -108,9 +110,14 @@ async function loadFirings() {
   }
 }
 
-async function loadAlerts() {
-  setLoading(true);
-  hideBanner();
+async function loadAlerts({ quiet = false } = {}) {
+  if (alertsLoadInFlight) return;
+  if (quiet && appState.busyId) return;
+  alertsLoadInFlight = true;
+  if (!quiet) {
+    setLoading(true);
+    hideBanner();
+  }
   try {
     const [alertRows, firingRows, tickerOrder] = await Promise.all([
       fetchAlerts(),
@@ -121,11 +128,19 @@ async function loadAlerts() {
     const { order: mergedOrder, changed } = mergeAlertTickersIntoOrder(alertRows, tickerOrder);
     appState.tickerOrder = mergedOrder;
     syncFiringsState(firingRows);
-    setLoading(false);
+    if (!quiet) {
+      appState.quotesLoading = true;
+      appState.quotesPending = new Set(
+        [...mergedOrder, ...alertRows.map((a) => a.ticker)]
+          .map((t) => String(t).toUpperCase())
+          .filter(Boolean),
+      );
+      setLoading(false);
+    }
     if (appState.currentView === "firings") renderFirings();
     else renderAlerts();
-    void loadQuotes();
-    if (changed) {
+    if (!quiet) void loadQuotes();
+    if (changed && !quiet) {
       try {
         await saveTickerOrder(mergedOrder);
       } catch {
@@ -133,11 +148,23 @@ async function loadAlerts() {
       }
     }
   } catch (error) {
+    if (quiet) return;
     setLoading(false);
     renderAlerts();
     const message = error instanceof Error ? error.message : "Error desconocido";
     showBanner("error", mapDbError(message));
+  } finally {
+    alertsLoadInFlight = false;
   }
+}
+
+function bindVisibilityRefresh() {
+  const refreshIfVisible = () => {
+    if (document.visibilityState !== "visible") return;
+    void loadAlerts({ quiet: true });
+  };
+  document.addEventListener("visibilitychange", refreshIfVisible);
+  window.addEventListener("focus", refreshIfVisible);
 }
 
 async function handleTickerReorder(tickers) {
@@ -407,6 +434,7 @@ async function main() {
   renderFiringsSkeleton();
   renderPresetGrid();
   bindEvents();
+  bindVisibilityRefresh();
   hideBanner();
 
   try {

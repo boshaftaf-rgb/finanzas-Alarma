@@ -9,12 +9,14 @@ export function quoteChangeClass(percentChange) {
 }
 
 export function quoteBlockHtml(ticker, { compact = false } = {}) {
-  const quote = appState.quotesByTicker[ticker.toUpperCase()];
-  if (appState.quotesLoading && !quote) {
+  const key = ticker.toUpperCase();
+  const quote = appState.quotesByTicker[key];
+  const pending = appState.quotesLoading || appState.quotesPending.has(key);
+  if (!quote && pending) {
     return `<div class="alert-row__quote" aria-busy="true"><span class="skeleton quote-skeleton"></span></div>`;
   }
   if (!quote) {
-    return `<div class="alert-row__quote alert-row__quote--muted">Sin cotización</div>`;
+    return `<div class="alert-row__quote alert-row__quote--muted" title="Twelve Data no devolvió precio en esta pasada">Sin cotización</div>`;
   }
 
   const dir = quoteChangeClass(quote.percentChange);

@@ -15,6 +15,7 @@ export const appState = {
   selectedPreset: null,
   quotesByTicker: {},
   quotesLoading: false,
+  quotesPending: new Set(),
   editingAlertId: null,
   formMode: "preset",
   customType: "ema",

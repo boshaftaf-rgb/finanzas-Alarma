@@ -27,7 +27,7 @@ Cómo evalúa el worker
 2. Si la última vela es la de **hoy** y el mercado aún no cerró (antes de 16:00 ET), la **descarta** y evalúa sobre la última sesión ya cerrada.
 3. Calcula EMA, RSI y/o Stochastic lento sobre ese histórico.
 4. Mira la vela cerrada más reciente (y, en alertas de cruce, también la anterior).
-5. Si la regla se cumple → conditionMet. Si además pasa candle-lock y el límite diario → correo.
+5. Si la regla se cumple → conditionMet. Si además pasa candle-lock y el límite diario → correo. Tras el correo, la alerta **se apaga sola**; para volver a vigilarla, enciende el interruptor en el panel.
 
 ---
 
@@ -77,8 +77,7 @@ Preset sobrecompra: RSI de la vela **diaria** actual > umbral (por defecto 70)
 
 Período por defecto: **14** (= **14 días**, alineado a un gráfico diario/1Y). Al crear o editar Sobreventa/Sobrecompra puedes ajustar período (2–50) y umbral (0–100). El operador queda fijo por preset (< o >).
 
-Ejemplo: si el RSI cierra en 28 en la vela diaria de hoy → dispara sobreventa.
-Si al día siguiente el RSI sigue en 27, la condición sigue cumplida pero no recibes otro correo por la misma vela (candle-lock).
+Ejemplo: si el RSI cierra en 28 en la vela diaria de hoy → dispara sobreventa y la alerta se apaga. Si al día siguiente el RSI sigue en 27, no hay otro correo hasta que enciendas de nuevo el interruptor.
 
 Custom RSI: eliges período (2–50), umbral (0–100) y operador «menor que» o «mayor que» (siempre en velas diarias).
 
@@ -195,13 +194,15 @@ Un correo solo se envía si se cumplen las tres condiciones siguientes:
 2. Candle-lock: no se repite correo por la misma vela (máx. 1 por vela por alerta).
 3. Límite diario: menos de 10 correos esa alerta en el día (reset a medianoche).
 
+Tras el envío, la alerta pasa a **inactiva** (interruptor apagado). No se vuelve a evaluar ni a enviar hasta que la enciendas a mano. Candle-lock y el tope diario siguen valiendo si la reactivas. **Verificar ahora** no apaga la alerta.
+
 Correo incluye: ticker, tipo de alerta, timeframe (diario), timestamp de la vela (ET).
 
 ---
 
 Panel y límites
 
-Crear, editar, activar/desactivar y eliminar alertas. Etiquetas: Tendencia = cruce EMA; Precio = precio vs media, precio objetivo o rango; Momentum = RSI o Stochastic.
+Crear, editar, activar/desactivar y eliminar alertas. Tras un correo de disparo el interruptor queda apagado. Etiquetas: Tendencia = cruce EMA; Precio = precio vs media, precio objetivo o rango; Momentum = RSI o Stochastic.
 
 Los presets aparecen bajo **Vista diaria / 1Y** (chip **Diario**). Precio objetivo y rango de precios muestran chip **15 min**.
 
@@ -215,6 +216,7 @@ El listado agrupa alertas por ticker. Puedes **arrastrar el asidero** (⋮⋮) d
 | Alertas por ticker | 5 |
 | Correos por alerta/día | 10 |
 | Correos por vela | 1 |
+| Tras un disparo | Se apaga; hay que encenderla otra vez |
 | Timeframes | Diario (1D) salvo **precio objetivo** y **rango** (15 min) |
 | SMS / push / webhook | No (v1) |
 | Histórico de disparos | Sí (campana → sección Disparos; borrar a mano) |
@@ -234,7 +236,10 @@ Al cerrar y evaluar la vela **diaria** más reciente: compara la relación entre
 Sí, según la implementación del worker (suavizado Wilder sobre gain/loss del close).
 
 ¿Por qué no llegó el correo si ya vi el cruce en mi terminal?
-Causas habituales: alerta inactiva, fuera de horario 9:30–16:00 ET, candle-lock (ya avisó esa vela), tope 10/día, retraso de datos Twelve Data, o festivo sin datos nuevos.
+Causas habituales: alerta inactiva (también se apaga sola tras el último aviso), fuera de horario 9:30–16:00 ET, candle-lock (ya avisó esa vela), tope 10/día, retraso de datos Twelve Data, o festivo sin datos nuevos.
+
+¿Por qué se apagó mi alerta?
+Porque ya envió el correo de disparo. Enciende el interruptor si quieres que vuelva a vigilar.
 
 ¿Puedo vigilar cruce EMA y RSI <30 en el mismo ticker?
 Sí: crea dos alertas distintas (hasta 5 por ticker).
