@@ -1265,7 +1265,12 @@
   grid-template-columns: repeat(3, 1fr);
 }
 
-#ema-cross-hint {
+#ema-cross-hint,
+#ema-single-hint {
+  margin-bottom: 20px;
+}
+
+#ema-mode {
   margin-bottom: 20px;
 }
 

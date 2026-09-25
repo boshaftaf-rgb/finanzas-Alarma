@@ -68,6 +68,9 @@ function fireLineFor(presetOrCustom, params) {
     if (type === "price_range") {
       return "Cuando el cierre de la vela de 15 min sale del canal (piso o techo); no reenvía mientras siga fuera.";
     }
+    if (type === "price_ma" && params?.ma_type === "ema") {
+      return "Cuando el cierre cruza esa EMA: la línea hace de soporte o resistencia.";
+    }
     if (type === "ema" || type === "price_ma") {
       return "Cuando el cierre de la última sesión cerrada confirma el cruce o la salida.";
     }
@@ -99,6 +102,14 @@ function softPresetParams() {
 
 function softCustomParams() {
   const type = appState.customType;
+  if (type === "ema" && appState.emaMode === "single") {
+    return {
+      type: "price_ma",
+      ma_type: "ema",
+      period: Number(els.emaSinglePeriod.value) || 50,
+      direction: els.emaDirection.value === "down" ? "down" : "up",
+    };
+  }
   if (type === "ema") {
     return {
       type: "ema",

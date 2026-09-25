@@ -62,30 +62,47 @@ function emaDayCount(raw) {
   return period;
 }
 
-function emaCrossHint(fast, slow) {
-  if (fast === null || slow === null) {
-    return "Escribe los días de cada media, entre 2 y 200. La rápida tiene que ser menor que la lenta. Atajos: 9/21, 20/50 y 50/200.";
-  }
-  if (fast >= slow) {
-    return `EMA(${fast}) y EMA(${slow}): la rápida tiene que ser menor que la lenta. Atajos: 9/21, 20/50 y 50/200.`;
-  }
-  return `EMA(${fast}) cruza EMA(${slow}) en días. Atajos 9/21, 20/50 y 50/200, o escribe otros días entre 2 y 200.`;
-}
-
-export function syncEmaPairShortcuts() {
-  const fast = emaDayCount(els.emaFast.value);
-  const slow = emaDayCount(els.emaSlow.value);
-  for (const btn of document.querySelectorAll("#ema-pair-shortcuts .operator-seg__btn")) {
-    const active = fast !== null && slow !== null && Number(btn.dataset.fast) === fast && Number(btn.dataset.slow) === slow;
+function applyEmaMode() {
+  const single = appState.emaMode === "single";
+  els.emaPairFields?.classList.toggle("hidden", single);
+  els.emaSingleFields?.classList.toggle("hidden", !single);
+  for (const btn of document.querySelectorAll("#ema-mode .operator-seg__btn")) {
+    const active = btn.dataset.emaMode === (single ? "single" : "pair");
     btn.classList.toggle("is-active", active);
     btn.setAttribute("aria-pressed", String(active));
   }
-  if (els.emaCrossHint) els.emaCrossHint.textContent = emaCrossHint(fast, slow);
+  const up = els.emaDirection?.querySelector('option[value="up"]');
+  const down = els.emaDirection?.querySelector('option[value="down"]');
+  if (up && down) {
+    up.textContent = single ? "Precio cruza arriba de la EMA" : "Cruce al alza";
+    down.textContent = single ? "Precio cruza abajo de la EMA" : "Cruce a la baja";
+  }
 }
 
-export function applyEmaPairShortcut(fast, slow) {
-  els.emaFast.value = String(fast);
-  els.emaSlow.value = String(slow);
+function emaSingleHint(days) {
+  if (days === null) {
+    return "Escribe los días de la EMA, entre 2 y 200. Atajos: 20, 50 y 200.";
+  }
+  return `EMA de ${days} días: una sola línea, de soporte o resistencia. Avisa cuando el cierre la cruza. Atajos 20, 50 y 200, o escribe otro número entre 2 y 200.`;
+}
+
+export function syncEmaSingleShortcuts() {
+  const days = emaDayCount(els.emaSinglePeriod.value);
+  for (const btn of document.querySelectorAll("#ema-single-shortcuts .operator-seg__btn")) {
+    const active = days !== null && Number(btn.dataset.period) === days;
+    btn.classList.toggle("is-active", active);
+    btn.setAttribute("aria-pressed", String(active));
+  }
+  if (els.emaSingleHint) els.emaSingleHint.textContent = emaSingleHint(days);
+}
+
+export function setEmaMode(mode) {
+  appState.emaMode = mode === "single" ? "single" : "pair";
+  updateTimeframeHint();
+}
+
+export function applyEmaSingleShortcut(period) {
+  els.emaSinglePeriod.value = String(period);
   updateTimeframeHint();
 }
 
@@ -156,13 +173,22 @@ export function updateTimeframeHint() {
       "Diario: período 12 = media de 12 días (como gráfico 1Y en TradingView).";
   } else if (appState.customType === "ema") {
     els.timeframeSelect.value = "1day";
-    syncEmaPairShortcuts();
-    const fast = emaDayCount(els.emaFast.value);
-    const slow = emaDayCount(els.emaSlow.value);
-    els.timeframeHint.textContent =
-      fast === null || slow === null
-        ? "Diario: escribe los días de las dos medias (2–200) sobre velas diarias (vista 1Y)."
-        : `Diario: EMA(${fast}) y EMA(${slow}) sobre velas diarias (vista 1Y).`;
+    applyEmaMode();
+    if (appState.emaMode === "single") {
+      syncEmaSingleShortcuts();
+      const days = emaDayCount(els.emaSinglePeriod.value);
+      els.timeframeHint.textContent =
+        days === null
+          ? "Diario: escribe los días de una sola EMA (2–200)."
+          : `Diario: una EMA de ${days} días, soporte o resistencia.`;
+    } else {
+      const fast = emaDayCount(els.emaFast.value);
+      const slow = emaDayCount(els.emaSlow.value);
+      els.timeframeHint.textContent =
+        fast === null || slow === null
+          ? "Diario: escribe los días de las dos medias cortas (2–200)."
+          : `Diario: EMA(${fast}) cruza EMA(${slow}). Las dos son cortas.`;
+    }
   } else if (appState.customType === "stochastic") {
     els.timeframeSelect.value = "1day";
     els.timeframeHint.textContent =
@@ -176,8 +202,10 @@ export function updateTimeframeHint() {
 }
 
 export function resetCustomFields() {
+  appState.emaMode = "pair";
   els.emaFast.value = "9";
   els.emaSlow.value = "21";
+  els.emaSinglePeriod.value = "50";
   els.emaDirection.value = "up";
   els.priceMaType.value = "sma";
   els.priceMaPeriod.value = "12";
@@ -215,6 +243,13 @@ export function fillCustomFields(params) {
     return;
   }
   if (params?.type === "price_ma") {
+    if (params.ma_type === "ema") {
+      appState.emaMode = "single";
+      els.emaSinglePeriod.value = String(params.period ?? 50);
+      els.emaDirection.value = params.direction === "down" ? "down" : "up";
+      setCustomType("ema");
+      return;
+    }
     setCustomType("price_ma");
     els.priceMaType.value = params.ma_type === "ema" ? "ema" : "sma";
     els.priceMaPeriod.value = String(params.period ?? 12);
@@ -234,6 +269,7 @@ export function fillCustomFields(params) {
     updatePriceRangeBand();
     return;
   }
+  appState.emaMode = "pair";
   els.emaFast.value = String(params?.ema_fast ?? 9);
   els.emaSlow.value = String(params?.ema_slow ?? 21);
   els.emaDirection.value = params?.direction === "down" ? "down" : "up";

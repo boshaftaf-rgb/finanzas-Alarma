@@ -67,6 +67,20 @@ export function validateFormPayload() {
     };
   }
 
+  if (appState.customType === "ema" && appState.emaMode === "single") {
+    const error = validatePriceMaParams(els.emaSinglePeriod.value, "ema", els.emaDirection.value);
+    if (error) {
+      els.formError.textContent = error;
+      els.formError.classList.remove("hidden");
+      return null;
+    }
+    return {
+      presetOrCustom: "custom",
+      params: buildPriceMaParams(els.emaSinglePeriod.value, "ema", els.emaDirection.value),
+      timeframe: resolveTimeframe(),
+    };
+  }
+
   if (appState.customType === "ema") {
     const error = validateEmaParams(els.emaFast.value, els.emaSlow.value, els.emaDirection.value);
     if (error) {

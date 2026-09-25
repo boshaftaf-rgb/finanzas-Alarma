@@ -19,4 +19,5 @@ export const appState = {
   editingAlertId: null,
   formMode: "preset",
   customType: "ema",
+  emaMode: "pair",
 };

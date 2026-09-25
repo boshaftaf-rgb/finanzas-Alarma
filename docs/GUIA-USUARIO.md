@@ -126,7 +126,7 @@ Presets
 
 Todas las alertas EMA (9/21 y 50/200) usan **velas diarias** (vista 1Y).
 
-Custom EMA: ema_fast y ema_slow (2–200, rápida < lenta), direction up/down. En el formulario hay atajos **9/21**, **20/50** y **50/200**; también se pueden escribir otros días.
+Custom EMA: cruce corto **9/21** (las dos medias son cortas, por eso el cruce sí se da) o **una sola EMA** (por defecto 50 días, también 20, 200 u otro número de 2 a 200) como soporte o resistencia: el cierre la cruza. La de una sola media se guarda como precio vs EMA.
 Custom **Precio vs media**: el cierre cruza SMA o EMA de período N (2–200), direction up/down. Recomendado **SMA** si comparas con TradingView (`ma`).
 Custom **Precio objetivo**: el cierre de una vela de **15 min** cruza un nivel fijo (`level` > 0) con operador `>=` o `<=` (solo el evento de toque; no reenvía mientras siga del mismo lado).
 Custom **Rango de precios**: piso (`low`) y techo (`high`); se dispara al salir del canal por arriba o por abajo (**velas de 15 min**).

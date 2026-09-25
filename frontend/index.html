@@ -243,27 +243,46 @@
             </div>
 
             <div id="custom-ema-fields" class="custom-fields">
-              <div class="form-row">
-                <label class="form-field" for="ema-fast">
-                  <span class="form-field__label">Días (rápida)</span>
-                  <input id="ema-fast" class="input-text" type="number" min="2" max="200" value="9" inputmode="numeric" />
-                </label>
-                <label class="form-field" for="ema-slow">
-                  <span class="form-field__label">Días (lenta)</span>
-                  <input id="ema-slow" class="input-text" type="number" min="2" max="200" value="21" inputmode="numeric" />
-                </label>
+              <div id="ema-mode" class="operator-seg" role="group" aria-label="Cómo usar la EMA">
+                <button type="button" class="operator-seg__btn is-active" data-ema-mode="pair" aria-pressed="true">
+                  <span class="operator-seg__symbol">9/21</span>
+                  <span class="operator-seg__text">Cruce corto</span>
+                </button>
+                <button type="button" class="operator-seg__btn" data-ema-mode="single" aria-pressed="false">
+                  <span class="operator-seg__symbol">50</span>
+                  <span class="operator-seg__text">Una media</span>
+                </button>
               </div>
-              <div
-                id="ema-pair-shortcuts"
-                class="operator-seg operator-seg--days"
-                role="group"
-                aria-label="Atajos de cruce EMA"
-              >
-                <button type="button" class="operator-seg__btn operator-seg__btn--day is-active" data-fast="9" data-slow="21" aria-pressed="true">9/21</button>
-                <button type="button" class="operator-seg__btn operator-seg__btn--day" data-fast="20" data-slow="50" aria-pressed="false">20/50</button>
-                <button type="button" class="operator-seg__btn operator-seg__btn--day" data-fast="50" data-slow="200" aria-pressed="false">50/200</button>
+              <div id="ema-pair-fields">
+                <div class="form-row">
+                  <label class="form-field" for="ema-fast">
+                    <span class="form-field__label">Días (rápida)</span>
+                    <input id="ema-fast" class="input-text" type="number" min="2" max="200" value="9" inputmode="numeric" />
+                  </label>
+                  <label class="form-field" for="ema-slow">
+                    <span class="form-field__label">Días (lenta)</span>
+                    <input id="ema-slow" class="input-text" type="number" min="2" max="200" value="21" inputmode="numeric" />
+                  </label>
+                </div>
+                <p id="ema-cross-hint" class="form-field__hint">9 y 21: las dos son cortas, por eso el cruce sí se da.</p>
               </div>
-              <p id="ema-cross-hint" class="form-field__hint">EMA(9) cruza EMA(21) en días. Atajos 9/21, 20/50 y 50/200, o escribe otros días entre 2 y 200.</p>
+              <div id="ema-single-fields" class="hidden">
+                <label class="form-field" for="ema-single-period">
+                  <span class="form-field__label">Días de la EMA</span>
+                  <input id="ema-single-period" class="input-text" type="number" min="2" max="200" value="50" inputmode="numeric" />
+                </label>
+                <div
+                  id="ema-single-shortcuts"
+                  class="operator-seg operator-seg--days"
+                  role="group"
+                  aria-label="Atajos de una EMA"
+                >
+                  <button type="button" class="operator-seg__btn operator-seg__btn--day" data-period="20" aria-pressed="false">20</button>
+                  <button type="button" class="operator-seg__btn operator-seg__btn--day is-active" data-period="50" aria-pressed="true">50</button>
+                  <button type="button" class="operator-seg__btn operator-seg__btn--day" data-period="200" aria-pressed="false">200</button>
+                </div>
+                <p id="ema-single-hint" class="form-field__hint">EMA de 50 días: una sola línea, de soporte o resistencia. Avisa cuando el cierre la cruza.</p>
+              </div>
               <label class="form-field" for="ema-direction">
                 <span class="form-field__label">Dirección del cruce</span>
                 <select id="ema-direction" class="input-text input-select">
