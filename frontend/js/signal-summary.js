@@ -111,7 +111,7 @@ function softCustomParams() {
     return {
       type: "price_ma",
       ma_type: els.priceMaType.value === "ema" ? "ema" : "sma",
-      period: Number(els.priceMaPeriod.value) || 50,
+      period: Number(els.priceMaPeriod.value) || 12,
       direction: els.priceMaDirection.value === "down" ? "down" : "up",
     };
   }

@@ -41,7 +41,7 @@ import {
   openCreateModal,
   openEditModal,
   readCreateTicker,
-  applyPriceMaPeriodShortcut,
+  applyEmaPairShortcut,
   setCustomType,
   setFormMode,
   setSubmitLoading,
@@ -372,12 +372,13 @@ function bindEvents() {
   for (const btn of document.querySelectorAll("#custom-price-level-fields .operator-seg__btn")) {
     btn.addEventListener("click", () => syncPriceLevelOperator(btn.dataset.operator));
   }
-  for (const btn of document.querySelectorAll("#price-ma-period-shortcuts .operator-seg__btn")) {
-    btn.addEventListener("click", () => applyPriceMaPeriodShortcut(btn.dataset.period));
+  for (const btn of document.querySelectorAll("#ema-pair-shortcuts .operator-seg__btn")) {
+    btn.addEventListener("click", () => applyEmaPairShortcut(btn.dataset.fast, btn.dataset.slow));
   }
-  els.priceMaPeriod.addEventListener("input", updateTimeframeHint);
-  els.priceMaPeriod.addEventListener("change", updateTimeframeHint);
-  els.priceMaType.addEventListener("change", updateTimeframeHint);
+  els.emaFast.addEventListener("input", updateTimeframeHint);
+  els.emaFast.addEventListener("change", updateTimeframeHint);
+  els.emaSlow.addEventListener("input", updateTimeframeHint);
+  els.emaSlow.addEventListener("change", updateTimeframeHint);
   els.priceRangeLow.addEventListener("input", updatePriceRangeBand);
   els.priceRangeHigh.addEventListener("input", updatePriceRangeBand);
   els.presetRsiPeriod.addEventListener("input", updatePresetRsiHint);
@@ -387,9 +388,9 @@ function bindEvents() {
   els.stochOperator.addEventListener("change", updateStochHint);
   els.timeframeSelect.addEventListener("change", updateTimeframeHint);
   for (const input of [
-    els.emaFast,
-    els.emaSlow,
     els.emaDirection,
+    els.priceMaType,
+    els.priceMaPeriod,
     els.priceMaDirection,
     els.priceLevelValue,
     els.rsiPeriod,

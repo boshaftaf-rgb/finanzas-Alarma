@@ -2,10 +2,10 @@ export function validateEmaParams(fastRaw, slowRaw, direction) {
   const fast = Number(fastRaw);
   const slow = Number(slowRaw);
   if (!Number.isInteger(fast) || fast < 2 || fast > 200) {
-    return "La media rápida debe ser un número entre 2 y 200.";
+    return "Los días de la media rápida deben ser un número entre 2 y 200.";
   }
   if (!Number.isInteger(slow) || slow < 2 || slow > 200) {
-    return "La media lenta debe ser un número entre 2 y 200.";
+    return "Los días de la media lenta deben ser un número entre 2 y 200.";
   }
   if (fast >= slow) {
     return "La media rápida debe ser menor que la media lenta.";
@@ -95,7 +95,7 @@ export function buildRsiPresetParams(periodRaw, thresholdRaw) {
 export function validatePriceMaParams(periodRaw, maType, direction) {
   const period = Number(periodRaw);
   if (!Number.isInteger(period) || period < 2 || period > 200) {
-    return "Los días de la media deben ser un número entre 2 y 200.";
+    return "El período debe ser un número entre 2 y 200.";
   }
   if (maType !== "sma" && maType !== "ema") {
     return "Selecciona el tipo de media (SMA o EMA).";

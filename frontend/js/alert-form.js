@@ -56,32 +56,36 @@ export function setCustomType(type) {
   updateSignalSummary();
 }
 
-function priceMaDayCount() {
-  const period = Number(els.priceMaPeriod.value);
+function emaDayCount(raw) {
+  const period = Number(raw);
   if (!Number.isInteger(period) || period < 2 || period > 200) return null;
   return period;
 }
 
-function priceMaFieldHint(days) {
-  if (days === null) {
-    return "Escribe los días de la media, entre 2 y 200. Atajos: 20, 50 y 200.";
+function emaCrossHint(fast, slow) {
+  if (fast === null || slow === null) {
+    return "Escribe los días de cada media, entre 2 y 200. La rápida tiene que ser menor que la lenta. Atajos: 9/21, 20/50 y 50/200.";
   }
-  const ma = els.priceMaType.value === "ema" ? "EMA" : "SMA";
-  return `${ma} de ${days} días: el cierre cruza esa media. Atajos 20, 50 y 200, o escribe otro número entre 2 y 200.`;
+  if (fast >= slow) {
+    return `EMA(${fast}) y EMA(${slow}): la rápida tiene que ser menor que la lenta. Atajos: 9/21, 20/50 y 50/200.`;
+  }
+  return `EMA(${fast}) cruza EMA(${slow}) en días. Atajos 9/21, 20/50 y 50/200, o escribe otros días entre 2 y 200.`;
 }
 
-export function syncPriceMaPeriodShortcuts() {
-  const days = priceMaDayCount();
-  for (const btn of document.querySelectorAll("#price-ma-period-shortcuts .operator-seg__btn")) {
-    const active = days !== null && Number(btn.dataset.period) === days;
+export function syncEmaPairShortcuts() {
+  const fast = emaDayCount(els.emaFast.value);
+  const slow = emaDayCount(els.emaSlow.value);
+  for (const btn of document.querySelectorAll("#ema-pair-shortcuts .operator-seg__btn")) {
+    const active = fast !== null && slow !== null && Number(btn.dataset.fast) === fast && Number(btn.dataset.slow) === slow;
     btn.classList.toggle("is-active", active);
     btn.setAttribute("aria-pressed", String(active));
   }
-  if (els.priceMaHint) els.priceMaHint.textContent = priceMaFieldHint(days);
+  if (els.emaCrossHint) els.emaCrossHint.textContent = emaCrossHint(fast, slow);
 }
 
-export function applyPriceMaPeriodShortcut(period) {
-  els.priceMaPeriod.value = String(period);
+export function applyEmaPairShortcut(fast, slow) {
+  els.emaFast.value = String(fast);
+  els.emaSlow.value = String(slow);
   updateTimeframeHint();
 }
 
@@ -148,12 +152,17 @@ export function updateTimeframeHint() {
       "Rango de precios: velas de 15 min — avisa cuando el cierre sale del canal (piso o techo); no reenvía mientras siga fuera.";
   } else if (appState.customType === "price_ma") {
     els.timeframeSelect.value = "1day";
-    syncPriceMaPeriodShortcuts();
-    const days = priceMaDayCount();
     els.timeframeHint.textContent =
-      days === null
-        ? "Diario: escribe los días de la media (2–200) sobre velas diarias (vista 1Y)."
-        : `Diario: ${days} días = media de ${days} días (como gráfico 1Y en TradingView).`;
+      "Diario: período 12 = media de 12 días (como gráfico 1Y en TradingView).";
+  } else if (appState.customType === "ema") {
+    els.timeframeSelect.value = "1day";
+    syncEmaPairShortcuts();
+    const fast = emaDayCount(els.emaFast.value);
+    const slow = emaDayCount(els.emaSlow.value);
+    els.timeframeHint.textContent =
+      fast === null || slow === null
+        ? "Diario: escribe los días de las dos medias (2–200) sobre velas diarias (vista 1Y)."
+        : `Diario: EMA(${fast}) y EMA(${slow}) sobre velas diarias (vista 1Y).`;
   } else if (appState.customType === "stochastic") {
     els.timeframeSelect.value = "1day";
     els.timeframeHint.textContent =
@@ -171,9 +180,8 @@ export function resetCustomFields() {
   els.emaSlow.value = "21";
   els.emaDirection.value = "up";
   els.priceMaType.value = "sma";
-  els.priceMaPeriod.value = "50";
+  els.priceMaPeriod.value = "12";
   els.priceMaDirection.value = "up";
-  syncPriceMaPeriodShortcuts();
   els.priceLevelValue.value = "100";
   syncPriceLevelOperator(">=");
   els.priceRangeLow.value = "100";
@@ -207,10 +215,10 @@ export function fillCustomFields(params) {
     return;
   }
   if (params?.type === "price_ma") {
-    els.priceMaType.value = params.ma_type === "ema" ? "ema" : "sma";
-    els.priceMaPeriod.value = String(params.period ?? 50);
-    els.priceMaDirection.value = params.direction === "down" ? "down" : "up";
     setCustomType("price_ma");
+    els.priceMaType.value = params.ma_type === "ema" ? "ema" : "sma";
+    els.priceMaPeriod.value = String(params.period ?? 12);
+    els.priceMaDirection.value = params.direction === "down" ? "down" : "up";
     return;
   }
   if (params?.type === "price_level") {
@@ -226,10 +234,10 @@ export function fillCustomFields(params) {
     updatePriceRangeBand();
     return;
   }
-  setCustomType("ema");
   els.emaFast.value = String(params?.ema_fast ?? 9);
   els.emaSlow.value = String(params?.ema_slow ?? 21);
   els.emaDirection.value = params?.direction === "down" ? "down" : "up";
+  setCustomType("ema");
 }
 
 export function setSubmitLoading(loading) {

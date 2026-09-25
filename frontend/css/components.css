@@ -1265,7 +1265,7 @@
   grid-template-columns: repeat(3, 1fr);
 }
 
-#price-ma-hint {
+#ema-cross-hint {
   margin-bottom: 20px;
 }
 
