@@ -272,10 +272,21 @@
                   </select>
                 </label>
                 <label class="form-field" for="price-ma-period">
-                  <span class="form-field__label">Período</span>
-                  <input id="price-ma-period" class="input-text" type="number" min="2" max="200" value="12" inputmode="numeric" />
+                  <span class="form-field__label">Días de la media</span>
+                  <input id="price-ma-period" class="input-text" type="number" min="2" max="200" value="50" inputmode="numeric" />
                 </label>
               </div>
+              <div
+                id="price-ma-period-shortcuts"
+                class="operator-seg operator-seg--days"
+                role="group"
+                aria-label="Atajos de días"
+              >
+                <button type="button" class="operator-seg__btn operator-seg__btn--day" data-period="20" aria-pressed="false">20</button>
+                <button type="button" class="operator-seg__btn operator-seg__btn--day is-active" data-period="50" aria-pressed="true">50</button>
+                <button type="button" class="operator-seg__btn operator-seg__btn--day" data-period="200" aria-pressed="false">200</button>
+              </div>
+              <p id="price-ma-hint" class="form-field__hint">SMA de 50 días: el cierre cruza esa media. Atajos 20, 50 y 200, o escribe otro número entre 2 y 200.</p>
               <label class="form-field" for="price-ma-direction">
                 <span class="form-field__label">Dirección</span>
                 <select id="price-ma-direction" class="input-text input-select">
@@ -283,7 +294,6 @@
                   <option value="down">Precio cruza abajo de la media</option>
                 </select>
               </label>
-              <p class="form-field__hint">Ejemplo: SMA(12) diaria = media de 12 días en gráfico anual.</p>
             </div>
 
             <div id="custom-price-level-fields" class="custom-fields hidden">

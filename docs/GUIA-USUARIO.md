@@ -152,6 +152,8 @@ Configuración equivalente en Stock Alerts:
 
 Se dispara cuando el **cierre** de la vela diaria cruza la línea de la media (vela actual vs anterior).
 
+En el formulario los días se eligen con atajos **20**, **50** y **200**, o escribiendo otro número entre 2 y 200. Una alerta nueva empieza en **50**.
+
 **Importante:** el período N son N **días** bursátiles (gráfico diario / 1Y).
 
 ---

@@ -44,6 +44,7 @@ export const els = {
   customPriceMaFields: document.getElementById("custom-price-ma-fields"),
   priceMaType: document.getElementById("price-ma-type"),
   priceMaPeriod: document.getElementById("price-ma-period"),
+  priceMaHint: document.getElementById("price-ma-hint"),
   priceMaDirection: document.getElementById("price-ma-direction"),
   customPriceLevelFields: document.getElementById("custom-price-level-fields"),
   priceLevelValue: document.getElementById("price-level-value"),

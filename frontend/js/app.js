@@ -41,6 +41,7 @@ import {
   openCreateModal,
   openEditModal,
   readCreateTicker,
+  applyPriceMaPeriodShortcut,
   setCustomType,
   setFormMode,
   setSubmitLoading,
@@ -371,6 +372,12 @@ function bindEvents() {
   for (const btn of document.querySelectorAll("#custom-price-level-fields .operator-seg__btn")) {
     btn.addEventListener("click", () => syncPriceLevelOperator(btn.dataset.operator));
   }
+  for (const btn of document.querySelectorAll("#price-ma-period-shortcuts .operator-seg__btn")) {
+    btn.addEventListener("click", () => applyPriceMaPeriodShortcut(btn.dataset.period));
+  }
+  els.priceMaPeriod.addEventListener("input", updateTimeframeHint);
+  els.priceMaPeriod.addEventListener("change", updateTimeframeHint);
+  els.priceMaType.addEventListener("change", updateTimeframeHint);
   els.priceRangeLow.addEventListener("input", updatePriceRangeBand);
   els.priceRangeHigh.addEventListener("input", updatePriceRangeBand);
   els.presetRsiPeriod.addEventListener("input", updatePresetRsiHint);
@@ -383,8 +390,6 @@ function bindEvents() {
     els.emaFast,
     els.emaSlow,
     els.emaDirection,
-    els.priceMaType,
-    els.priceMaPeriod,
     els.priceMaDirection,
     els.priceLevelValue,
     els.rsiPeriod,

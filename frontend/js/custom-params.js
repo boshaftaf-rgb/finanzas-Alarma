@@ -95,7 +95,7 @@ export function buildRsiPresetParams(periodRaw, thresholdRaw) {
 export function validatePriceMaParams(periodRaw, maType, direction) {
   const period = Number(periodRaw);
   if (!Number.isInteger(period) || period < 2 || period > 200) {
-    return "El período debe ser un número entre 2 y 200.";
+    return "Los días de la media deben ser un número entre 2 y 200.";
   }
   if (maType !== "sma" && maType !== "ema") {
     return "Selecciona el tipo de media (SMA o EMA).";

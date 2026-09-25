@@ -1261,6 +1261,25 @@
   line-height: 1.3;
 }
 
+.operator-seg--days {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+#price-ma-hint {
+  margin-bottom: 20px;
+}
+
+.operator-seg__btn--day {
+  min-height: calc(44px * var(--text-scale));
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: calc(15px * var(--text-scale));
+  font-weight: 600;
+}
+
 .range-band {
   display: grid;
   grid-template-columns: auto 1fr auto;
@@ -1342,6 +1361,10 @@
 
   .operator-seg {
     grid-template-columns: 1fr;
+  }
+
+  .operator-seg--days {
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 
